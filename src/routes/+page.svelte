@@ -26,16 +26,16 @@
 	<div class:opacity-50={halfOpacity} class="h-full w-full rounded-full {skin}"></div>
 {/snippet}
 
-<div class="flex flex-col items-center border-b">
+<div class="border-b">
 	{#each game.table as row, i}
-		<div class="flex">
+		<div class="flex justify-center">
 			{#each row as cell, j}
 				{@const halfOpacity =
 					!!game.wonPlayer &&
 					!game.wonPlayer.coordinates.some(([row, col]) => row === i && col === j)}
 
 				<button
-					class="grid h-[5rem] w-[5rem] place-items-center border border-slate-800"
+					class="grid aspect-square w-[5rem] place-items-center border border-slate-800"
 					onclick={() => game.dropPiece(j)}
 				>
 					{#if cell.playerId}
