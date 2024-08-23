@@ -173,7 +173,6 @@
 </div>
 
 <div class="grid w-screen place-items-center border-b">
-	<!-- render table -->
 	{#each game.table as row}
 		<div class="flex">
 			{#each row as cell, j}
