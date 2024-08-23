@@ -120,6 +120,11 @@
 		}
 
 		const dropPiece = (column: number) => {
+			if (wonPlayer) {
+				console.error('Game is over');
+				return;
+			}
+
 			const player = currentPlayerTurn();
 			for (let i = table.length - 1; i >= 0; i--) {
 				if (table[i][column].playerId === null) {
@@ -130,7 +135,7 @@
 					} else {
 						switchTurn();
 					}
-					break;
+					return;
 				}
 			}
 		};
