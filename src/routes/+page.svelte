@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { createGame, type Player } from '$lib/game.svelte';
+	import { fly, scale } from 'svelte/transition';
+	import { expoInOut, expoOut } from 'svelte/easing';
 
 	const players: [Player, Player] = [
 		{ id: '1', name: 'player 1' },
@@ -41,10 +43,19 @@
 						onclick={() => game.dropPiece(j)}
 					>
 						{#if cell.playerId}
-							{@render piece({
-								halfOpacity,
-								skin: cell.playerId === '1' ? 'bg-red-500' : 'bg-yellow-500'
-							})}
+							<div
+								class="h-full w-full"
+								in:fly={{ y: -10, easing: expoOut }}
+								out:scale={{
+									delay: Math.random() * 300,
+									easing: expoInOut
+								}}
+							>
+								{@render piece({
+									halfOpacity,
+									skin: cell.playerId === '1' ? 'bg-red-500' : 'bg-yellow-500'
+								})}
+							</div>
 						{/if}
 					</button>
 				{/each}
@@ -53,11 +64,24 @@
 	</div>
 
 	{#if game.wonPlayer}
-		<div class="my-2 flex flex-col items-center justify-center">
+		<div
+			class="my-2 flex flex-col items-center justify-center"
+			in:fly={{
+				y: -10,
+				delay: 300
+			}}
+		>
 			<p class="text-2xl font-bold">
 				{game.wonPlayer.player.name} won!
 			</p>
-			<button class="block underline" onclick={game.restart}>Restart</button>
+			<button
+				class="block underline"
+				onclick={game.restart}
+				in:fly={{
+					y: -10,
+					delay: 1500
+				}}>Restart</button
+			>
 		</div>
 	{/if}
 </div>
