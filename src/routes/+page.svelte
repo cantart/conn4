@@ -172,18 +172,27 @@
 	{/each}
 </div>
 
+{#snippet piece({ halfOpacity, skin }: { halfOpacity: boolean; skin: string })}
+	<div class:opacity-50={halfOpacity} class="h-[5rem] w-[5rem] rounded-full {skin}"></div>
+{/snippet}
+
 <div class="grid w-screen place-items-center border-b">
-	{#each game.table as row}
+	{#each game.table as row, i}
 		<div class="flex">
 			{#each row as cell, j}
+				{@const halfOpacity =
+					!!game.wonPlayer &&
+					!game.wonPlayer.coordinates.some(([row, col]) => row === i && col === j)}
+
 				<button
 					class="grid h-[7rem] w-[7rem] place-items-center border border-slate-800"
 					onclick={() => game.dropPiece(j)}
 				>
-					{#if cell.playerId === players[0].id}
-						<div class="h-[5rem] w-[5rem] rounded-full bg-red-500"></div>
-					{:else if cell.playerId === players[1].id}
-						<div class="h-[5rem] w-[5rem] rounded-full bg-yellow-500"></div>
+					{#if cell.playerId}
+						{@render piece({
+							halfOpacity,
+							skin: cell.playerId === '1' ? 'bg-red-500' : 'bg-yellow-500'
+						})}
 					{/if}
 				</button>
 			{/each}
