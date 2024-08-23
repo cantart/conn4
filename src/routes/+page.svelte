@@ -23,10 +23,10 @@
 </div>
 
 {#snippet piece({ halfOpacity, skin }: { halfOpacity: boolean; skin: string })}
-	<div class:opacity-50={halfOpacity} class="h-[5rem] w-[5rem] rounded-full {skin}"></div>
+	<div class:opacity-50={halfOpacity} class="h-full w-full rounded-full {skin}"></div>
 {/snippet}
 
-<div class="grid w-screen place-items-center border-b">
+<div class="flex flex-col items-center border-b">
 	{#each game.table as row, i}
 		<div class="flex">
 			{#each row as cell, j}
@@ -35,7 +35,7 @@
 					!game.wonPlayer.coordinates.some(([row, col]) => row === i && col === j)}
 
 				<button
-					class="grid h-[7rem] w-[7rem] place-items-center border border-slate-800"
+					class="grid h-[5rem] w-[5rem] place-items-center border border-slate-800"
 					onclick={() => game.dropPiece(j)}
 				>
 					{#if cell.playerId}
