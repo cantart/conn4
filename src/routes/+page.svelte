@@ -23,15 +23,6 @@
 		{/each}
 	</div>
 
-	{#if game.wonPlayer}
-		<div class="my-2 flex flex-col items-center justify-center">
-			<p class="text-2xl font-bold">
-				{game.wonPlayer.player.name} won!
-			</p>
-			<button class="block underline" onclick={game.restart}>Restart</button>
-		</div>
-	{/if}
-
 	{#snippet piece({ halfOpacity, skin }: { halfOpacity: boolean; skin: string })}
 		<div class:opacity-50={halfOpacity} class="h-full w-full rounded-full {skin}"></div>
 	{/snippet}
@@ -60,4 +51,13 @@
 			</div>
 		{/each}
 	</div>
+
+	{#if game.wonPlayer}
+		<div class="my-2 flex flex-col items-center justify-center">
+			<p class="text-2xl font-bold">
+				{game.wonPlayer.player.name} won!
+			</p>
+			<button class="block underline" onclick={game.restart}>Restart</button>
+		</div>
+	{/if}
 </div>
