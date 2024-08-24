@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createGame, type Player } from '$lib/game.svelte';
-	import { fly, scale } from 'svelte/transition';
+	import { fly, scale, slide } from 'svelte/transition';
 	import { expoInOut, expoOut } from 'svelte/easing';
 
 	const players: [Player, Player] = [
@@ -10,7 +10,7 @@
 	const game = createGame({ players });
 </script>
 
-<div class="mt-2 flex flex-col gap-2">
+<div class="flex min-h-screen flex-col justify-center gap-2">
 	<div class="flex justify-center gap-8">
 		{#each players as player, i}
 			<span
@@ -25,11 +25,7 @@
 		{/each}
 	</div>
 
-	{#snippet piece({ halfOpacity, skin }: { halfOpacity: boolean; skin: string })}
-		<div class:opacity-50={halfOpacity} class="h-full w-full rounded-full {skin}"></div>
-	{/snippet}
-
-	<div>
+	<div transition:slide>
 		{#each game.table as row, i}
 			<div class="flex justify-center">
 				{#each row as cell, j}
@@ -64,13 +60,7 @@
 	</div>
 
 	{#if game.wonPlayer}
-		<div
-			class="my-2 flex flex-col items-center justify-center"
-			in:fly={{
-				y: -10,
-				delay: 300
-			}}
-		>
+		<div class="my-2 flex flex-col items-center justify-center" transition:slide>
 			<p class="text-2xl font-bold">
 				{game.wonPlayer.player.name} won!
 			</p>
@@ -79,9 +69,13 @@
 				onclick={game.restart}
 				in:fly={{
 					y: -10,
-					delay: 1500
+					delay: 500
 				}}>Restart</button
 			>
 		</div>
 	{/if}
 </div>
+
+{#snippet piece({ halfOpacity, skin }: { halfOpacity: boolean; skin: string })}
+	<div class:opacity-50={halfOpacity} class="h-full w-full rounded-full {skin}"></div>
+{/snippet}
