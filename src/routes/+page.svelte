@@ -9,7 +9,7 @@
 	const yourId = Math.random().toString();
 
 	$effect(() => {
-		const s = new WebSocket('ws://159.65.15.16:80');
+		const s = new WebSocket('wss://159.65.15.16:80');
 		socket = s;
 
 		// Connection opened
