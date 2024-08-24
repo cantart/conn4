@@ -13,10 +13,12 @@ export type Player = {
 	name: string;
 };
 
-export function createGame(args: { players: [Player, Player] }) {
+export function createGame(args: { players: [Player, Player]; roomId: string }) {
 	let wonPlayer = $state<{ player: Player; coordinates: [number, number][] } | null>(null);
 	let table = $state<{ playerId: string | null }[][]>(createTable());
 	let sw = $state(true);
+	const players = args.players;
+	const roomId = args.roomId;
 
 	const restart = () => {
 		table = createTable();
@@ -150,6 +152,8 @@ export function createGame(args: { players: [Player, Player] }) {
 		get wonPlayer() {
 			return wonPlayer;
 		},
+		players,
+		roomId,
 		switchTurn,
 		dropPiece,
 		restart
