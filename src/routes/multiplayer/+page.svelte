@@ -132,6 +132,7 @@
 					name: 'standby',
 					opponentDisconnected: true
 				};
+				return;
 			}
 
 			if (data.type === 'error') {
