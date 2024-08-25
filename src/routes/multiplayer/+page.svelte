@@ -32,7 +32,7 @@
 	};
 
 	const setupWebsocket = () => {
-		const socket = new WebSocket('ws://159.65.15.16:80');
+		const socket = new WebSocket(import.meta.env.VITE_WEBSOCKET_ENDPOINT);
 
 		// Connection opened
 		socket.addEventListener('open', () => {
