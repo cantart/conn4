@@ -64,13 +64,8 @@
 
 		// Listen for messages
 		socket.addEventListener('message', (event) => {
-			const parsed = incomingMessageSchema.safeParse(JSON.parse(event.data));
-			if (!parsed.success) {
-				console.error(parsed.error.errors);
-				return;
-			}
+			const data = incomingMessageSchema.parse(JSON.parse(event.data));
 
-			const data = parsed.data;
 			if (data.type === 'start') {
 				if (flow.name !== 'matchmaking') {
 					throw new Error('Invalid state');
