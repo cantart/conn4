@@ -159,7 +159,11 @@
 	const handleStandbyFormSubmit = (event: Event) => {
 		const formDataSchema = z.object({
 			name: z.preprocess((value) => {
-				return String(value).trim();
+				const v = String(value).trim();
+				if (v.toLowerCase() === 'you') {
+					throw new Error('Invalid name: You');
+				}
+				return v;
 			}, z.string().min(1))
 		});
 		event.preventDefault();
