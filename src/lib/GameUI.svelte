@@ -11,7 +11,7 @@
 	}>();
 </script>
 
-<div class="flex min-h-screen flex-col justify-center gap-2">
+<div class="flex flex-col justify-center gap-2">
 	<div class="flex justify-center gap-8">
 		{#each props.game.players as player, i}
 			<span
@@ -64,7 +64,7 @@
 	</div>
 
 	{#if props.game.wonPlayer}
-		<div class="my-2 flex flex-col items-center justify-center" transition:slide>
+		<div class="mt-2 flex flex-col items-center justify-center" transition:slide>
 			<p class="text-2xl font-bold">
 				{props.game.wonPlayer.player.name} won!
 			</p>

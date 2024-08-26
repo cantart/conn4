@@ -8,4 +8,6 @@
 	});
 </script>
 
-{@render children()}
+<div class="flex min-h-screen flex-col justify-center">
+	{@render children()}
+</div>
