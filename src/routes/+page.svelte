@@ -18,3 +18,9 @@
 	}}
 	onRestart={game.restart}
 />
+
+{#if import.meta.env.DEV}
+	<a href="/multiplayer">To multiplayer</a>
+{:else}
+	<span>Stay tuned for multiplayer mode</span>
+{/if}
