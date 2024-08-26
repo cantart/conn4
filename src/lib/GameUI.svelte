@@ -26,7 +26,7 @@
 		{/each}
 	</div>
 
-	<div transition:slide>
+	<div in:slide>
 		{#each props.game.table as row, i}
 			<div class="flex justify-center">
 				{#each row as cell, j}
