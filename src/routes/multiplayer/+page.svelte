@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { createGame, type Game } from '$lib/game.svelte';
 	import OnlineMatch from '$lib/OnlineMatch.svelte';
-	import { fade } from 'svelte/transition';
 	import { z } from 'zod';
 
 	const yourId = Math.random().toString();
@@ -44,7 +43,10 @@
 			z.object({
 				type: z.literal('start'),
 				player: z.number(),
-				opponentId: z.string(),
+				opponent: z.object({
+					id: z.string(),
+					name: z.string()
+				}),
 				roomId: z.string()
 			}),
 			z.object({
@@ -84,7 +86,7 @@
 					throw new Error('Invalid state');
 				}
 
-				const { player, opponentId, roomId } = data;
+				const { player, opponent, roomId } = data;
 				const game = createGame({
 					players:
 						player === 1
@@ -94,14 +96,14 @@
 										name: 'You'
 									},
 									{
-										id: opponentId,
-										name: 'Opponent'
+										id: opponent.id,
+										name: opponent.name
 									}
 								]
 							: [
 									{
-										id: opponentId,
-										name: 'Opponent'
+										id: opponent.id,
+										name: opponent.name
 									},
 									{
 										id: yourId,
