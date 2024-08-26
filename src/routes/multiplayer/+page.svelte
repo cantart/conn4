@@ -55,7 +55,13 @@
 			}),
 			z.object({
 				type: z.literal('error'),
-				message: z.string()
+				message: z.string().nullable(),
+				parseErrors: z
+					.object({
+						formErrors: z.string().array(),
+						fieldErrors: z.record(z.any())
+					})
+					.nullable()
 			}),
 			z.object({
 				type: z.literal('opponent-disconnected')
@@ -64,8 +70,14 @@
 
 		// Listen for messages
 		socket.addEventListener('message', (event) => {
-			const data = incomingMessageSchema.parse(JSON.parse(event.data));
+			const parsed = incomingMessageSchema.safeParse(JSON.parse(event.data));
 
+			if (!parsed.success) {
+				console.error(parsed.error.flatten());
+				return;
+			}
+
+			const data = parsed.data;
 			if (data.type === 'start') {
 				if (flow.name !== 'matchmaking') {
 					throw new Error('Invalid state');
@@ -136,7 +148,7 @@
 			}
 
 			if (data.type === 'error') {
-				console.error(data.message);
+				console.error(data);
 			}
 		});
 	};
