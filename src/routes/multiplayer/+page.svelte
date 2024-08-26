@@ -158,19 +158,21 @@
 
 	const handleStandbyFormSubmit = (event: Event) => {
 		const formDataSchema = z.object({
-			name: z.preprocess((value) => {
-				const v = String(value).trim();
-				if (v.toLowerCase() === 'you') {
-					throw new Error('Invalid name: You');
-				}
-				return v;
-			}, z.string().min(1))
+			name: z
+				.string()
+				.trim()
+				.min(1)
+				.refine((v) => v.toLowerCase() !== 'you', { message: 'Invalid name: You' })
 		});
 		event.preventDefault();
 		const form = event.target as HTMLFormElement;
 		const formData = new FormData(form);
-		const { name } = formDataSchema.parse(Object.fromEntries(formData.entries()));
-		startMatchmaking({ name });
+		const parsed = formDataSchema.safeParse(Object.fromEntries(formData.entries()));
+		if (!parsed.success) {
+			console.error(parsed.error.flatten());
+			return;
+		}
+		startMatchmaking(parsed.data);
 	};
 </script>
 
