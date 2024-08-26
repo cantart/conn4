@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { createGame, type Game } from '$lib/game.svelte';
 	import OnlineMatch from '$lib/OnlineMatch.svelte';
+	import { fade } from 'svelte/transition';
 	import { z } from 'zod';
 
 	const yourId = Math.random().toString();
@@ -21,22 +22,22 @@
 		  }
 	>({ name: 'standby', opponentDisconnected: false });
 
-	const startMatchmaking = () => {
+	const startMatchmaking = (data: { name: string }) => {
 		if (flow.name !== 'standby') {
 			throw new Error('Invalid state');
 		}
 		flow = {
 			name: 'matchmaking'
 		};
-		setupWebsocket();
+		setupWebsocket(data);
 	};
 
-	const setupWebsocket = () => {
+	const setupWebsocket = (data: { name: string }) => {
 		const socket = new WebSocket(import.meta.env.VITE_WEBSOCKET_ENDPOINT);
 
 		// Connection opened
 		socket.addEventListener('open', () => {
-			socket.send(JSON.stringify({ type: 'join', userId: yourId }));
+			socket.send(JSON.stringify({ type: 'join', userId: yourId, name: data.name }));
 		});
 
 		const incomingMessageSchema = z.union([
@@ -152,10 +153,26 @@
 			}
 		});
 	};
+
+	const handleStandbyFormSubmit = (event: Event) => {
+		const formDataSchema = z.object({
+			name: z.preprocess((value) => {
+				return String(value).trim();
+			}, z.string().min(1))
+		});
+		event.preventDefault();
+		const form = event.target as HTMLFormElement;
+		const formData = new FormData(form);
+		const { name } = formDataSchema.parse(Object.fromEntries(formData.entries()));
+		startMatchmaking({ name });
+	};
 </script>
 
 {#if flow.name === 'standby'}
-	<button onclick={startMatchmaking}>Click to start</button>
+	<form class="flex flex-col gap-2" onsubmit={handleStandbyFormSubmit}>
+		<input type="text" required name="name" placeholder="Name" class="text-center" />
+		<button type="submit">Click to start</button>
+	</form>
 {:else if flow.name === 'matchmaking'}
 	<div>finding match...</div>
 {:else if flow.name === 'in-match'}

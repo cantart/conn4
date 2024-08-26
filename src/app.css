@@ -6,4 +6,8 @@
 	body {
 		@apply bg-slate-900 text-white;
 	}
+
+	input {
+		@apply rounded-full border bg-transparent;
+	}
 }
