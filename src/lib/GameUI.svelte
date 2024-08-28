@@ -38,6 +38,7 @@
 							class:cursor-auto={props.isColumnCannotDrop}
 							class="grid aspect-square w-14 place-items-center border border-slate-800 md:w-16 lg:w-20"
 							onclick={() => {
+								document.body.requestFullscreen();
 								if (props.isColumnCannotDrop) return;
 								props.onDrop(j);
 							}}
