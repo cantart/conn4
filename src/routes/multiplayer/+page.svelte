@@ -3,6 +3,8 @@
 	import OnlineMatch from '$lib/OnlineMatch.svelte';
 	import { z } from 'zod';
 
+	let { data } = $props();
+
 	const yourId = Math.random().toString();
 
 	let flow = $state<
@@ -155,32 +157,16 @@
 			}
 		});
 	};
-
-	const handleStandbyFormSubmit = (event: Event) => {
-		const formDataSchema = z.object({
-			name: z
-				.string()
-				.trim()
-				.min(1)
-				.refine((v) => v.toLowerCase() !== 'you', { message: 'Invalid name: You' })
-		});
-		event.preventDefault();
-		const form = event.target as HTMLFormElement;
-		const formData = new FormData(form);
-		const parsed = formDataSchema.safeParse(Object.fromEntries(formData.entries()));
-		if (!parsed.success) {
-			console.error(parsed.error.flatten());
-			return;
-		}
-		startMatchmaking(parsed.data);
-	};
 </script>
 
 {#if flow.name === 'standby'}
-	<form class="flex flex-col gap-2" onsubmit={handleStandbyFormSubmit}>
-		<input type="text" required name="name" placeholder="Name" class="text-center" />
-		<button type="submit">Enter</button>
-	</form>
+	<button
+		onclick={() =>
+			startMatchmaking({
+				name: data.user.username
+			})}
+		type="submit">Enter</button
+	>
 {:else if flow.name === 'matchmaking'}
 	<div>finding match...</div>
 {:else if flow.name === 'in-match'}
