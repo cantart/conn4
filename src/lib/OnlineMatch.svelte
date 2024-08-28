@@ -2,7 +2,7 @@
 	import { type Game } from './game.svelte';
 	import GameUI from './GameUI.svelte';
 
-	let props = $props<{ socket: WebSocket; game: Game; roomId: string; yourId: string }>();
+	let props: { socket: WebSocket; game: Game; roomId: string; yourId: string } = $props();
 </script>
 
 <GameUI

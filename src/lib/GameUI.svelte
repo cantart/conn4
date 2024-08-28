@@ -3,12 +3,12 @@
 	import { fly, scale, slide } from 'svelte/transition';
 	import { expoInOut, expoOut } from 'svelte/easing';
 
-	let props = $props<{
+	let props: {
 		game: Game;
 		isColumnCannotDrop: boolean;
 		onDrop: (column: number) => void;
 		onRestart: () => void;
-	}>();
+	} = $props();
 </script>
 
 <div class="flex flex-col justify-center gap-2">
