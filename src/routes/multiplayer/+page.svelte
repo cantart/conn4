@@ -179,9 +179,8 @@
 {#if flow.name === 'standby'}
 	<form class="flex flex-col gap-2" onsubmit={handleStandbyFormSubmit}>
 		<input type="text" required name="name" placeholder="Name" class="text-center" />
-		<button type="submit">Click to start</button>
+		<button type="submit">Enter</button>
 	</form>
-	<a href="/">To offline mode</a>
 {:else if flow.name === 'matchmaking'}
 	<div>finding match...</div>
 {:else if flow.name === 'in-match'}
