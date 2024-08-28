@@ -20,8 +20,8 @@ export const actions = {
 		return redirect(301, '/');
 	},
 
-	login: async ({ request, cookies }) => {
-		const data = await request.formData();
+	login: async (event) => {
+		const data = await event.request.formData();
 		const username = data.get('username') ?? '';
 		const password = data.get('password') ?? '';
 
@@ -31,9 +31,9 @@ export const actions = {
 		if (bcrypt.compareSync(password.toString(), hash)) {
 			const token = await createAuthJWT({ username: username.toString(), id: 1 });
 
-			cookies.set('auth_token', token, { path: '/' });
+			event.cookies.set('auth_token', token, { path: '/' });
 
-			return redirect(301, '/');
+			return redirect(301, data.get('redirect')?.toString() || '/');
 		} else {
 			return { success: false };
 		}

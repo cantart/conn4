@@ -4,8 +4,6 @@
 	let { children, data } = $props();
 
 	$effect(() => {
-		console.log('data', data);
-
 		onGoogleScriptLoad();
 	});
 </script>
