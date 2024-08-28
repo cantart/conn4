@@ -26,41 +26,43 @@
 		{/each}
 	</div>
 
-	<div in:slide>
-		{#each props.game.table as row, i}
-			<div class="flex justify-center">
-				{#each row as cell, j}
-					{@const halfOpacity =
-						!!props.game.wonPlayer &&
-						!props.game.wonPlayer.coordinates.some(([row, col]) => row === i && col === j)}
-
-					<button
-						class:cursor-auto={props.isColumnCannotDrop}
-						class="grid aspect-square w-12 place-items-center border border-slate-800 sm:w-14 md:w-16 lg:w-20"
-						onclick={() => {
-							if (props.isColumnCannotDrop) return;
-							props.onDrop(j);
-						}}
-					>
-						{#if cell.playerId}
-							<div
-								class="h-full w-full"
-								in:fly={{ y: -10, easing: expoOut }}
-								out:scale={{
-									delay: Math.random() * 300,
-									easing: expoInOut
-								}}
-							>
-								{@render piece({
-									halfOpacity,
-									skin: cell.playerId === props.game.players[0].id ? 'bg-red-500' : 'bg-yellow-500'
-								})}
-							</div>
-						{/if}
-					</button>
-				{/each}
-			</div>
-		{/each}
+	<div class="w-screen overflow-x-auto text-center">
+		<div in:slide class="inline-block">
+			{#each props.game.table as row, i}
+				<div class="flex justify-center">
+					{#each row as cell, j}
+						{@const halfOpacity =
+							!!props.game.wonPlayer &&
+							!props.game.wonPlayer.coordinates.some(([row, col]) => row === i && col === j)}
+						<button
+							class:cursor-auto={props.isColumnCannotDrop}
+							class="grid aspect-square w-12 place-items-center border border-slate-800 sm:w-14 md:w-16 lg:w-20"
+							onclick={() => {
+								if (props.isColumnCannotDrop) return;
+								props.onDrop(j);
+							}}
+						>
+							{#if cell.playerId}
+								<div
+									class="h-full w-full"
+									in:fly={{ y: -10, easing: expoOut }}
+									out:scale={{
+										delay: Math.random() * 300,
+										easing: expoInOut
+									}}
+								>
+									{@render piece({
+										halfOpacity,
+										skin:
+											cell.playerId === props.game.players[0].id ? 'bg-red-500' : 'bg-yellow-500'
+									})}
+								</div>
+							{/if}
+						</button>
+					{/each}
+				</div>
+			{/each}
+		</div>
 	</div>
 
 	{#if props.game.wonPlayer}
