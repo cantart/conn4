@@ -8,6 +8,6 @@
 	}
 
 	input {
-		@apply rounded-full border bg-transparent;
+		@apply rounded-full border bg-transparent px-2;
 	}
 }
