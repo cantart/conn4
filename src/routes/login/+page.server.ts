@@ -40,9 +40,7 @@ export const actions = {
 	},
 
 	logout: async ({ cookies }) => {
-		cookies.set('auth_token', '', { path: '/' });
-		console.log('logged out');
-
+		cookies.delete('auth_token', { path: '/' });
 		return redirect(301, '/');
 	}
 };
