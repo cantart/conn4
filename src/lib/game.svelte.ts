@@ -1,6 +1,8 @@
 const createTable = () => {
-	return Array.from({ length: 6 }, () =>
-		Array.from({ length: 7 }, () => {
+	const rows = 6;
+	const cols = 20;
+	return Array.from({ length: rows }, () =>
+		Array.from({ length: cols }, () => {
 			return {
 				playerId: null
 			};
