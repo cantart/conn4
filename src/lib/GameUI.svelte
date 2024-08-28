@@ -36,7 +36,7 @@
 
 					<button
 						class:cursor-auto={props.isColumnCannotDrop}
-						class="grid aspect-square w-[5rem] place-items-center border border-slate-800"
+						class="grid aspect-square w-12 place-items-center border border-slate-800 sm:w-14 md:w-16 lg:w-20"
 						onclick={() => {
 							if (props.isColumnCannotDrop) return;
 							props.onDrop(j);
