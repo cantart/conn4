@@ -4,9 +4,6 @@ const createSession = () => {
 	let user: User | null = $state(null);
 	let ready = $state(false);
 	return {
-		// get user() {
-		// 	return user;
-		// },
 		setUser(value: User | null) {
 			ready = true;
 			user = value;
@@ -17,7 +14,7 @@ const createSession = () => {
 			  }
 			| {
 					ready: true;
-					user: User | null;
+					user: typeof user;
 			  } {
 			return ready ? { ready, user } : { ready };
 		}
