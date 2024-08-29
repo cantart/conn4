@@ -1,11 +1,26 @@
 <script lang="ts">
-	import { onGoogleScriptLoad } from '$lib/google';
+	// import { onGoogleScriptLoad } from '$lib/google';
 	import '../app.css';
 	let { children, data } = $props();
+	import { initializeApp } from 'firebase/app';
+	import { setFireBaseApp } from '$lib/firebase.svelte';
 
-	$effect(() => {
-		onGoogleScriptLoad();
-	});
+	// Import the functions you need from the SDKs you need
+	// TODO: Add SDKs for Firebase products that you want to use
+	// https://firebase.google.com/docs/web/setup#available-libraries
+
+	const firebaseConfig = {
+		apiKey: 'AIzaSyAXsv_EdGzJw4UYCDdkLMnXEyEb_lZIz1s',
+		authDomain: 'fial-the-game.firebaseapp.com',
+		projectId: 'fial-the-game',
+		storageBucket: 'fial-the-game.appspot.com',
+		messagingSenderId: '9162154050',
+		appId: '1:9162154050:web:485c1425bedcb0bc098ddb'
+	};
+
+	// Initialize Firebase
+	const app = initializeApp(firebaseConfig);
+	setFireBaseApp(app);
 </script>
 
 <div class="flex min-h-screen flex-col items-center justify-center gap-4">
