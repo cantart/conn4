@@ -21,6 +21,6 @@ const createSession = () => {
 	};
 };
 
-export const session = $state(createSession());
+export const session = createSession();
 
 export type Session = ReturnType<typeof createSession>;
