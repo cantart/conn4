@@ -1,11 +1,9 @@
 <script lang="ts">
+	import { googleSignInWithPopup } from '$lib/firebase.client';
 	import { createGame, type Game } from '$lib/game.svelte';
 	import OnlineMatch from '$lib/OnlineMatch.svelte';
+	import { session } from '$lib/session.svelte';
 	import { z } from 'zod';
-
-	let { data } = $props();
-
-	const yourId = Math.random().toString();
 
 	let flow = $state<
 		| {
@@ -14,31 +12,34 @@
 		  }
 		| {
 				name: 'matchmaking';
+				yourId: string;
 		  }
 		| {
 				name: 'in-match';
 				game: Game;
 				socket: WebSocket;
 				roomId: string;
+				yourId: string;
 		  }
 	>({ name: 'standby', opponentDisconnected: false });
 
-	const startMatchmaking = (data: { name: string }) => {
+	const startMatchmaking = (data: { name: string; userId: string }) => {
 		if (flow.name !== 'standby') {
 			throw new Error('Invalid state');
 		}
 		flow = {
-			name: 'matchmaking'
+			name: 'matchmaking',
+			yourId: data.userId
 		};
 		setupWebsocket(data);
 	};
 
-	const setupWebsocket = (data: { name: string }) => {
+	const setupWebsocket = (data: { name: string; userId: string }) => {
 		const socket = new WebSocket(import.meta.env.VITE_WEBSOCKET_ENDPOINT);
 
 		// Connection opened
 		socket.addEventListener('open', () => {
-			socket.send(JSON.stringify({ type: 'join', userId: yourId, name: data.name }));
+			socket.send(JSON.stringify({ type: 'join', userId: data.userId, name: data.name }));
 		});
 
 		const incomingMessageSchema = z.union([
@@ -94,7 +95,7 @@
 						player === 1
 							? [
 									{
-										id: yourId,
+										id: flow.yourId,
 										name: 'You'
 									},
 									{
@@ -108,7 +109,7 @@
 										name: opponent.name
 									},
 									{
-										id: yourId,
+										id: flow.yourId,
 										name: 'You'
 									}
 								]
@@ -117,7 +118,8 @@
 					name: 'in-match',
 					game,
 					socket,
-					roomId
+					roomId,
+					yourId: flow.yourId
 				};
 				return;
 			}
@@ -159,16 +161,31 @@
 	};
 </script>
 
-{#if flow.name === 'standby'}
-	<button
-		onclick={() =>
-			startMatchmaking({
-				name: data.user.username
-			})}
-		type="submit">Enter</button
-	>
-{:else if flow.name === 'matchmaking'}
-	<div>finding match...</div>
-{:else if flow.name === 'in-match'}
-	<OnlineMatch socket={flow.socket} roomId={flow.roomId} game={flow.game} {yourId} />
+{#if session.data.ready}
+	{#if session.data.user}
+		{@const user = session.data.user}
+		{#if flow.name === 'standby'}
+			<button
+				onclick={() =>
+					startMatchmaking({
+						name: user.displayName ?? 'Anonymous',
+						userId: user.uid
+					})}
+				type="submit">Enter</button
+			>
+		{:else if flow.name === 'matchmaking'}
+			<div>finding match...</div>
+		{:else if flow.name === 'in-match'}
+			<OnlineMatch
+				socket={flow.socket}
+				roomId={flow.roomId}
+				game={flow.game}
+				yourId={flow.yourId}
+			/>
+		{/if}
+	{:else}
+		<button onclick={googleSignInWithPopup}>Login</button>
+	{/if}
+{:else}
+	<div>Loading...</div>
 {/if}
