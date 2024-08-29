@@ -15,21 +15,18 @@
 <div class="flex min-h-screen flex-col items-center justify-center gap-4">
 	<div class="my-auto text-center">{@render children()}</div>
 	<footer class="mb-2 space-x-4">
-		{#if import.meta.env.DEV}
-			{#if session.data.ready}
-				{#if session.data.user}
-					<button
-						class="opacity-40 transition-all hover:opacity-100"
-						onclick={() => {
-							signOut(auth);
-						}}>logout</button
-					>
-				{:else}
-					<button
-						class="opacity-40 transition-all hover:opacity-100"
-						onclick={googleSignInWithPopup}>login</button
-					>
-				{/if}
+		{#if session.data.ready}
+			{#if session.data.user}
+				<button
+					class="opacity-40 transition-all hover:opacity-100"
+					onclick={() => {
+						signOut(auth);
+					}}>logout</button
+				>
+			{:else}
+				<button class="opacity-40 transition-all hover:opacity-100" onclick={googleSignInWithPopup}
+					>login</button
+				>
 			{/if}
 		{/if}
 		<a href="/" class="opacity-40 transition-all hover:opacity-100">offline</a>
