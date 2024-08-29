@@ -4,6 +4,7 @@
 	import { session } from '$lib/session.svelte';
 	let { children } = $props();
 	import { signOut, onAuthStateChanged } from 'firebase/auth';
+	import { slide } from 'svelte/transition';
 
 	$effect(() => {
 		onAuthStateChanged(auth, (user) => {
@@ -14,15 +15,25 @@
 
 <div class="flex min-h-screen flex-col items-center justify-center gap-4">
 	<div class="my-auto text-center">{@render children()}</div>
-	<footer class="mb-2 space-x-4">
+	<footer class="mb-2 flex items-center justify-center gap-4">
 		{#if session.data.ready}
 			{#if session.data.user}
-				<button
-					class="opacity-40 transition-all hover:opacity-100"
-					onclick={() => {
-						signOut(auth);
-					}}>logout</button
-				>
+				<span class="flex items-center gap-2">
+					<img
+						class="h-5 w-5 rounded-full"
+						in:slide={{
+							delay: 100
+						}}
+						src={session.data.user.photoURL}
+						alt=""
+					/>
+					<button
+						class="opacity-40 transition-all hover:opacity-100"
+						onclick={() => {
+							signOut(auth);
+						}}>logout</button
+					>
+				</span>
 			{:else}
 				<button class="opacity-40 transition-all hover:opacity-100" onclick={googleSignInWithPopup}
 					>login</button
