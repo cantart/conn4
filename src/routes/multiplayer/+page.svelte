@@ -4,6 +4,14 @@
 	import OnlineMatch from '$lib/OnlineMatch.svelte';
 	import { session } from '$lib/session.svelte';
 	import { z } from 'zod';
+	import {
+		addDoc,
+		onSnapshot,
+		type DocumentReference,
+		deleteDoc,
+		updateDoc
+	} from 'firebase/firestore';
+	import { collections } from '$lib/firestore';
 
 	let flow = $state<
 		| {
@@ -13,25 +21,45 @@
 		| {
 				name: 'matchmaking';
 				yourId: string;
+				queue: string[];
+				matchMakingRoomUnsub: () => void;
+				roomRef: DocumentReference;
 		  }
 		| {
 				name: 'in-match';
 				game: Game;
-				socket: WebSocket;
-				roomId: string;
+				gameRoomRef: DocumentReference;
 				yourId: string;
 		  }
 	>({ name: 'standby', opponentDisconnected: false });
 
-	const startMatchmaking = (data: { name: string; userId: string }) => {
+	const startMatchmaking = async (data: { name: string; userId: string }) => {
 		if (flow.name !== 'standby') {
 			throw new Error('Invalid state');
 		}
+		// setupWebsocket(data);
+		const d: z.infer<typeof collections.matchmakingRooms.docSchema> = {
+			host: data.userId,
+			queue: []
+		};
+		const docRef = await addDoc(collections.matchmakingRooms.collection([]), d);
+		let queue = $state<string[]>([]);
+		const unsub = onSnapshot(docRef, (doc) => {
+			const data = doc.data() as z.infer<typeof collections.matchmakingRooms.docSchema> | undefined;
+			if (!data) {
+				throw new Error('Cannot find matchmaking room after creation');
+			}
+			queue = data.queue;
+		});
 		flow = {
 			name: 'matchmaking',
-			yourId: data.userId
+			yourId: data.userId,
+			matchMakingRoomUnsub: unsub,
+			get queue() {
+				return queue;
+			},
+			roomRef: docRef
 		};
-		setupWebsocket(data);
 	};
 
 	const setupWebsocket = (data: { name: string; userId: string }) => {
@@ -159,6 +187,66 @@
 			}
 		});
 	};
+
+	const acceptPlayer = async (opponentId: string) => {
+		if (flow.name !== 'matchmaking') {
+			throw new Error('Invalid state');
+		}
+		// add opponent as an accepted player to the matchmaking room
+		const dataToUpdate: Partial<z.infer<typeof collections.matchmakingRooms.docSchema>> = {
+			acceptedPlayer: opponentId
+		};
+		await updateDoc(flow.roomRef, dataToUpdate);
+		// create game room
+		const gameRoom: z.infer<typeof collections.gameRooms.docSchema> = {
+			players: [flow.yourId]
+		};
+		const gameRoomRef = await addDoc(collections.gameRooms.collection([]), gameRoom);
+		// listen if the opponent has joined the game room (listen to the `players` field)
+		const unsub = onSnapshot(gameRoomRef, (doc) => {
+			if (flow.name !== 'matchmaking') {
+				throw new Error('Invalid state');
+			}
+			if (doc.metadata.hasPendingWrites) {
+				return;
+			}
+			const data = doc.data() as z.infer<typeof collections.gameRooms.docSchema> | undefined;
+			if (!data || data.players.length !== 2) {
+				return;
+			}
+
+			// unsubscribe the matchmaking room
+			flow.matchMakingRoomUnsub();
+			// delete the matchmaking room
+			deleteDoc(flow.roomRef);
+			unsub();
+
+			// change flow to in-match
+			flow = {
+				name: 'in-match',
+				game: createGame({
+					players: [
+						{
+							id: data.players[0],
+							name: data.players[0] === flow.yourId ? 'You' : 'Opponent'
+						},
+						{
+							id: data.players[1],
+							name: data.players[1] === flow.yourId ? 'You' : 'Opponent'
+						}
+					]
+				}),
+				gameRoomRef,
+				yourId: flow.yourId
+			};
+		});
+
+		// create an active game room
+		const d: z.infer<typeof collections.gameRooms.docSchema> = {
+			players: [flow.yourId, opponentId]
+		};
+		await addDoc(collections.gameRooms.collection([]), d);
+	};
 </script>
 
 {#if session.data.ready}
@@ -174,14 +262,11 @@
 				type="submit">Enter</button
 			>
 		{:else if flow.name === 'matchmaking'}
-			<div>finding match...</div>
+			{#each flow.queue as q}
+				<button onclick={() => acceptPlayer(q)}>{q}</button>
+			{/each}
 		{:else if flow.name === 'in-match'}
-			<OnlineMatch
-				socket={flow.socket}
-				roomId={flow.roomId}
-				game={flow.game}
-				yourId={flow.yourId}
-			/>
+			<OnlineMatch gameRoomRef={flow.gameRoomRef} game={flow.game} yourId={flow.yourId} />
 		{/if}
 	{:else}
 		<button onclick={googleSignInWithPopup}>Login</button>
