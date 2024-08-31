@@ -25,8 +25,7 @@
 </script>
 
 <div class="flex min-h-screen flex-col items-center justify-center gap-4">
-	<div class="my-auto text-center">{@render children()}</div>
-	<footer class="mb-2 flex items-center justify-center gap-4">
+	<nav class="mb-2 flex items-center justify-center gap-4">
 		{#if session.data.ready}
 			{#if session.data.user}
 				<span class="flex items-center gap-2">
@@ -55,5 +54,7 @@
 		<!-- {#if import.meta.env.DEV} -->
 		<a href="/multiplayer" class="opacity-40 transition-all hover:opacity-100">online</a>
 		<!-- {/if} -->
-	</footer>
+	</nav>
+
+	<div class="my-auto text-center">{@render children()}</div>
 </div>
