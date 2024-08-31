@@ -24,8 +24,20 @@ export const docSchemas = z.object({
 	}),
 	gameRooms: z.object({
 		host: z.string(),
-		opponent: z.string().optional(),
-		startPlayerOrder: z.tuple([z.string(), z.string()]).optional()
+		state: z.union([
+			z.object({
+				type: z.literal('waiting')
+			}),
+			z.object({
+				type: z.literal('player-joined'),
+				opponent: z.string()
+			}),
+			z.object({
+				type: z.literal('playing'),
+				opponent: z.string(),
+				startPlayerOrder: z.tuple([z.string(), z.string()])
+			})
+		])
 	})
 });
 

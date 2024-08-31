@@ -90,7 +90,10 @@
 		}
 		// create game room
 		const gameRoom: Doc['gameRooms'] = {
-			host: flow.yourId
+			host: flow.yourId,
+			state: {
+				type: 'waiting'
+			}
 		};
 		const gameRoomRef = await addDoc(collections.gameRooms(), gameRoom);
 
@@ -115,14 +118,17 @@
 
 		// listen if the opponent has joined the game room (listen to the `players` field)
 		const unsub = onSnapshot(gameRoomRef, async (doc) => {
+			if (!doc.exists()) {
+				return;
+			}
 			if (flow.name !== 'waiting-for-opponent-to-join') {
 				throw new Error('Invalid state');
 			}
 			if (doc.metadata.hasPendingWrites) {
 				return;
 			}
-			const data = doc.data() as Doc['gameRooms'] | undefined;
-			if (!data || data.opponent === undefined) {
+			const data = doc.data() as Doc['gameRooms'];
+			if (data.state.type !== 'player-joined') {
 				return;
 			}
 			// unsubscribe the game room being used to listen to the opponent's join
@@ -159,7 +165,11 @@
 
 			// add the field of actual player orders to the game room
 			const toUpdate: Partial<Doc['gameRooms']> = {
-				startPlayerOrder: [players[0].id, players[1].id]
+				state: {
+					type: 'playing',
+					opponent: opponentId,
+					startPlayerOrder: [players[0].id, players[1].id]
+				}
 			};
 			await updateDoc(gameRoomRef, toUpdate);
 
@@ -236,28 +246,34 @@
 
 				// join the game room
 				const toUpdate: Partial<Doc['gameRooms']> = {
-					opponent: userId
+					state: {
+						type: 'player-joined',
+						opponent: userId
+					}
 				};
 				await updateDoc(gameRoomRef, toUpdate);
 				joinGameRoomUnsub();
 
 				// listen for host to start the game (listen to the `startPlayerOrder` field)
 				const startPlayerOrderUnsub = onSnapshot(gameRoomRef, async (gameRoomSnap) => {
-					const gameRoomData = gameRoomSnap.data() as Doc['gameRooms'] | undefined;
+					if (!gameRoomSnap.exists()) {
+						return;
+					}
+					const gameRoomData = gameRoomSnap.data() as Doc['gameRooms'];
 
-					if (!gameRoomData || !gameRoomData.startPlayerOrder) {
+					if (gameRoomData.state.type !== 'playing') {
 						return;
 					}
 					startPlayerOrderUnsub();
 
 					const players: [Player, Player] = [
 						{
-							id: gameRoomData.startPlayerOrder[0],
-							name: gameRoomData.startPlayerOrder[0] === userId ? 'You' : 'Opponent'
+							id: gameRoomData.state.startPlayerOrder[0],
+							name: gameRoomData.state.startPlayerOrder[0] === userId ? 'You' : 'Opponent'
 						},
 						{
-							id: gameRoomData.startPlayerOrder[1],
-							name: gameRoomData.startPlayerOrder[1] === userId ? 'You' : 'Opponent'
+							id: gameRoomData.state.startPlayerOrder[1],
+							name: gameRoomData.state.startPlayerOrder[1] === userId ? 'You' : 'Opponent'
 						}
 					];
 
