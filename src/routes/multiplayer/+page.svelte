@@ -53,10 +53,12 @@
 		  }
 	>({ name: 'standby', opponentDisconnected: false });
 
+	let startingHost = $state(false);
 	const starHosting = async (data: { userId: string }) => {
 		if (flow.name !== 'standby') {
 			throw new Error('Invalid state');
 		}
+		startingHost = true;
 
 		// delete any existing matchmaking room whose host is the same as the current user
 		const existingMatchmakingRoom = await getDocs(
@@ -90,6 +92,7 @@
 			},
 			matchmakingRoomRef,
 		};
+		startingHost = false;
 	};
 
 	const acceptPlayer = async (opponentId: string) => {
@@ -306,10 +309,14 @@
 		{#if flow.name === 'standby'}
 			<div class="flex flex-col gap-2">
 				<button
-					onclick={() =>
+					onclick={() => {
+						if (startingHost) {
+							return;
+						}
 						starHosting({
 							userId: user.uid,
-						})}
+						});
+					}}
 					type="submit">Host</button
 				>
 				<button
