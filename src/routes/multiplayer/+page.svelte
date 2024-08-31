@@ -14,9 +14,14 @@
 		arrayUnion,
 		doc,
 		getDocs,
+		getDoc,
 	} from 'firebase/firestore';
 	import { collections, type Doc } from '$lib/firestore';
-	import { type ConvertToUnknown } from '$lib/utils';
+	import { type ConvertToUnknown, type SafeOmit } from '$lib/utils';
+
+	type GameRoomDataWhenSearching = SafeOmit<Doc['matchmakingRooms'], 'host'> & {
+		host: Doc['users'] & { id: string };
+	};
 
 	let flow = $state<
 		| {
@@ -48,7 +53,7 @@
 				matchMakingRoomUnsub: () => void;
 				rooms: {
 					ref: DocumentReference;
-					data: Doc['matchmakingRooms'];
+					data: GameRoomDataWhenSearching;
 				}[];
 		  }
 	>({ name: 'standby', opponentDisconnected: false });
@@ -197,6 +202,14 @@
 		});
 	};
 
+	const userInfoCache = new Map<
+		string /* user id */,
+		{
+			displayName: string | null;
+			photoURL: string | null;
+		}
+	>();
+
 	const searchForRoom = () => {
 		if (flow.name !== 'standby') {
 			throw new Error('Invalid state');
@@ -205,19 +218,57 @@
 		let rooms = $state<
 			{
 				ref: DocumentReference;
-				data: Doc['matchmakingRooms'];
+				data: GameRoomDataWhenSearching;
 			}[]
 		>([]);
 
 		const unsub = onSnapshot(
 			query(collections.matchmakingRooms(), where('state.type', '==', 'waiting')),
-			(snapshot) => {
-				rooms = snapshot.docs.map((doc) => {
-					return {
-						ref: doc.ref,
-						data: doc.data() as Doc['matchmakingRooms'],
-					};
-				});
+			async (snapshot) => {
+				rooms = await Promise.all(
+					snapshot.docs.map(
+						async (
+							roomSnap,
+						): Promise<{
+							ref: DocumentReference;
+							data: GameRoomDataWhenSearching;
+						}> => {
+							const data = roomSnap.data() as Doc['matchmakingRooms'];
+							const hostId = data.host.id;
+							if (userInfoCache.has(hostId)) {
+								return {
+									ref: roomSnap.ref,
+									data: {
+										...data,
+										host: {
+											...userInfoCache.get(hostId)!,
+											id: hostId,
+										},
+									},
+								};
+							}
+
+							const hostSnap = await getDoc(doc(collections.userInfos(), hostId));
+							const hostData = hostSnap.data() as Doc['users'];
+							const gameRoomDataWhenSearching: GameRoomDataWhenSearching = {
+								...data,
+								host: {
+									...hostData,
+									id: hostId,
+								},
+							};
+							userInfoCache.set(hostId, {
+								displayName: hostData.displayName,
+								photoURL: hostData.photoURL,
+							});
+
+							return {
+								ref: roomSnap.ref,
+								data: gameRoomDataWhenSearching,
+							};
+						},
+					),
+				);
 			},
 		);
 
@@ -232,7 +283,10 @@
 
 	const joinRoom = async (
 		userId: string,
-		room: { ref: DocumentReference; data: Doc['matchmakingRooms'] },
+		room: {
+			ref: DocumentReference;
+			data: GameRoomDataWhenSearching;
+		},
 	) => {
 		const toUpdate: Partial<ConvertToUnknown<Doc['matchmakingRooms']>> = {
 			queue: arrayUnion(userId),
@@ -352,8 +406,17 @@
 						<button
 							onclick={() => {
 								joinRoom(user.uid, room);
-							}}>{room.data.host.id}</button
+							}}
 						>
+							<div class="flex items-center gap-2">
+								<img
+									class="aspect-square h-8 rounded-full"
+									src={room.data.host.photoURL}
+									alt="host profile"
+								/>
+								<div>{room.data.host.displayName}</div>
+							</div>
+						</button>
 					</li>
 				{/each}
 			</ul>
