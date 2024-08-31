@@ -12,7 +12,8 @@
 		query,
 		where,
 		arrayUnion,
-		doc
+		doc,
+		getDocs,
 	} from 'firebase/firestore';
 	import { collections, type Doc } from '$lib/firestore';
 	import { type ConvertToUnknown } from '$lib/utils';
@@ -57,12 +58,19 @@
 			throw new Error('Invalid state');
 		}
 
+		// delete any existing matchmaking room whose host is the same as the current user
+		const existingMatchmakingRoom = await getDocs(
+			query(collections.matchmakingRooms(), where('host', '==', data.userId)),
+		);
+		const deletePromises = existingMatchmakingRoom.docs.map((doc) => deleteDoc(doc.ref));
+		await Promise.all(deletePromises);
+
 		const d: Doc['matchmakingRooms'] = {
 			host: data.userId,
 			queue: [],
 			state: {
-				type: 'waiting'
-			}
+				type: 'waiting',
+			},
 		};
 		const matchmakingRoomRef = await addDoc(collections.matchmakingRooms(), d);
 		let queue = $state<string[]>([]);
@@ -80,7 +88,7 @@
 			get queue() {
 				return queue;
 			},
-			matchmakingRoomRef
+			matchmakingRoomRef,
 		};
 	};
 
@@ -92,8 +100,8 @@
 		const gameRoom: Doc['gameRooms'] = {
 			host: flow.yourId,
 			state: {
-				type: 'waiting'
-			}
+				type: 'waiting',
+			},
 		};
 		const gameRoomRef = await addDoc(collections.gameRooms(), gameRoom);
 
@@ -102,8 +110,8 @@
 			state: {
 				type: 'accepted',
 				opponent: opponentId,
-				gameRoomId: gameRoomRef.id
-			}
+				gameRoomId: gameRoomRef.id,
+			},
 		};
 		await updateDoc(flow.matchmakingRoomRef, dataToUpdate);
 
@@ -113,7 +121,7 @@
 			matchmakingRoomRef: flow.matchmakingRoomRef,
 			matchMakingRoomUnsub: flow.matchMakingRoomUnsub,
 			yourId: flow.yourId,
-			opponentId
+			opponentId,
 		};
 
 		// listen if the opponent has joined the game room (listen to the `players` field)
@@ -145,22 +153,22 @@
 					? [
 							{
 								id: flow.yourId,
-								name: 'You'
+								name: 'You',
 							},
 							{
 								id: opponentId,
-								name: 'Opponent'
-							}
+								name: 'Opponent',
+							},
 						]
 					: [
 							{
 								id: opponentId,
-								name: 'Opponent'
+								name: 'Opponent',
 							},
 							{
 								id: flow.yourId,
-								name: 'You'
-							}
+								name: 'You',
+							},
 						];
 
 			// start the game
@@ -169,8 +177,8 @@
 					type: 'playing',
 					opponent: opponentId,
 					startPlayerOrder: [players[0].id, players[1].id],
-					drops: []
-				}
+					drops: [],
+				},
 			};
 			await updateDoc(gameRoomRef, toUpdate);
 
@@ -178,7 +186,7 @@
 				name: 'in-match',
 				game: createGame({ players }),
 				gameRoomRef,
-				yourId: flow.yourId
+				yourId: flow.yourId,
 			};
 		});
 	};
@@ -201,10 +209,10 @@
 				rooms = snapshot.docs.map((doc) => {
 					return {
 						ref: doc.ref,
-						data: doc.data() as Doc['matchmakingRooms']
+						data: doc.data() as Doc['matchmakingRooms'],
 					};
 				});
-			}
+			},
 		);
 
 		flow = {
@@ -212,16 +220,16 @@
 			matchMakingRoomUnsub: unsub,
 			get rooms() {
 				return rooms;
-			}
+			},
 		};
 	};
 
 	const joinRoom = async (
 		userId: string,
-		room: { ref: DocumentReference; data: Doc['matchmakingRooms'] }
+		room: { ref: DocumentReference; data: Doc['matchmakingRooms'] },
 	) => {
 		const toUpdate: Partial<ConvertToUnknown<Doc['matchmakingRooms']>> = {
-			queue: arrayUnion(userId)
+			queue: arrayUnion(userId),
 		};
 		await updateDoc(room.ref, toUpdate);
 
@@ -249,8 +257,8 @@
 				const toUpdate: Partial<Doc['gameRooms']> = {
 					state: {
 						type: 'player-joined',
-						opponent: userId
-					}
+						opponent: userId,
+					},
 				};
 				await updateDoc(gameRoomRef, toUpdate);
 				joinGameRoomUnsub();
@@ -270,21 +278,21 @@
 					const players: [Player, Player] = [
 						{
 							id: gameRoomData.state.startPlayerOrder[0],
-							name: gameRoomData.state.startPlayerOrder[0] === userId ? 'You' : 'Opponent'
+							name: gameRoomData.state.startPlayerOrder[0] === userId ? 'You' : 'Opponent',
 						},
 						{
 							id: gameRoomData.state.startPlayerOrder[1],
-							name: gameRoomData.state.startPlayerOrder[1] === userId ? 'You' : 'Opponent'
-						}
+							name: gameRoomData.state.startPlayerOrder[1] === userId ? 'You' : 'Opponent',
+						},
 					];
 
 					flow = {
 						name: 'in-match',
 						game: createGame({
-							players
+							players,
 						}),
 						gameRoomRef,
-						yourId: userId
+						yourId: userId,
 					};
 				});
 			});
@@ -300,7 +308,7 @@
 				<button
 					onclick={() =>
 						starHosting({
-							userId: user.uid
+							userId: user.uid,
 						})}
 					type="submit">Host</button
 				>
