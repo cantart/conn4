@@ -40,7 +40,7 @@
 		  }
 	>({ name: 'standby', opponentDisconnected: false });
 
-	const starHosting = async (data: { name: string; userId: string }) => {
+	const starHosting = async (data: { userId: string }) => {
 		if (flow.name !== 'standby') {
 			throw new Error('Invalid state');
 		}
@@ -192,7 +192,6 @@
 			<button
 				onclick={() =>
 					starHosting({
-						name: user.displayName ?? 'Anonymous',
 						userId: user.uid
 					})}
 				type="submit">Enter</button
