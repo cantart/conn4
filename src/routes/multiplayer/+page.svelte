@@ -163,12 +163,13 @@
 							}
 						];
 
-			// add the field of actual player orders to the game room
+			// start the game
 			const toUpdate: Partial<Doc['gameRooms']> = {
 				state: {
 					type: 'playing',
 					opponent: opponentId,
-					startPlayerOrder: [players[0].id, players[1].id]
+					startPlayerOrder: [players[0].id, players[1].id],
+					drops: []
 				}
 			};
 			await updateDoc(gameRoomRef, toUpdate);

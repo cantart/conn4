@@ -35,7 +35,12 @@ export const docSchemas = z.object({
 			z.object({
 				type: z.literal('playing'),
 				opponent: z.string(),
-				startPlayerOrder: z.tuple([z.string(), z.string()])
+				startPlayerOrder: z.tuple([z.string(), z.string()]),
+				drops: z
+					.object({
+						column: z.number()
+					})
+					.array()
 			})
 		])
 	})
