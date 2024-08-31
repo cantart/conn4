@@ -295,9 +295,18 @@
 				>
 			</div>
 		{:else if flow.name === 'hosting'}
-			{#each flow.queue as q}
-				<button onclick={() => acceptPlayer(q)}>{q}</button>
-			{/each}
+			<div>
+				<div>Select a player to play with</div>
+				<ol>
+					{#each flow.queue as q}
+						<li>
+							<button onclick={() => acceptPlayer(q)}>{q}</button>
+						</li>
+					{:else}
+						<li>No players in queue</li>
+					{/each}
+				</ol>
+			</div>
 		{:else if flow.name === 'waiting-for-opponent-to-join'}
 			<div>Waiting for {flow.opponentId} to join</div>
 		{:else if flow.name === 'in-match'}
