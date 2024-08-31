@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { DocumentReference } from 'firebase/firestore';
+	import { type DocumentReference, updateDoc } from 'firebase/firestore';
 	import { type Game } from './game.svelte';
 	import GameUI from './GameUI.svelte';
 	import { onSnapshot } from 'firebase/firestore';
@@ -31,6 +31,10 @@
 			unsub?.();
 		};
 	});
+
+	const sendDrop = async (column: number) => {
+		// await updateDoc(props.gameRoomRef, {});
+	};
 </script>
 
 <GameUI
@@ -40,9 +44,7 @@
 		if (hasPendingWrites) {
 			return;
 		}
-		// props.socket.send(JSON.stringify({ type: 'drop', column, roomId: props.roomId }));
+		sendDrop(column);
 	}}
-	onRestart={() => {
-		// props.socket.send(JSON.stringify({ type: 'restart', roomId: props.roomId }));
-	}}
+	onRestart={() => {}}
 />
