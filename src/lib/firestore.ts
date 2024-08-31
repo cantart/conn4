@@ -1,4 +1,4 @@
-import { collection } from 'firebase/firestore';
+import { collection, DocumentReference } from 'firebase/firestore';
 import { db } from './firebase.client';
 
 export const collectionNames = {
@@ -18,7 +18,7 @@ export type Doc = {
 		photoURL: string | null;
 	};
 	matchmakingRooms: {
-		host: string;
+		host: DocumentReference;
 		queue: string[];
 		state:
 			| {
@@ -31,7 +31,7 @@ export type Doc = {
 			  };
 	};
 	gameRooms: {
-		host: string;
+		host: DocumentReference;
 		state:
 			| {
 					type: 'waiting';
@@ -42,7 +42,7 @@ export type Doc = {
 			  }
 			| {
 					type: 'playing';
-					opponent: string;
+					opponent: DocumentReference;
 					startPlayerOrder: [string, string];
 					drops: {
 						column: number;

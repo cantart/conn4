@@ -62,13 +62,16 @@
 
 		// delete any existing matchmaking room whose host is the same as the current user
 		const existingMatchmakingRoom = await getDocs(
-			query(collections.matchmakingRooms(), where('host', '==', data.userId)),
+			query(
+				collections.matchmakingRooms(),
+				where('host', '==', doc(collections.userInfos(), data.userId)),
+			),
 		);
 		const deletePromises = existingMatchmakingRoom.docs.map((doc) => deleteDoc(doc.ref));
 		await Promise.all(deletePromises);
 
 		const d: Doc['matchmakingRooms'] = {
-			host: data.userId,
+			host: doc(collections.userInfos(), data.userId),
 			queue: [],
 			state: {
 				type: 'waiting',
@@ -101,7 +104,7 @@
 		}
 		// create game room
 		const gameRoom: Doc['gameRooms'] = {
-			host: flow.yourId,
+			host: doc(collections.userInfos(), flow.yourId),
 			state: {
 				type: 'waiting',
 			},
@@ -128,17 +131,17 @@
 		};
 
 		// listen if the opponent has joined the game room (listen to the `players` field)
-		const unsub = onSnapshot(gameRoomRef, async (doc) => {
-			if (!doc.exists()) {
+		const unsub = onSnapshot(gameRoomRef, async (snap) => {
+			if (!snap.exists()) {
 				return;
 			}
 			if (flow.name !== 'waiting-for-opponent-to-join') {
 				throw new Error('Invalid state');
 			}
-			if (doc.metadata.hasPendingWrites) {
+			if (snap.metadata.hasPendingWrites) {
 				return;
 			}
-			const data = doc.data() as Doc['gameRooms'];
+			const data = snap.data() as Doc['gameRooms'];
 			if (data.state.type !== 'player-joined') {
 				return;
 			}
@@ -178,7 +181,7 @@
 			const toUpdate: Partial<Doc['gameRooms']> = {
 				state: {
 					type: 'playing',
-					opponent: opponentId,
+					opponent: doc(collections.userInfos(), opponentId),
 					startPlayerOrder: [players[0].id, players[1].id],
 					drops: [],
 				},
@@ -349,7 +352,7 @@
 						<button
 							onclick={() => {
 								joinRoom(user.uid, room);
-							}}>{room.data.host}</button
+							}}>{room.data.host.id}</button
 						>
 					</li>
 				{/each}
