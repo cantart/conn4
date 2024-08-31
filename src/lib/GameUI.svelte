@@ -38,9 +38,9 @@
 							class:cursor-auto={props.isColumnCannotDrop}
 							class="grid aspect-square w-14 place-items-center border border-slate-800 md:w-16 lg:w-20"
 							onclick={() => {
-								if (import.meta.env.PROD) {
-									document.body.requestFullscreen();
-								}
+								// if (import.meta.env.PROD) {
+								// 	document.body.requestFullscreen();
+								// }
 								if (props.isColumnCannotDrop) return;
 								props.onDrop(j);
 							}}
@@ -51,13 +51,13 @@
 									in:fly={{ y: -10, easing: expoOut }}
 									out:scale={{
 										delay: Math.random() * 300,
-										easing: expoInOut
+										easing: expoInOut,
 									}}
 								>
 									{@render piece({
 										halfOpacity,
 										skin:
-											cell.playerId === props.game.players[0].id ? 'bg-red-500' : 'bg-yellow-500'
+											cell.playerId === props.game.players[0].id ? 'bg-red-500' : 'bg-yellow-500',
 									})}
 								</div>
 							{/if}
@@ -78,7 +78,7 @@
 				onclick={props.onRestart}
 				in:fly={{
 					y: -10,
-					delay: 500
+					delay: 500,
 				}}>Restart</button
 			>
 		</div>
