@@ -3,7 +3,6 @@
 	import { createGame, type Game, type Player } from '$lib/game.svelte';
 	import OnlineMatch from '$lib/OnlineMatch.svelte';
 	import { session } from '$lib/session.svelte';
-	import { z } from 'zod';
 	import {
 		addDoc,
 		onSnapshot,
