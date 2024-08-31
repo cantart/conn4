@@ -9,9 +9,14 @@
 		onSnapshot,
 		type DocumentReference,
 		deleteDoc,
-		updateDoc
+		updateDoc,
+		query,
+		where,
+		arrayUnion,
+		doc
 	} from 'firebase/firestore';
 	import { collections, type Doc } from '$lib/firestore';
+	import { type ConvertToUnknown } from '$lib/utils';
 
 	let flow = $state<
 		| {
@@ -38,6 +43,14 @@
 				yourId: string;
 				opponentId: string;
 		  }
+		| {
+				name: 'searching-for-room';
+				matchMakingRoomUnsub: () => void;
+				rooms: {
+					ref: DocumentReference;
+					data: Doc['matchmakingRooms'];
+				}[];
+		  }
 	>({ name: 'standby', opponentDisconnected: false });
 
 	const starHosting = async (data: { userId: string }) => {
@@ -47,7 +60,10 @@
 
 		const d: Doc['matchmakingRooms'] = {
 			host: data.userId,
-			queue: []
+			queue: [],
+			state: {
+				type: 'waiting'
+			}
 		};
 		const matchmakingRoomRef = await addDoc(collections.matchmakingRooms(), d);
 		let queue = $state<string[]>([]);
@@ -69,52 +85,25 @@
 		};
 	};
 
-	const incomingMessageSchema = z.union([
-		z.object({
-			type: z.literal('start'),
-			player: z.number(),
-			opponent: z.object({
-				id: z.string(),
-				name: z.string()
-			}),
-			roomId: z.string()
-		}),
-		z.object({
-			type: z.literal('drop'),
-			column: z.number()
-		}),
-		z.object({
-			type: z.literal('restart')
-		}),
-		z.object({
-			type: z.literal('error'),
-			message: z.string().nullable(),
-			parseErrors: z
-				.object({
-					formErrors: z.string().array(),
-					fieldErrors: z.record(z.any())
-				})
-				.nullable()
-		}),
-		z.object({
-			type: z.literal('opponent-disconnected')
-		})
-	]);
-
 	const acceptPlayer = async (opponentId: string) => {
 		if (flow.name !== 'hosting') {
 			throw new Error('Invalid state');
 		}
-		// add opponent as an accepted player to the matchmaking room
-		const dataToUpdate: Partial<Doc['matchmakingRooms']> = {
-			acceptedPlayer: opponentId
-		};
-		await updateDoc(flow.matchmakingRoomRef, dataToUpdate);
 		// create game room
 		const gameRoom: Doc['gameRooms'] = {
 			host: flow.yourId
 		};
 		const gameRoomRef = await addDoc(collections.gameRooms(), gameRoom);
+
+		// update state of the matchmaking room
+		const dataToUpdate: Partial<Doc['matchmakingRooms']> = {
+			state: {
+				type: 'accepted',
+				opponent: opponentId,
+				gameRoomId: gameRoomRef.id
+			}
+		};
+		await updateDoc(flow.matchmakingRoomRef, dataToUpdate);
 
 		// change flow to waiting for opponent to join
 		flow = {
@@ -171,7 +160,7 @@
 
 			// add the field of actual player orders to the game room
 			const toUpdate: Partial<Doc['gameRooms']> = {
-				startPlayerOrder: players.map((p) => p.id)
+				startPlayerOrder: [players[0].id, players[1].id]
 			};
 			await updateDoc(gameRoomRef, toUpdate);
 
@@ -183,19 +172,128 @@
 			};
 		});
 	};
+
+	const searchForRoom = () => {
+		if (flow.name !== 'standby') {
+			throw new Error('Invalid state');
+		}
+
+		let rooms = $state<
+			{
+				ref: DocumentReference;
+				data: Doc['matchmakingRooms'];
+			}[]
+		>([]);
+
+		const unsub = onSnapshot(
+			query(collections.matchmakingRooms(), where('state.type', '==', 'waiting')),
+			(snapshot) => {
+				rooms = snapshot.docs.map((doc) => {
+					return {
+						ref: doc.ref,
+						data: doc.data() as Doc['matchmakingRooms']
+					};
+				});
+			}
+		);
+
+		flow = {
+			name: 'searching-for-room',
+			matchMakingRoomUnsub: unsub,
+			get rooms() {
+				return rooms;
+			}
+		};
+	};
+
+	const joinRoom = async (
+		userId: string,
+		room: { ref: DocumentReference; data: Doc['matchmakingRooms'] }
+	) => {
+		const toUpdate: Partial<ConvertToUnknown<Doc['matchmakingRooms']>> = {
+			queue: arrayUnion(userId)
+		};
+		await updateDoc(room.ref, toUpdate);
+
+		// listen if the game room has been created
+		const unsub = onSnapshot(room.ref, (snap) => {
+			if (flow.name !== 'searching-for-room') {
+				throw new Error('Invalid state');
+			}
+
+			const data = snap.data() as Doc['matchmakingRooms'] | undefined;
+			if (!data || data.state.type !== 'accepted') {
+				return;
+			}
+			unsub();
+			flow.matchMakingRoomUnsub();
+
+			const gameRoomRef = doc(collections.gameRooms(), data.state.gameRoomId);
+			const joinGameRoomUnsub = onSnapshot(gameRoomRef, async (gameRoomSnap) => {
+				const gameRoomData = gameRoomSnap.data() as Doc['gameRooms'] | undefined;
+				if (!gameRoomData) {
+					return;
+				}
+
+				// join the game room
+				const toUpdate: Partial<Doc['gameRooms']> = {
+					opponent: userId
+				};
+				await updateDoc(gameRoomRef, toUpdate);
+				joinGameRoomUnsub();
+
+				// listen for host to start the game (listen to the `startPlayerOrder` field)
+				const startPlayerOrderUnsub = onSnapshot(gameRoomRef, async (gameRoomSnap) => {
+					const gameRoomData = gameRoomSnap.data() as Doc['gameRooms'] | undefined;
+
+					if (!gameRoomData || !gameRoomData.startPlayerOrder) {
+						return;
+					}
+					startPlayerOrderUnsub();
+
+					const players: [Player, Player] = [
+						{
+							id: gameRoomData.startPlayerOrder[0],
+							name: gameRoomData.startPlayerOrder[0] === userId ? 'You' : 'Opponent'
+						},
+						{
+							id: gameRoomData.startPlayerOrder[1],
+							name: gameRoomData.startPlayerOrder[1] === userId ? 'You' : 'Opponent'
+						}
+					];
+
+					flow = {
+						name: 'in-match',
+						game: createGame({
+							players
+						}),
+						gameRoomRef,
+						yourId: userId
+					};
+				});
+			});
+		});
+	};
 </script>
 
 {#if session.data.ready}
 	{#if session.data.user}
 		{@const user = session.data.user}
 		{#if flow.name === 'standby'}
-			<button
-				onclick={() =>
-					starHosting({
-						userId: user.uid
-					})}
-				type="submit">Enter</button
-			>
+			<div class="flex flex-col gap-2">
+				<button
+					onclick={() =>
+						starHosting({
+							userId: user.uid
+						})}
+					type="submit">Host</button
+				>
+				<button
+					onclick={() => {
+						searchForRoom();
+					}}>Join</button
+				>
+			</div>
 		{:else if flow.name === 'hosting'}
 			{#each flow.queue as q}
 				<button onclick={() => acceptPlayer(q)}>{q}</button>
@@ -204,6 +302,18 @@
 			<div>Waiting for {flow.opponentId} to join</div>
 		{:else if flow.name === 'in-match'}
 			<OnlineMatch gameRoomRef={flow.gameRoomRef} game={flow.game} yourId={flow.yourId} />
+		{:else if flow.name === 'searching-for-room'}
+			<ul>
+				{#each flow.rooms as room}
+					<li>
+						<button
+							onclick={() => {
+								joinRoom(user.uid, room);
+							}}>{room.data.host}</button
+						>
+					</li>
+				{/each}
+			</ul>
 		{/if}
 	{:else}
 		<button onclick={googleSignInWithPopup}>Login</button>

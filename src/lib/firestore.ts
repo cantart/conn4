@@ -11,12 +11,21 @@ export const docSchemas = z.object({
 	matchmakingRooms: z.object({
 		host: z.string().min(1),
 		queue: z.string().array(),
-		acceptedPlayer: z.string().optional()
+		state: z.union([
+			z.object({
+				type: z.literal('waiting')
+			}),
+			z.object({
+				type: z.literal('accepted'),
+				opponent: z.string(),
+				gameRoomId: z.string()
+			})
+		])
 	}),
 	gameRooms: z.object({
 		host: z.string(),
 		opponent: z.string().optional(),
-		startPlayerOrder: z.string().array().optional()
+		startPlayerOrder: z.tuple([z.string(), z.string()]).optional()
 	})
 });
 
