@@ -5,10 +5,21 @@
 	let { children } = $props();
 	import { signOut, onAuthStateChanged } from 'firebase/auth';
 	import { slide } from 'svelte/transition';
+	import { doc, setDoc } from 'firebase/firestore';
+	import { collections, type Doc } from '$lib/firestore';
 
 	$effect(() => {
 		onAuthStateChanged(auth, (user) => {
 			session.setUser(user);
+			// update user to db
+			if (user) {
+				const data: Doc['users'] = {
+					displayName: user.displayName,
+					photoURL: user.photoURL,
+				};
+				const docRef = doc(collections.userInfos(), user.uid);
+				setDoc(docRef, data);
+			}
 		});
 	});
 </script>
@@ -22,7 +33,7 @@
 					<img
 						class="h-5 w-5 rounded-full"
 						in:slide={{
-							delay: 100
+							delay: 100,
 						}}
 						src={session.data.user.photoURL}
 						alt=""
