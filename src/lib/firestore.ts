@@ -1,55 +1,56 @@
 import { collection } from 'firebase/firestore';
 import { db } from './firebase.client';
-import { z } from 'zod';
 
-export const collectionNames: Record<string, string> = {
+export const collectionNames = {
 	matchmakingRooms: 'matchmaking-rooms',
 	gameRooms: 'game-rooms',
+	userInfos: 'user-public-infos',
 } as const;
 
-const dropSchema = z.object({
-	column: z.number(),
-	id: z.string(),
-});
+export type Drop = {
+	column: number;
+	id: string;
+};
 
-export type Drop = z.infer<typeof dropSchema>;
-
-export const docSchemas = z.object({
-	matchmakingRooms: z.object({
-		host: z.string().min(1),
-		queue: z.string().array(),
-		state: z.union([
-			z.object({
-				type: z.literal('waiting'),
-			}),
-			z.object({
-				type: z.literal('accepted'),
-				opponent: z.string(),
-				gameRoomId: z.string(),
-			}),
-		]),
-	}),
-	gameRooms: z.object({
-		host: z.string(),
-		state: z.union([
-			z.object({
-				type: z.literal('waiting'),
-			}),
-			z.object({
-				type: z.literal('player-joined'),
-				opponent: z.string(),
-			}),
-			z.object({
-				type: z.literal('playing'),
-				opponent: z.string(),
-				startPlayerOrder: z.tuple([z.string(), z.string()]),
-				drops: dropSchema.array(),
-			}),
-		]),
-	}),
-});
-
-export type Doc = z.infer<typeof docSchemas>;
+export type Doc = {
+	users: {
+		displayName: string | null;
+		photoURL: string | null;
+	};
+	matchmakingRooms: {
+		host: string;
+		queue: string[];
+		state:
+			| {
+					type: 'waiting';
+			  }
+			| {
+					type: 'accepted';
+					opponent: string;
+					gameRoomId: string;
+			  };
+	};
+	gameRooms: {
+		host: string;
+		state:
+			| {
+					type: 'waiting';
+			  }
+			| {
+					type: 'player-joined';
+					opponent: string;
+			  }
+			| {
+					type: 'playing';
+					opponent: string;
+					startPlayerOrder: [string, string];
+					drops: {
+						column: number;
+						id: string;
+					}[];
+			  };
+	};
+};
 
 export const collections: Record<
 	keyof typeof collectionNames,
@@ -58,4 +59,5 @@ export const collections: Record<
 	gameRooms: (...pathSegments) => collection(db, collectionNames.gameRooms, ...pathSegments),
 	matchmakingRooms: (...pathSegments) =>
 		collection(db, collectionNames.matchmakingRooms, ...pathSegments),
+	userInfos: (...pathSegments) => collection(db, collectionNames.userInfos, ...pathSegments),
 } as const;
