@@ -22,6 +22,14 @@
 				throw new Error('Invalid game state');
 			}
 
+			if (data.state.drops.length === 0) {
+				// reset the applied drops
+				appliedDrops.clear();
+				// restart the game
+				props.game.restart();
+				return;
+			}
+
 			data.state.drops.forEach((drop) => {
 				if (appliedDrops.has(drop.id)) {
 					return;
@@ -48,6 +56,16 @@
 			dropping = false;
 		});
 	};
+
+	let restarting = $state(false);
+	const restart = async () => {
+		restarting = true;
+		await updateDoc(props.gameRoomRef, {
+			'state.drops': [],
+		}).finally(() => {
+			restarting = false;
+		});
+	};
 </script>
 
 <GameUI
@@ -59,5 +77,10 @@
 		}
 		sendDrop(column);
 	}}
-	onRestart={() => {}}
+	onRestart={() => {
+		if (restarting) {
+			return;
+		}
+		restart();
+	}}
 />
