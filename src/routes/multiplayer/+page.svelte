@@ -398,23 +398,29 @@
 	{#if session.data.user}
 		{@const user = session.data.user}
 		{#if flow.name === 'standby'}
-			<div class="flex flex-col gap-2">
-				<button
-					onclick={() => {
-						if (startingHost) {
-							return;
-						}
-						starHosting({
-							userId: user.uid,
-						});
-					}}
-					type="submit">Host</button
-				>
-				<button
-					onclick={() => {
-						searchForRoom();
-					}}>Join</button
-				>
+			<div class="space-y-4">
+				<div class="flex flex-col gap-2">
+					<button
+						onclick={() => {
+							if (startingHost) {
+								return;
+							}
+							starHosting({
+								userId: user.uid,
+							});
+						}}
+						type="submit">Host</button
+					>
+					<button
+						onclick={() => {
+							searchForRoom();
+						}}>Join</button
+					>
+				</div>
+
+				{#if flow.opponentDisconnected}
+					<p>Your opponent has disconnected</p>
+				{/if}
 			</div>
 		{:else if flow.name === 'hosting'}
 			<div class="flex flex-col gap-4">
