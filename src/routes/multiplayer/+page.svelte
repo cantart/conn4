@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { googleSignInWithPopup } from '$lib/firebase.client';
-	import { createGame, type Game } from '$lib/game.svelte';
+	import { createGame, type Game, type Player } from '$lib/game.svelte';
 	import OnlineMatch from '$lib/OnlineMatch.svelte';
 	import { session } from '$lib/session.svelte';
 	import { z } from 'zod';
@@ -11,7 +11,7 @@
 		deleteDoc,
 		updateDoc
 	} from 'firebase/firestore';
-	import { collections } from '$lib/firestore';
+	import { collections, type Doc } from '$lib/firestore';
 
 	let flow = $state<
 		| {
@@ -19,11 +19,11 @@
 				opponentDisconnected: boolean;
 		  }
 		| {
-				name: 'matchmaking';
+				name: 'hosting';
 				yourId: string;
 				queue: string[];
 				matchMakingRoomUnsub: () => void;
-				roomRef: DocumentReference;
+				matchmakingRoomRef: DocumentReference;
 		  }
 		| {
 				name: 'in-match';
@@ -31,221 +31,157 @@
 				gameRoomRef: DocumentReference;
 				yourId: string;
 		  }
+		| {
+				name: 'waiting-for-opponent-to-join';
+				matchMakingRoomUnsub: () => void;
+				matchmakingRoomRef: DocumentReference;
+				yourId: string;
+				opponentId: string;
+		  }
 	>({ name: 'standby', opponentDisconnected: false });
 
-	const startMatchmaking = async (data: { name: string; userId: string }) => {
+	const starHosting = async (data: { name: string; userId: string }) => {
 		if (flow.name !== 'standby') {
 			throw new Error('Invalid state');
 		}
-		// setupWebsocket(data);
-		const d: z.infer<typeof collections.matchmakingRooms.docSchema> = {
+
+		const d: Doc['matchmakingRooms'] = {
 			host: data.userId,
 			queue: []
 		};
-		const docRef = await addDoc(collections.matchmakingRooms.collection([]), d);
+		const matchmakingRoomRef = await addDoc(collections.matchmakingRooms(), d);
 		let queue = $state<string[]>([]);
-		const unsub = onSnapshot(docRef, (doc) => {
-			const data = doc.data() as z.infer<typeof collections.matchmakingRooms.docSchema> | undefined;
+		const unsub = onSnapshot(matchmakingRoomRef, (doc) => {
+			const data = doc.data() as Doc['matchmakingRooms'] | undefined;
 			if (!data) {
 				throw new Error('Cannot find matchmaking room after creation');
 			}
 			queue = data.queue;
 		});
 		flow = {
-			name: 'matchmaking',
+			name: 'hosting',
 			yourId: data.userId,
 			matchMakingRoomUnsub: unsub,
 			get queue() {
 				return queue;
 			},
-			roomRef: docRef
+			matchmakingRoomRef
 		};
 	};
 
-	const setupWebsocket = (data: { name: string; userId: string }) => {
-		const socket = new WebSocket(import.meta.env.VITE_WEBSOCKET_ENDPOINT);
-
-		// Connection opened
-		socket.addEventListener('open', () => {
-			socket.send(JSON.stringify({ type: 'join', userId: data.userId, name: data.name }));
-		});
-
-		const incomingMessageSchema = z.union([
-			z.object({
-				type: z.literal('start'),
-				player: z.number(),
-				opponent: z.object({
-					id: z.string(),
-					name: z.string()
-				}),
-				roomId: z.string()
+	const incomingMessageSchema = z.union([
+		z.object({
+			type: z.literal('start'),
+			player: z.number(),
+			opponent: z.object({
+				id: z.string(),
+				name: z.string()
 			}),
-			z.object({
-				type: z.literal('drop'),
-				column: z.number()
-			}),
-			z.object({
-				type: z.literal('restart')
-			}),
-			z.object({
-				type: z.literal('error'),
-				message: z.string().nullable(),
-				parseErrors: z
-					.object({
-						formErrors: z.string().array(),
-						fieldErrors: z.record(z.any())
-					})
-					.nullable()
-			}),
-			z.object({
-				type: z.literal('opponent-disconnected')
-			})
-		]);
-
-		// Listen for messages
-		socket.addEventListener('message', (event) => {
-			const parsed = incomingMessageSchema.safeParse(JSON.parse(event.data));
-
-			if (!parsed.success) {
-				console.error(parsed.error.flatten());
-				return;
-			}
-
-			const data = parsed.data;
-			if (data.type === 'start') {
-				if (flow.name !== 'matchmaking') {
-					throw new Error('Invalid state');
-				}
-
-				const { player, opponent, roomId } = data;
-				const game = createGame({
-					players:
-						player === 1
-							? [
-									{
-										id: flow.yourId,
-										name: 'You'
-									},
-									{
-										id: opponent.id,
-										name: opponent.name
-									}
-								]
-							: [
-									{
-										id: opponent.id,
-										name: opponent.name
-									},
-									{
-										id: flow.yourId,
-										name: 'You'
-									}
-								]
-				});
-				flow = {
-					name: 'in-match',
-					game,
-					socket,
-					roomId,
-					yourId: flow.yourId
-				};
-				return;
-			}
-
-			if (data.type === 'drop') {
-				if (flow.name !== 'in-match') {
-					throw new Error('Invalid state');
-				}
-				const { column } = data;
-				flow.game.dropPiece(column);
-				return;
-			}
-
-			if (data.type === 'restart') {
-				if (flow.name !== 'in-match') {
-					throw new Error('Invalid state');
-				}
-				flow.game.restart();
-				return;
-			}
-
-			if (data.type === 'opponent-disconnected') {
-				if (flow.name !== 'in-match') {
-					throw new Error('Invalid state');
-				}
-
-				flow.socket.close();
-				flow = {
-					name: 'standby',
-					opponentDisconnected: true
-				};
-				return;
-			}
-
-			if (data.type === 'error') {
-				console.error(data);
-			}
-		});
-	};
+			roomId: z.string()
+		}),
+		z.object({
+			type: z.literal('drop'),
+			column: z.number()
+		}),
+		z.object({
+			type: z.literal('restart')
+		}),
+		z.object({
+			type: z.literal('error'),
+			message: z.string().nullable(),
+			parseErrors: z
+				.object({
+					formErrors: z.string().array(),
+					fieldErrors: z.record(z.any())
+				})
+				.nullable()
+		}),
+		z.object({
+			type: z.literal('opponent-disconnected')
+		})
+	]);
 
 	const acceptPlayer = async (opponentId: string) => {
-		if (flow.name !== 'matchmaking') {
+		if (flow.name !== 'hosting') {
 			throw new Error('Invalid state');
 		}
 		// add opponent as an accepted player to the matchmaking room
-		const dataToUpdate: Partial<z.infer<typeof collections.matchmakingRooms.docSchema>> = {
+		const dataToUpdate: Partial<Doc['matchmakingRooms']> = {
 			acceptedPlayer: opponentId
 		};
-		await updateDoc(flow.roomRef, dataToUpdate);
+		await updateDoc(flow.matchmakingRoomRef, dataToUpdate);
 		// create game room
-		const gameRoom: z.infer<typeof collections.gameRooms.docSchema> = {
-			players: [flow.yourId]
+		const gameRoom: Doc['gameRooms'] = {
+			host: flow.yourId
 		};
-		const gameRoomRef = await addDoc(collections.gameRooms.collection([]), gameRoom);
+		const gameRoomRef = await addDoc(collections.gameRooms(), gameRoom);
+
+		// change flow to waiting for opponent to join
+		flow = {
+			name: 'waiting-for-opponent-to-join',
+			matchmakingRoomRef: flow.matchmakingRoomRef,
+			matchMakingRoomUnsub: flow.matchMakingRoomUnsub,
+			yourId: flow.yourId,
+			opponentId
+		};
+
 		// listen if the opponent has joined the game room (listen to the `players` field)
-		const unsub = onSnapshot(gameRoomRef, (doc) => {
-			if (flow.name !== 'matchmaking') {
+		const unsub = onSnapshot(gameRoomRef, async (doc) => {
+			if (flow.name !== 'waiting-for-opponent-to-join') {
 				throw new Error('Invalid state');
 			}
 			if (doc.metadata.hasPendingWrites) {
 				return;
 			}
-			const data = doc.data() as z.infer<typeof collections.gameRooms.docSchema> | undefined;
-			if (!data || data.players.length !== 2) {
+			const data = doc.data() as Doc['gameRooms'] | undefined;
+			if (!data || data.opponent === undefined) {
 				return;
 			}
+			// unsubscribe the game room being used to listen to the opponent's join
+			unsub();
 
 			// unsubscribe the matchmaking room
 			flow.matchMakingRoomUnsub();
 			// delete the matchmaking room
-			deleteDoc(flow.roomRef);
-			unsub();
+			deleteDoc(flow.matchmakingRoomRef);
 
 			// change flow to in-match
+			const players: [Player, Player] =
+				Math.random() < 0.5
+					? [
+							{
+								id: flow.yourId,
+								name: 'You'
+							},
+							{
+								id: opponentId,
+								name: 'Opponent'
+							}
+						]
+					: [
+							{
+								id: opponentId,
+								name: 'Opponent'
+							},
+							{
+								id: flow.yourId,
+								name: 'You'
+							}
+						];
+
+			// add the field of actual player orders to the game room
+			const toUpdate: Partial<Doc['gameRooms']> = {
+				startPlayerOrder: players.map((p) => p.id)
+			};
+			await updateDoc(gameRoomRef, toUpdate);
+
 			flow = {
 				name: 'in-match',
-				game: createGame({
-					players: [
-						{
-							id: data.players[0],
-							name: data.players[0] === flow.yourId ? 'You' : 'Opponent'
-						},
-						{
-							id: data.players[1],
-							name: data.players[1] === flow.yourId ? 'You' : 'Opponent'
-						}
-					]
-				}),
+				game: createGame({ players }),
 				gameRoomRef,
 				yourId: flow.yourId
 			};
 		});
-
-		// create an active game room
-		const d: z.infer<typeof collections.gameRooms.docSchema> = {
-			players: [flow.yourId, opponentId]
-		};
-		await addDoc(collections.gameRooms.collection([]), d);
 	};
 </script>
 
@@ -255,16 +191,18 @@
 		{#if flow.name === 'standby'}
 			<button
 				onclick={() =>
-					startMatchmaking({
+					starHosting({
 						name: user.displayName ?? 'Anonymous',
 						userId: user.uid
 					})}
 				type="submit">Enter</button
 			>
-		{:else if flow.name === 'matchmaking'}
+		{:else if flow.name === 'hosting'}
 			{#each flow.queue as q}
 				<button onclick={() => acceptPlayer(q)}>{q}</button>
 			{/each}
+		{:else if flow.name === 'waiting-for-opponent-to-join'}
+			<div>Waiting for {flow.opponentId} to join</div>
 		{:else if flow.name === 'in-match'}
 			<OnlineMatch gameRoomRef={flow.gameRoomRef} game={flow.game} yourId={flow.yourId} />
 		{/if}
