@@ -290,6 +290,18 @@
 						},
 					),
 				);
+				rooms = rooms.filter((room) => {
+					if (!session.data.ready || !session.data.user) {
+						console.error('User not ready or not logged in');
+						return true;
+					}
+					const isOwnRoom = room.data.host.id === session.data.user.uid;
+					if (isOwnRoom) {
+						// delete the room if it's the user's own room
+						deleteDoc(room.ref);
+					}
+					return !isOwnRoom;
+				});
 			},
 		);
 
