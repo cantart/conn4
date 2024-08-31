@@ -19,8 +19,10 @@
 	import { collections, type Doc } from '$lib/firestore';
 	import { type ConvertToUnknown, type SafeOmit } from '$lib/utils';
 
+	type UserWithId = Doc['users'] & { id: string };
+
 	type GameRoomDataWhenSearching = SafeOmit<Doc['matchmakingRooms'], 'host'> & {
-		host: Doc['users'] & { id: string };
+		host: UserWithId;
 	};
 
 	let flow = $state<
@@ -31,7 +33,7 @@
 		| {
 				name: 'hosting';
 				yourId: string;
-				queue: string[];
+				queue: UserWithId[];
 				matchMakingRoomUnsub: () => void;
 				matchmakingRoomRef: DocumentReference;
 		  }
@@ -83,13 +85,32 @@
 			},
 		};
 		const matchmakingRoomRef = await addDoc(collections.matchmakingRooms(), d);
-		let queue = $state<string[]>([]);
-		const unsub = onSnapshot(matchmakingRoomRef, (doc) => {
-			const data = doc.data() as Doc['matchmakingRooms'] | undefined;
+		let queue = $state<UserWithId[]>([]);
+		const unsub = onSnapshot(matchmakingRoomRef, async (snap) => {
+			const data = snap.data() as Doc['matchmakingRooms'] | undefined;
 			if (!data) {
 				throw new Error('Cannot find matchmaking room after creation');
 			}
-			queue = data.queue;
+			queue = await Promise.all(
+				data.queue.map(async (userId) => {
+					if (userInfoCache.has(userId)) {
+						return {
+							...userInfoCache.get(userId)!,
+							id: userId,
+						};
+					}
+					const snap = await getDoc(doc(collections.userInfos(), userId));
+					const data = snap.data() as Doc['users'];
+					userInfoCache.set(userId, {
+						displayName: data.displayName,
+						photoURL: data.photoURL,
+					});
+					return {
+						...data,
+						id: userId,
+					};
+				}),
+			);
 		});
 		flow = {
 			name: 'hosting',
@@ -383,12 +404,12 @@
 				>
 			</div>
 		{:else if flow.name === 'hosting'}
-			<div>
+			<div class="flex flex-col gap-4">
 				<div>Select a player to play with</div>
 				<ol>
 					{#each flow.queue as q}
 						<li>
-							<button onclick={() => acceptPlayer(q)}>{q}</button>
+							<button onclick={() => acceptPlayer(q.id)}>{@render userRow(q)}</button>
 						</li>
 					{:else}
 						<li>No players in queue</li>
@@ -408,14 +429,7 @@
 								joinRoom(user.uid, room);
 							}}
 						>
-							<div class="flex items-center gap-2">
-								<img
-									class="aspect-square h-8 rounded-full"
-									src={room.data.host.photoURL}
-									alt="host profile"
-								/>
-								<div>{room.data.host.displayName}</div>
-							</div>
+							{@render userRow(room.data.host)}
 						</button>
 					</li>
 				{/each}
@@ -427,3 +441,10 @@
 {:else}
 	<div>Loading...</div>
 {/if}
+
+{#snippet userRow(data: { photoURL: string | null; displayName: string | null })}
+	<div class="flex items-center gap-2">
+		<img class="aspect-square h-8 rounded-full" src={data.photoURL} alt="host profile" />
+		<div>{data.displayName}</div>
+	</div>
+{/snippet}
