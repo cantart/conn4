@@ -52,8 +52,8 @@
 			{/if}
 		{/if}
 		<a href="/" class="opacity-40 transition-all hover:opacity-100">offline</a>
-		{#if import.meta.env.DEV}
-			<a href="/multiplayer" class="opacity-40 transition-all hover:opacity-100">online</a>
-		{/if}
+		<!-- {#if import.meta.env.DEV} -->
+		<a href="/multiplayer" class="opacity-40 transition-all hover:opacity-100">online</a>
+		<!-- {/if} -->
 	</footer>
 </div>
