@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { type DocumentReference, updateDoc } from 'firebase/firestore';
+	import { arrayUnion, type DocumentReference, updateDoc } from 'firebase/firestore';
 	import { type Game } from './game.svelte';
 	import GameUI from './GameUI.svelte';
 	import { onSnapshot } from 'firebase/firestore';
-	import type { Doc } from './firestore';
+	import type { Doc, Drop } from './firestore';
 	import { onMount } from 'svelte';
 
 	let props: { game: Game; gameRoomRef: DocumentReference; yourId: string } = $props();
-	let hasPendingWrites = $state(false);
 	let unsub = $state<(() => void) | null>(null);
+	const appliedDrops = new Set<string>();
 
 	$effect(() => {
 		// start listening to the game room
@@ -16,13 +16,19 @@
 			if (!snap.exists()) {
 				throw new Error('Game room does not exist');
 			}
-			hasPendingWrites = snap.metadata.hasPendingWrites;
-			if (snap.metadata.hasPendingWrites) {
-				return;
-			}
 
 			const data = snap.data() as Doc['gameRooms'];
-			// listen for changes in the game
+			if (data.state.type !== 'playing') {
+				throw new Error('Invalid game state');
+			}
+
+			data.state.drops.forEach((drop) => {
+				if (appliedDrops.has(drop.id)) {
+					return;
+				}
+				appliedDrops.add(drop.id);
+				props.game.dropPiece(drop.column);
+			});
 		});
 	});
 
@@ -32,8 +38,15 @@
 		};
 	});
 
+	let dropping = $state(false);
 	const sendDrop = async (column: number) => {
-		// await updateDoc(props.gameRoomRef, {});
+		dropping = true;
+		const drop: Drop = { column, id: Math.random().toString() };
+		await updateDoc(props.gameRoomRef, {
+			'state.drops': arrayUnion(drop),
+		}).finally(() => {
+			dropping = false;
+		});
 	};
 </script>
 
@@ -41,7 +54,7 @@
 	game={props.game}
 	isColumnCannotDrop={!!props.game.wonPlayer || props.game.currentPlayerTurn().id !== props.yourId}
 	onDrop={(column) => {
-		if (hasPendingWrites) {
+		if (dropping) {
 			return;
 		}
 		sendDrop(column);

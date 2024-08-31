@@ -4,8 +4,15 @@ import { z } from 'zod';
 
 export const collectionNames: Record<string, string> = {
 	matchmakingRooms: 'matchmaking-rooms',
-	gameRooms: 'game-rooms'
+	gameRooms: 'game-rooms',
 } as const;
+
+const dropSchema = z.object({
+	column: z.number(),
+	id: z.string(),
+});
+
+export type Drop = z.infer<typeof dropSchema>;
 
 export const docSchemas = z.object({
 	matchmakingRooms: z.object({
@@ -13,37 +20,33 @@ export const docSchemas = z.object({
 		queue: z.string().array(),
 		state: z.union([
 			z.object({
-				type: z.literal('waiting')
+				type: z.literal('waiting'),
 			}),
 			z.object({
 				type: z.literal('accepted'),
 				opponent: z.string(),
-				gameRoomId: z.string()
-			})
-		])
+				gameRoomId: z.string(),
+			}),
+		]),
 	}),
 	gameRooms: z.object({
 		host: z.string(),
 		state: z.union([
 			z.object({
-				type: z.literal('waiting')
+				type: z.literal('waiting'),
 			}),
 			z.object({
 				type: z.literal('player-joined'),
-				opponent: z.string()
+				opponent: z.string(),
 			}),
 			z.object({
 				type: z.literal('playing'),
 				opponent: z.string(),
 				startPlayerOrder: z.tuple([z.string(), z.string()]),
-				drops: z
-					.object({
-						column: z.number()
-					})
-					.array()
-			})
-		])
-	})
+				drops: dropSchema.array(),
+			}),
+		]),
+	}),
 });
 
 export type Doc = z.infer<typeof docSchemas>;
@@ -54,5 +57,5 @@ export const collections: Record<
 > = {
 	gameRooms: (...pathSegments) => collection(db, collectionNames.gameRooms, ...pathSegments),
 	matchmakingRooms: (...pathSegments) =>
-		collection(db, collectionNames.matchmakingRooms, ...pathSegments)
+		collection(db, collectionNames.matchmakingRooms, ...pathSegments),
 } as const;
