@@ -48,6 +48,7 @@ export type Doc = {
 						column: number;
 						id: string;
 					}[];
+					quitter: string | null;
 			  };
 	};
 };

@@ -210,6 +210,7 @@
 					opponent: doc(collections.userInfos(), opponentId),
 					startPlayerOrder: [players[0].id, players[1].id],
 					drops: [],
+					quitter: null,
 				},
 			};
 			await updateDoc(gameRoomRef, toUpdate);
@@ -431,7 +432,34 @@
 		{:else if flow.name === 'waiting-for-opponent-to-join'}
 			<div>Waiting for {flow.opponentId} to join</div>
 		{:else if flow.name === 'in-match'}
-			<OnlineMatch gameRoomRef={flow.gameRoomRef} game={flow.game} yourId={flow.yourId} />
+			<OnlineMatch
+				gameRoomRef={flow.gameRoomRef}
+				game={flow.game}
+				yourId={flow.yourId}
+				onSelfQuitForcefully={() => {
+					if (flow.name !== 'in-match') {
+						throw new Error('Invalid state');
+					}
+
+					// let the opponent know that you have left
+					updateDoc(flow.gameRoomRef, {
+						'state.quitter': flow.yourId,
+					});
+				}}
+				onOpponentQuit={() => {
+					if (flow.name !== 'in-match') {
+						throw new Error('Invalid state');
+					}
+
+					// delete the game room
+					deleteDoc(flow.gameRoomRef);
+					// the opponent has left the game
+					flow = {
+						name: 'standby',
+						opponentDisconnected: true,
+					};
+				}}
+			/>
 		{:else if flow.name === 'searching-for-room'}
 			<ul>
 				{#each flow.rooms as room}

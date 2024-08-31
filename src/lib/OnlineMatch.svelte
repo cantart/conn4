@@ -6,9 +6,16 @@
 	import type { Doc, Drop } from './firestore';
 	import { onMount } from 'svelte';
 
-	let props: { game: Game; gameRoomRef: DocumentReference; yourId: string } = $props();
+	let props: {
+		game: Game;
+		gameRoomRef: DocumentReference;
+		yourId: string;
+		onSelfQuitForcefully: () => void;
+		onOpponentQuit: () => void;
+	} = $props();
 	let unsub = $state<(() => void) | null>(null);
 	const appliedDrops = new Set<string>();
+	let opponentQuitted = $state(false);
 
 	$effect(() => {
 		// start listening to the game room
@@ -20,6 +27,13 @@
 			const data = snap.data() as Doc['gameRooms'];
 			if (data.state.type !== 'playing') {
 				throw new Error('Invalid game state');
+			}
+
+			// check if the opponent has left the game
+			if (data.state.quitter) {
+				opponentQuitted = true;
+				props.onOpponentQuit();
+				return;
 			}
 
 			if (data.state.drops.length === 0) {
@@ -41,8 +55,16 @@
 	});
 
 	onMount(() => {
+		const handleUnloadEvent = () => {
+			props.onSelfQuitForcefully();
+		};
+		window.addEventListener('beforeunload', handleUnloadEvent);
 		return () => {
 			unsub?.();
+			window.removeEventListener('beforeunload', handleUnloadEvent);
+			if (!opponentQuitted) {
+				props.onSelfQuitForcefully();
+			}
 		};
 	});
 
