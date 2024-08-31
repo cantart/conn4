@@ -25,7 +25,7 @@
 </script>
 
 <div class="flex min-h-screen flex-col items-center justify-center gap-4">
-	<nav class="mb-2 flex items-center justify-center gap-4">
+	<nav class="mt-2 flex items-center justify-center gap-4">
 		{#if session.data.ready}
 			{#if session.data.user}
 				<span class="flex items-center gap-2">
