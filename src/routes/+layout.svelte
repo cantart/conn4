@@ -64,7 +64,8 @@
 {#snippet navEntry(data: { pathname: string; label: string })}
 	<a
 		href={data.pathname}
-		class="opacity-40 transition-all hover:opacity-100 {$page.url.pathname === data.pathname &&
-			'cursor-auto underline decoration-pink-300 opacity-100'}">{data.label}</a
+		class="transition-all hover:opacity-100 {$page.url.pathname === data.pathname
+			? 'cursor-auto underline decoration-pink-300'
+			: 'opacity-40'}">{data.label}</a
 	>
 {/snippet}
