@@ -58,7 +58,7 @@
 		{@render navEntry({ pathname: '/feedback', label: 'feedback' })}
 	</nav>
 
-	<div class="my-auto text-center">{@render children()}</div>
+	<div class="flex grow flex-col justify-center">{@render children()}</div>
 </div>
 
 {#snippet navEntry(data: { pathname: string; label: string })}
