@@ -51,17 +51,18 @@
 				>
 			{/if}
 		{/if}
-		<a
-			href="/"
-			class="opacity-40 transition-all hover:opacity-100 {$page.url.pathname === '/' &&
-				'cursor-auto underline decoration-pink-300 opacity-100'}">offline</a
-		>
-		<a
-			href="/multiplayer"
-			class="opacity-40 transition-all hover:opacity-100 {$page.url.pathname === '/multiplayer' &&
-				'cursor-auto underline decoration-pink-300 opacity-100'}">online</a
-		>
+		{@render navEntry({ pathname: '/', label: 'offline' })}
+		{@render navEntry({ pathname: '/multiplayer', label: 'online' })}
+		{@render navEntry({ pathname: '/feedback', label: 'feedback' })}
 	</nav>
 
 	<div class="my-auto text-center">{@render children()}</div>
 </div>
+
+{#snippet navEntry(data: { pathname: string; label: string })}
+	<a
+		href={data.pathname}
+		class="opacity-40 transition-all hover:opacity-100 {$page.url.pathname === data.pathname &&
+			'cursor-auto underline decoration-pink-300 opacity-100'}">{data.label}</a
+	>
+{/snippet}
