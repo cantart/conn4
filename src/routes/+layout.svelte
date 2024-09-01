@@ -7,6 +7,7 @@
 	import { slide } from 'svelte/transition';
 	import { doc, setDoc } from 'firebase/firestore';
 	import { collections, type Doc } from '$lib/firestore';
+	import { page } from '$app/stores';
 
 	$effect(() => {
 		onAuthStateChanged(auth, (user) => {
@@ -50,10 +51,16 @@
 				>
 			{/if}
 		{/if}
-		<a href="/" class="opacity-40 transition-all hover:opacity-100">offline</a>
-		<!-- {#if import.meta.env.DEV} -->
-		<a href="/multiplayer" class="opacity-40 transition-all hover:opacity-100">online</a>
-		<!-- {/if} -->
+		<a
+			href="/"
+			class="opacity-40 transition-all hover:opacity-100 {$page.url.pathname === '/' &&
+				'cursor-auto underline decoration-pink-300 opacity-100'}">offline</a
+		>
+		<a
+			href="/multiplayer"
+			class="opacity-40 transition-all hover:opacity-100 {$page.url.pathname === '/multiplayer' &&
+				'cursor-auto underline decoration-pink-300 opacity-100'}">online</a
+		>
 	</nav>
 
 	<div class="my-auto text-center">{@render children()}</div>
