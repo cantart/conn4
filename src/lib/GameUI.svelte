@@ -26,7 +26,7 @@
 		{/each}
 	</div>
 
-	<div class="w-screen overflow-x-auto text-center">
+	<div class="scrollbar-thin w-screen overflow-x-auto text-center">
 		<div in:slide class="inline-block">
 			{#each props.game.table as row, i}
 				<div class="flex justify-center">
