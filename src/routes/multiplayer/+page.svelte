@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { googleSignInWithPopup } from '$lib/firebase.client';
 	import { createGame, type Game, type Player } from '$lib/game.svelte';
 	import OnlineMatch from '$lib/OnlineMatch.svelte';
 	import { session } from '$lib/session.svelte';
@@ -18,11 +17,17 @@
 	} from 'firebase/firestore';
 	import { collections, type Doc } from '$lib/firestore';
 	import { type ConvertToUnknown, type SafeOmit } from '$lib/utils';
+	import LoginButton from '$lib/AuthButton.svelte';
 
 	type UserWithId = Doc['users'] & { id: string };
 
 	type GameRoomDataWhenSearching = SafeOmit<Doc['matchmakingRooms'], 'host'> & {
 		host: UserWithId;
+	};
+
+	type SearchingForRoomRoom = {
+		ref: DocumentReference;
+		data: GameRoomDataWhenSearching;
 	};
 
 	let flow = $state<
@@ -36,6 +41,8 @@
 				queue: UserWithId[];
 				matchMakingRoomUnsub: () => void;
 				matchmakingRoomRef: DocumentReference;
+				acceptingPlayerId: () => string | null;
+				setPlayerBeingAccepted: (id: string) => void;
 		  }
 		| {
 				name: 'in-match';
@@ -48,15 +55,18 @@
 				matchMakingRoomUnsub: () => void;
 				matchmakingRoomRef: DocumentReference;
 				yourId: string;
-				opponentId: string;
+				opponent: UserWithId;
 		  }
 		| {
 				name: 'searching-for-room';
 				matchMakingRoomUnsub: () => void;
-				rooms: {
-					ref: DocumentReference;
-					data: GameRoomDataWhenSearching;
-				}[];
+				rooms: SearchingForRoomRoom[];
+				roomBeingJoined: () => SearchingForRoomRoom | null;
+				setRoomBeingJoined: (room: SearchingForRoomRoom) => void;
+		  }
+		| {
+				name: 'waiting-for-host-to-start';
+				host: UserWithId;
 		  }
 	>({ name: 'standby', opponentDisconnected: false });
 
@@ -91,27 +101,9 @@
 			if (!data) {
 				throw new Error('Cannot find matchmaking room after creation');
 			}
-			queue = await Promise.all(
-				data.queue.map(async (userId) => {
-					if (userInfoCache.has(userId)) {
-						return {
-							...userInfoCache.get(userId)!,
-							id: userId,
-						};
-					}
-					const snap = await getDoc(doc(collections.userInfos(), userId));
-					const data = snap.data() as Doc['users'];
-					userInfoCache.set(userId, {
-						displayName: data.displayName,
-						photoURL: data.photoURL,
-					});
-					return {
-						...data,
-						id: userId,
-					};
-				}),
-			);
+			queue = await Promise.all(data.queue.map(getUserInfo));
 		});
+		let acceptingPlayerId = $state<string | null>(null);
 		flow = {
 			name: 'hosting',
 			yourId: data.userId,
@@ -120,14 +112,21 @@
 				return queue;
 			},
 			matchmakingRoomRef,
+			acceptingPlayerId: () => {
+				return acceptingPlayerId;
+			},
+			setPlayerBeingAccepted(id: string) {
+				acceptingPlayerId = id;
+			},
 		};
 		startingHost = false;
 	};
 
-	const acceptPlayer = async (opponentId: string) => {
+	const acceptPlayer = async (opponent: UserWithId) => {
 		if (flow.name !== 'hosting') {
 			throw new Error('Invalid state');
 		}
+		flow.setPlayerBeingAccepted(opponent.id);
 		// create game room
 		const gameRoom: Doc['gameRooms'] = {
 			host: doc(collections.userInfos(), flow.yourId),
@@ -141,7 +140,7 @@
 		const dataToUpdate: Partial<Doc['matchmakingRooms']> = {
 			state: {
 				type: 'accepted',
-				opponent: opponentId,
+				opponent: opponent.id,
 				gameRoomId: gameRoomRef.id,
 			},
 		};
@@ -153,7 +152,7 @@
 			matchmakingRoomRef: flow.matchmakingRoomRef,
 			matchMakingRoomUnsub: flow.matchMakingRoomUnsub,
 			yourId: flow.yourId,
-			opponentId,
+			opponent,
 		};
 
 		// listen if the opponent has joined the game room (listen to the `players` field)
@@ -188,13 +187,13 @@
 								name: 'You',
 							},
 							{
-								id: opponentId,
+								id: opponent.id,
 								name: 'Opponent',
 							},
 						]
 					: [
 							{
-								id: opponentId,
+								id: opponent.id,
 								name: 'Opponent',
 							},
 							{
@@ -207,7 +206,7 @@
 			const toUpdate: Partial<Doc['gameRooms']> = {
 				state: {
 					type: 'playing',
-					opponent: doc(collections.userInfos(), opponentId),
+					opponent: doc(collections.userInfos(), opponent.id),
 					startPlayerOrder: [players[0].id, players[1].id],
 					drops: [],
 					quitter: null,
@@ -232,64 +231,55 @@
 		}
 	>();
 
+	const getUserInfo = async (userId: string): Promise<UserWithId> => {
+		if (userInfoCache.has(userId)) {
+			return {
+				...userInfoCache.get(userId)!,
+				id: userId,
+			};
+		}
+		const snap = await getDoc(doc(collections.userInfos(), userId));
+		if (!snap.exists()) {
+			return {
+				id: userId,
+				displayName: null,
+				photoURL: null,
+			};
+		}
+		const data = snap.data() as Doc['users'];
+		userInfoCache.set(userId, {
+			displayName: data.displayName,
+			photoURL: data.photoURL,
+		});
+		return {
+			...data,
+			id: userId,
+		};
+	};
+
 	const searchForRoom = () => {
 		if (flow.name !== 'standby') {
 			throw new Error('Invalid state');
 		}
 
-		let rooms = $state<
-			{
-				ref: DocumentReference;
-				data: GameRoomDataWhenSearching;
-			}[]
-		>([]);
+		let rooms = $state<SearchingForRoomRoom[]>([]);
 
 		const unsub = onSnapshot(
 			query(collections.matchmakingRooms(), where('state.type', '==', 'waiting')),
 			async (snapshot) => {
 				rooms = await Promise.all(
-					snapshot.docs.map(
-						async (
-							roomSnap,
-						): Promise<{
-							ref: DocumentReference;
-							data: GameRoomDataWhenSearching;
-						}> => {
-							const data = roomSnap.data() as Doc['matchmakingRooms'];
-							const hostId = data.host.id;
-							if (userInfoCache.has(hostId)) {
-								return {
-									ref: roomSnap.ref,
-									data: {
-										...data,
-										host: {
-											...userInfoCache.get(hostId)!,
-											id: hostId,
-										},
-									},
-								};
-							}
-
-							const hostSnap = await getDoc(doc(collections.userInfos(), hostId));
-							const hostData = hostSnap.data() as Doc['users'];
-							const gameRoomDataWhenSearching: GameRoomDataWhenSearching = {
+					snapshot.docs.map(async (roomSnap): Promise<SearchingForRoomRoom> => {
+						const data = roomSnap.data() as Doc['matchmakingRooms'];
+						const hostId = data.host.id;
+						const host = await getUserInfo(hostId);
+						return {
+							ref: roomSnap.ref,
+							data: {
 								...data,
-								host: {
-									...hostData,
-									id: hostId,
-								},
-							};
-							userInfoCache.set(hostId, {
-								displayName: hostData.displayName,
-								photoURL: hostData.photoURL,
-							});
-
-							return {
-								ref: roomSnap.ref,
-								data: gameRoomDataWhenSearching,
-							};
-						},
-					),
+								host,
+							},
+						};
+					}),
 				);
 				rooms = rooms.filter((room) => {
 					if (!session.data.ready || !session.data.user) {
@@ -306,22 +296,23 @@
 			},
 		);
 
+		let roomBeingJoined = $state<SearchingForRoomRoom | null>(null);
 		flow = {
 			name: 'searching-for-room',
 			matchMakingRoomUnsub: unsub,
 			get rooms() {
 				return rooms;
 			},
+			roomBeingJoined: () => {
+				return roomBeingJoined;
+			},
+			setRoomBeingJoined(room) {
+				roomBeingJoined = room;
+			},
 		};
 	};
 
-	const joinRoom = async (
-		userId: string,
-		room: {
-			ref: DocumentReference;
-			data: GameRoomDataWhenSearching;
-		},
-	) => {
+	const joinRoom = async (userId: string, room: SearchingForRoomRoom) => {
 		const toUpdate: Partial<ConvertToUnknown<Doc['matchmakingRooms']>> = {
 			queue: arrayUnion(userId),
 		};
@@ -391,6 +382,11 @@
 				});
 			});
 		});
+
+		flow = {
+			name: 'waiting-for-host-to-start',
+			host: room.data.host,
+		};
 	};
 </script>
 
@@ -401,6 +397,7 @@
 			<div class="space-y-4">
 				<div class="flex flex-col gap-2">
 					<button
+						class="btn btn-primary"
 						onclick={() => {
 							if (startingHost) {
 								return;
@@ -412,6 +409,7 @@
 						type="submit">Host</button
 					>
 					<button
+						class="btn btn-primary"
 						onclick={() => {
 							searchForRoom();
 						}}>Join</button
@@ -423,20 +421,44 @@
 				{/if}
 			</div>
 		{:else if flow.name === 'hosting'}
-			<div class="flex flex-col gap-4">
-				<div>Select a player to play with</div>
-				<ol>
-					{#each flow.queue as q}
-						<li>
-							<button onclick={() => acceptPlayer(q.id)}>{@render userRow(q)}</button>
-						</li>
-					{:else}
-						<li>No players in queue</li>
-					{/each}
-				</ol>
+			<div>
+				{#if flow.queue.length === 0}
+					<p class="flex items-center gap-2">
+						<span>Waiting for players to enqueue</span>
+						<span class="loading loading-spinner loading-xs"></span>
+					</p>
+				{:else}
+					<div class="flex flex-col items-center gap-2">
+						<p class="flex items-center gap-2">
+							<span>Choose your opponent</span>
+							<span class="loading loading-spinner loading-xs"></span>
+						</p>
+						<ol class="flex flex-col items-center">
+							{#each flow.queue as user}
+								<li>
+									<button
+										class="btn btn-md"
+										disabled={!!flow.acceptingPlayerId()}
+										onclick={() => {
+											acceptPlayer(user);
+										}}
+									>
+										{#if flow.acceptingPlayerId() === user.id}
+											<span class="loading loading-spinner loading-xs"></span>
+										{/if}
+										{@render userRow(user)}</button
+									>
+								</li>
+							{/each}
+						</ol>
+					</div>
+				{/if}
 			</div>
 		{:else if flow.name === 'waiting-for-opponent-to-join'}
-			<div>Waiting for {flow.opponentId} to join</div>
+			{@render playerLoading({
+				player: flow.opponent,
+				tooltipText: 'Waiting for opponent to join',
+			})}
 		{:else if flow.name === 'in-match'}
 			<OnlineMatch
 				gameRoomRef={flow.gameRoomRef}
@@ -467,22 +489,41 @@
 				}}
 			/>
 		{:else if flow.name === 'searching-for-room'}
-			<ul>
-				{#each flow.rooms as room}
-					<li>
-						<button
-							onclick={() => {
-								joinRoom(user.uid, room);
-							}}
-						>
-							{@render userRow(room.data.host)}
-						</button>
-					</li>
-				{/each}
-			</ul>
+			{#if flow.rooms.length}
+				<div class="flex flex-col items-center gap-2">
+					<p class="flex items-center gap-2">
+						<span>Choose your opponent</span>
+						<span class="loading loading-spinner loading-xs"></span>
+					</p>
+					<ul>
+						{#each flow.rooms as room}
+							<li>
+								<button
+									class="btn btn-md"
+									onclick={() => {
+										joinRoom(user.uid, room);
+									}}
+								>
+									{@render userRow(room.data.host)}
+								</button>
+							</li>
+						{/each}
+					</ul>
+				</div>
+			{:else}
+				<p class="flex items-center gap-2">
+					<span>Searching for game rooms</span>
+					<span class="loading loading-spinner loading-xs"></span>
+				</p>
+			{/if}
+		{:else if flow.name === 'waiting-for-host-to-start'}
+			{@render playerLoading({
+				player: flow.host,
+				tooltipText: 'Waiting for host to start the game',
+			})}
 		{/if}
 	{:else}
-		<button onclick={googleSignInWithPopup}>Login</button>
+		<LoginButton />
 	{/if}
 {:else}
 	<div>Loading...</div>
@@ -492,5 +533,12 @@
 	<div class="flex items-center gap-2">
 		<img class="aspect-square h-8 rounded-full" src={data.photoURL} alt="host profile" />
 		<div>{data.displayName}</div>
+	</div>
+{/snippet}
+
+{#snippet playerLoading(data: { player: UserWithId; tooltipText: string })}
+	<div class="tooltip flex items-center gap-2" data-tip={data.tooltipText}>
+		<span class="loading loading-spinner text-accent"></span>
+		<button class="btn btn-accent"> {@render userRow(data.player)}</button>
 	</div>
 {/snippet}

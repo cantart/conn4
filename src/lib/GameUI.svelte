@@ -12,14 +12,16 @@
 </script>
 
 <div class="flex flex-col justify-center gap-2">
-	<div class="flex justify-center gap-8">
+	<div class="flex flex-wrap justify-center gap-4">
 		{#each props.game.players as player, i}
 			<span
 				class:opacity-25={props.game.currentPlayerTurn().id !== player.id}
 				class="flex items-center gap-2 transition-all"
 			>
-				<div class="h-8 w-8 rounded-full {i === 0 ? 'bg-red-500' : 'bg-yellow-500'}"></div>
-				<p>
+				<div
+					class="aspect-square h-8 rounded-full {i === 0 ? 'bg-red-500' : 'bg-yellow-500'}"
+				></div>
+				<p class="text-xs-rs">
 					{player.name}
 				</p>
 			</span>
@@ -71,12 +73,12 @@
 	</div>
 
 	{#if props.game.wonPlayer}
-		<div class="mt-2 flex flex-col items-center justify-center" transition:slide>
-			<p class="text-2xl font-bold">
+		<div class="mt-2 flex flex-col items-center justify-center gap-2" transition:slide>
+			<p class="text-base-rs font-bold">
 				{props.game.wonPlayer.player.name} won!
 			</p>
 			<button
-				class="block underline"
+				class="btn btn-sm btn-accent"
 				onclick={props.onRestart}
 				in:fly={{
 					y: -10,
