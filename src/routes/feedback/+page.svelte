@@ -6,7 +6,7 @@
 			src="https://docs.google.com/forms/d/e/1FAIpQLSdQWaIBRZAsaYb29GU-fj7VV35nSxHAc5iOKu2qLkBEFkhb5Q/viewform?embedded=true"
 			frameborder="0"
 			marginheight="0"
-			marginwidth="0">Loading...</iframe
+			marginwidth="0"><span class="loading loading-spinner"></span></iframe
 		>
 	</div>
 </div>

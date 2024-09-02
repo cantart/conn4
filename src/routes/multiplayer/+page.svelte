@@ -532,7 +532,7 @@
 		<LoginButton />
 	{/if}
 {:else}
-	<div>Loading...</div>
+	<span class="loading loading-spinner"></span>
 {/if}
 
 {#snippet userRow(data: { photoURL: string | null; displayName: string | null })}
