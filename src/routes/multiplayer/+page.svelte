@@ -394,6 +394,28 @@
 			matchMakingRoomUnsub: flow.matchMakingRoomUnsub,
 		};
 	};
+
+	$effect(() => {
+		// TODO: handle all states e.g. delete things in DB
+		return () => {
+			// if-else for all states
+			if (flow.name === 'hosting') {
+				flow.matchMakingRoomUnsub();
+			} else if (flow.name === 'waiting-for-opponent-to-join') {
+				flow.matchMakingRoomUnsub();
+			} else if (flow.name === 'searching-for-room') {
+				flow.matchMakingRoomUnsub();
+			} else if (flow.name === 'waiting-for-host-to-start') {
+				flow.matchMakingRoomUnsub();
+			} else if (flow.name === 'standby') {
+				// do nothing
+			} else if (flow.name === 'in-match') {
+				// do nothing
+			} else {
+				throw new Error('Handle this state', flow);
+			}
+		};
+	});
 </script>
 
 {#if session.data.ready}
