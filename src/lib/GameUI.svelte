@@ -26,7 +26,7 @@
 		{/each}
 	</div>
 
-	<div class="scrollbar-thin w-screen overflow-x-auto text-center">
+	<div class="w-screen overflow-x-auto text-center scrollbar-thin">
 		<div in:slide class="inline-block">
 			{#each props.game.table as row, i}
 				<div class="flex justify-center">
@@ -47,7 +47,9 @@
 						>
 							{#if cell.playerId}
 								<div
-									class="h-full w-full"
+									class="h-full w-full {props.game.latestPiecePosition?.[0] === i &&
+										props.game.latestPiecePosition?.[1] === j &&
+										'z-10 rounded-full ring-4 ring-white'}"
 									in:fly={{ y: -10, easing: expoOut }}
 									out:scale={{
 										delay: Math.random() * 300,
@@ -86,5 +88,5 @@
 </div>
 
 {#snippet piece({ halfOpacity, skin }: { halfOpacity: boolean; skin: string })}
-	<div class:opacity-50={halfOpacity} class="h-full w-full rounded-full {skin}"></div>
+	<div class:opacity-50={halfOpacity} class="h-full w-full rounded-full {skin} ring-red-300"></div>
 {/snippet}

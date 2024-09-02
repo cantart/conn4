@@ -4,9 +4,9 @@ const createTable = () => {
 	return Array.from({ length: rows }, () =>
 		Array.from({ length: cols }, () => {
 			return {
-				playerId: null
+				playerId: null,
 			};
-		})
+		}),
 	);
 };
 
@@ -19,13 +19,16 @@ export function createGame(args: { players: [Player, Player] }) {
 	let wonPlayer = $state<{ player: Player; coordinates: [number, number][] } | null>(null);
 	let table = $state<{ playerId: string | null }[][]>(createTable());
 	let sw = $state(true);
-	const players = args.players;
+	let latestPiecePosition: [number, number] | null = $state(null);
 
 	const restart = () => {
 		table = createTable();
 		sw = true;
 		wonPlayer = null;
+		latestPiecePosition = null;
 	};
+
+	const players = args.players;
 
 	const currentPlayerTurn = $derived(() => {
 		return sw ? args.players[0] : args.players[1];
@@ -37,7 +40,7 @@ export function createGame(args: { players: [Player, Player] }) {
 
 	function checkWin(
 		table: { playerId: string | null }[][],
-		playerId: string
+		playerId: string,
 	): null | [number, number][] {
 		const rows = table.length;
 		const cols = table[0].length;
@@ -56,7 +59,7 @@ export function createGame(args: { players: [Player, Player] }) {
 						[row, col],
 						[row, col + 1],
 						[row, col + 2],
-						[row, col + 3]
+						[row, col + 3],
 					];
 				}
 			}
@@ -75,7 +78,7 @@ export function createGame(args: { players: [Player, Player] }) {
 						[row, col],
 						[row + 1, col],
 						[row + 2, col],
-						[row + 3, col]
+						[row + 3, col],
 					];
 				}
 			}
@@ -94,7 +97,7 @@ export function createGame(args: { players: [Player, Player] }) {
 						[row, col],
 						[row + 1, col + 1],
 						[row + 2, col + 2],
-						[row + 3, col + 3]
+						[row + 3, col + 3],
 					];
 				}
 			}
@@ -113,7 +116,7 @@ export function createGame(args: { players: [Player, Player] }) {
 						[row, col],
 						[row - 1, col + 1],
 						[row - 2, col + 2],
-						[row - 3, col + 3]
+						[row - 3, col + 3],
 					];
 				}
 			}
@@ -132,6 +135,7 @@ export function createGame(args: { players: [Player, Player] }) {
 		for (let i = table.length - 1; i >= 0; i--) {
 			if (table[i][column].playerId === null) {
 				table[i][column].playerId = player.id;
+				latestPiecePosition = [i, column];
 				const winCoordinates = checkWin(table, player.id);
 				if (winCoordinates) {
 					wonPlayer = { player: player, coordinates: winCoordinates };
@@ -153,10 +157,13 @@ export function createGame(args: { players: [Player, Player] }) {
 		get wonPlayer() {
 			return wonPlayer;
 		},
+		get latestPiecePosition() {
+			return latestPiecePosition;
+		},
 		players,
 		switchTurn,
 		dropPiece,
-		restart
+		restart,
 	};
 }
 
