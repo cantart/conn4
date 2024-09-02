@@ -67,6 +67,7 @@
 		| {
 				name: 'waiting-for-host-to-start';
 				host: UserWithId;
+				matchMakingRoomUnsub: () => void;
 		  }
 	>({ name: 'standby', opponentDisconnected: false });
 
@@ -313,6 +314,10 @@
 	};
 
 	const joinRoom = async (userId: string, room: SearchingForRoomRoom) => {
+		if (flow.name !== 'searching-for-room') {
+			throw new Error('Invalid state');
+		}
+
 		const toUpdate: Partial<ConvertToUnknown<Doc['matchmakingRooms']>> = {
 			queue: arrayUnion(userId),
 		};
@@ -320,7 +325,7 @@
 
 		// listen if the game room has been created
 		const unsub = onSnapshot(room.ref, (snap) => {
-			if (flow.name !== 'searching-for-room') {
+			if (flow.name !== 'waiting-for-host-to-start') {
 				throw new Error('Invalid state');
 			}
 
@@ -386,6 +391,7 @@
 		flow = {
 			name: 'waiting-for-host-to-start',
 			host: room.data.host,
+			matchMakingRoomUnsub: flow.matchMakingRoomUnsub,
 		};
 	};
 </script>
