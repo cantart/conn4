@@ -9,6 +9,8 @@
 		onDrop: (column: number) => void;
 		onRestart: () => void;
 	} = $props();
+
+	const useLatestPieceRing = import.meta.env.VITE_USE_LATEST_PIECE_RING === 'true';
 </script>
 
 <div class="flex flex-col justify-center gap-2">
@@ -44,7 +46,8 @@
 						>
 							{#if cell.playerId}
 								<div
-									class="h-full w-full {props.game.latestPiecePosition?.[0] === i &&
+									class="h-full w-full {useLatestPieceRing &&
+										props.game.latestPiecePosition?.[0] === i &&
 										props.game.latestPiecePosition?.[1] === j &&
 										'z-10 rounded-full ring-4 ring-accent'}"
 									in:fly={{ y: -10, easing: expoOut }}
