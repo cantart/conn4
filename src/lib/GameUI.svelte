@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { type Game } from '$lib/game.svelte';
-	import { fly, scale, slide } from 'svelte/transition';
+	import { fly, scale, slide, fade } from 'svelte/transition';
 	import { expoInOut, expoOut } from 'svelte/easing';
 
 	let props: {
@@ -78,10 +78,9 @@
 				{props.game.wonPlayer.player.name} won!
 			</p>
 			<button
-				class="btn btn-sm btn-accent"
+				class="btn btn-accent btn-sm"
 				onclick={props.onRestart}
-				in:fly={{
-					y: -10,
+				in:fade={{
 					delay: 500,
 				}}>Restart</button
 			>
