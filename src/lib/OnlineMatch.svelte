@@ -10,12 +10,10 @@
 		game: Game;
 		gameRoomRef: DocumentReference;
 		yourId: string;
-		onSelfQuitForcefully: () => void;
 		onOpponentQuit: () => void;
 	} = $props();
 	let unsub = $state<(() => void) | null>(null);
 	const appliedDrops = new Set<string>();
-	let opponentQuitted = $state(false);
 
 	$effect(() => {
 		// start listening to the game room
@@ -31,7 +29,6 @@
 
 			// check if the opponent has left the game
 			if (data.state.quitter) {
-				opponentQuitted = true;
 				props.onOpponentQuit();
 				return;
 			}
@@ -55,16 +52,8 @@
 	});
 
 	onMount(() => {
-		const handleUnloadEvent = () => {
-			props.onSelfQuitForcefully();
-		};
-		window.addEventListener('beforeunload', handleUnloadEvent);
 		return () => {
 			unsub?.();
-			window.removeEventListener('beforeunload', handleUnloadEvent);
-			if (!opponentQuitted) {
-				props.onSelfQuitForcefully();
-			}
 		};
 	});
 

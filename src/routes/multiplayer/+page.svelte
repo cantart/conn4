@@ -395,25 +395,36 @@
 		};
 	};
 
-	$effect(() => {
+	const cleanup = () => {
 		// TODO: handle all states e.g. delete things in DB
+		// if-else for all states
+		if (flow.name === 'hosting') {
+			flow.matchMakingRoomUnsub();
+			deleteDoc(flow.matchmakingRoomRef);
+		} else if (flow.name === 'waiting-for-opponent-to-join') {
+			flow.matchMakingRoomUnsub();
+			deleteDoc(flow.matchmakingRoomRef);
+		} else if (flow.name === 'searching-for-room') {
+			flow.matchMakingRoomUnsub();
+		} else if (flow.name === 'waiting-for-host-to-start') {
+			flow.matchMakingRoomUnsub();
+		} else if (flow.name === 'standby') {
+			// do nothing
+		} else if (flow.name === 'in-match') {
+			// let the opponent know that you have left
+			updateDoc(flow.gameRoomRef, {
+				'state.quitter': flow.yourId,
+			});
+		} else {
+			throw new Error('Handle this state', flow);
+		}
+	};
+
+	$effect(() => {
+		window.addEventListener('beforeunload', cleanup);
 		return () => {
-			// if-else for all states
-			if (flow.name === 'hosting') {
-				flow.matchMakingRoomUnsub();
-			} else if (flow.name === 'waiting-for-opponent-to-join') {
-				flow.matchMakingRoomUnsub();
-			} else if (flow.name === 'searching-for-room') {
-				flow.matchMakingRoomUnsub();
-			} else if (flow.name === 'waiting-for-host-to-start') {
-				flow.matchMakingRoomUnsub();
-			} else if (flow.name === 'standby') {
-				// do nothing
-			} else if (flow.name === 'in-match') {
-				// do nothing
-			} else {
-				throw new Error('Handle this state', flow);
-			}
+			window.removeEventListener('beforeunload', cleanup);
+			cleanup();
 		};
 	});
 </script>
@@ -492,16 +503,6 @@
 				gameRoomRef={flow.gameRoomRef}
 				game={flow.game}
 				yourId={flow.yourId}
-				onSelfQuitForcefully={() => {
-					if (flow.name !== 'in-match') {
-						throw new Error('Invalid state');
-					}
-
-					// let the opponent know that you have left
-					updateDoc(flow.gameRoomRef, {
-						'state.quitter': flow.yourId,
-					});
-				}}
 				onOpponentQuit={() => {
 					if (flow.name !== 'in-match') {
 						throw new Error('Invalid state');
