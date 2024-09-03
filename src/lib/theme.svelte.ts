@@ -36,12 +36,23 @@ export const themes = [
 export type Theme = (typeof themes)[number];
 
 const createThem = () => {
-	const value = $state<Theme>('synthwave');
+	let value = $state<Theme>('synthwave');
+
+	const loadSavedTheme = () => {
+		const saved = localStorage.getItem('theme');
+		if (saved && themes.includes(saved as Theme)) {
+			value = saved as Theme;
+		}
+	};
 
 	return {
 		get value() {
 			return value;
 		},
+		set value(val: Theme) {
+			value = val;
+		},
+		loadSavedTheme,
 	};
 };
 

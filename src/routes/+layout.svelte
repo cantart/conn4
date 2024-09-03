@@ -8,6 +8,7 @@
 	import { collections, type Doc } from '$lib/firestore';
 	import { page } from '$app/stores';
 	import AuthButton from '$lib/AuthButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 
 	$effect(() => {
 		onAuthStateChanged(auth, (user) => {
@@ -27,7 +28,7 @@
 
 <div
 	class="flex min-h-screen flex-col items-center justify-center gap-2 scrollbar-track-transparent scrollbar-thumb-white"
-	data-theme="synthwave"
+	data-theme={theme.value}
 >
 	<nav class="mt-2 flex items-center justify-center gap-2">
 		<AuthButton size="btn-sm" />
@@ -35,10 +36,11 @@
 			{@render tab({ pathname: '/', label: 'offline' })}
 			{@render tab({ pathname: '/multiplayer', label: 'online' })}
 			{@render tab({ pathname: '/feedback', label: 'feedback' })}
+			{@render tab({ pathname: '/theme', label: 'theme' })}
 		</div>
 	</nav>
 
-	<div class="flex grow flex-col justify-center">{@render children()}</div>
+	<div class="flex grow flex-col items-center justify-center">{@render children()}</div>
 </div>
 
 {#snippet tab(data: { pathname: string; label: string })}
