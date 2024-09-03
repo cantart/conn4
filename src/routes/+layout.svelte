@@ -30,7 +30,7 @@
 	class="flex min-h-screen flex-col items-center justify-center gap-2 scrollbar-track-transparent scrollbar-thumb-white"
 	data-theme={theme.value}
 >
-	<nav class="mt-2 flex items-center justify-center gap-2">
+	<nav class="mt-2 flex flex-wrap items-center justify-center">
 		<AuthButton size="btn-sm" />
 		<div role="tablist" class="tabs tabs-bordered">
 			{@render tab({ pathname: '/', label: 'offline' })}
