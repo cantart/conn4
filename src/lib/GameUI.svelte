@@ -18,9 +18,7 @@
 				class:opacity-25={props.game.currentPlayerTurn().id !== player.id}
 				class="flex items-center gap-2 transition-all"
 			>
-				<div
-					class="aspect-square h-8 rounded-full {i === 0 ? 'bg-red-500' : 'bg-yellow-500'}"
-				></div>
+				<div class="aspect-square h-8 rounded-full {i === 0 ? 'bg-primary' : 'bg-secondary'}"></div>
 				<p class="text-xs-rs">
 					{player.name}
 				</p>
@@ -40,9 +38,6 @@
 							class:cursor-auto={props.isColumnCannotDrop}
 							class="grid aspect-square w-14 place-items-center border border-slate-800 md:w-16 lg:w-20"
 							onclick={() => {
-								// if (import.meta.env.PROD) {
-								// 	document.body.requestFullscreen();
-								// }
 								if (props.isColumnCannotDrop) return;
 								props.onDrop(j);
 							}}
@@ -51,7 +46,7 @@
 								<div
 									class="h-full w-full {props.game.latestPiecePosition?.[0] === i &&
 										props.game.latestPiecePosition?.[1] === j &&
-										'z-10 rounded-full ring-4 ring-white'}"
+										'z-10 rounded-full ring-4 ring-accent'}"
 									in:fly={{ y: -10, easing: expoOut }}
 									out:scale={{
 										delay: Math.random() * 300,
@@ -61,7 +56,7 @@
 									{@render piece({
 										halfOpacity,
 										skin:
-											cell.playerId === props.game.players[0].id ? 'bg-red-500' : 'bg-yellow-500',
+											cell.playerId === props.game.players[0].id ? 'bg-primary' : 'bg-secondary',
 									})}
 								</div>
 							{/if}
