@@ -26,8 +26,8 @@
 	const pages = [
 		{ pathname: '/', label: 'offline', icon: '😪' },
 		{ pathname: '/multiplayer', label: 'online', icon: '🤼' },
-		{ pathname: '/feedback', label: 'feedback', icon: '💬' },
 		{ pathname: '/theme', label: 'theme', icon: '🎨' },
+		{ pathname: '/feedback', label: 'feedback', icon: '💬' },
 	] as const;
 </script>
 
@@ -71,7 +71,9 @@
 					<li>
 						<a href={p.pathname} class:active={$page.url.pathname === p.pathname}>
 							{p.icon}
-							{p.label}
+							{#if $page.url.pathname === p.pathname}
+								{p.label}
+							{/if}
 						</a>
 					</li>
 				{/each}
