@@ -8,7 +8,7 @@
 	import { collections, type Doc } from '$lib/firestore';
 	import { page } from '$app/stores';
 	import AuthButton from '$lib/AuthButton.svelte';
-	import { theme } from '$lib/theme.svelte';
+	import { theme, themes } from '$lib/theme.svelte';
 
 	$effect(() => {
 		onAuthStateChanged(auth, (user) => {
@@ -24,29 +24,66 @@
 			}
 		});
 	});
+
+	const pages = [
+		{ pathname: '/', label: 'offline', icon: '😪' },
+		{ pathname: '/multiplayer', label: 'online', icon: '🤼' },
+		{ pathname: '/feedback', label: 'feedback', icon: '💬' },
+		{ pathname: '/theme', label: 'theme', icon: '🎨' },
+	] as const;
 </script>
 
 <div
 	class="flex min-h-screen flex-col items-center justify-center gap-2 scrollbar-track-transparent scrollbar-thumb-white"
 	data-theme={theme.value}
 >
-	<nav class="mt-2 flex flex-wrap items-center justify-center">
-		<AuthButton size="btn-sm" />
-		<div role="tablist" class="tabs tabs-bordered">
-			{@render tab({ pathname: '/', label: 'offline' })}
-			{@render tab({ pathname: '/multiplayer', label: 'online' })}
-			{@render tab({ pathname: '/feedback', label: 'feedback' })}
-			{@render tab({ pathname: '/theme', label: 'theme' })}
+	<div class="navbar bg-base-100">
+		<div class="navbar-start sm:invisible">
+			<div class="dropdown">
+				<div tabindex="0" role="button" class="btn btn-circle btn-ghost">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M4 6h16M4 12h16M4 18h7"
+						/>
+					</svg>
+				</div>
+				<ul
+					class="menu dropdown-content menu-sm z-[1] mt-3 w-52 rounded-box bg-base-100 p-2 shadow"
+				>
+					{#each pages as p}
+						<li>
+							<a href={p.pathname} class:active={$page.url.pathname === p.pathname}>
+								{p.icon}
+								{p.label}
+							</a>
+						</li>
+					{/each}
+				</ul>
+			</div>
 		</div>
-	</nav>
+		<div class="navbar-center hidden sm:block">
+			<ul class="menu menu-horizontal rounded-box bg-base-200">
+				{#each pages as p}
+					<li>
+						<a href={p.pathname} class:active={$page.url.pathname === p.pathname}>
+							{p.icon}
+							{p.label}
+						</a>
+					</li>
+				{/each}
+			</ul>
+		</div>
+		<div class="navbar-end"></div>
+	</div>
 
 	<div class="flex grow flex-col items-center justify-center">{@render children()}</div>
 </div>
-
-{#snippet tab(data: { pathname: string; label: string })}
-	<a
-		href={data.pathname}
-		class:tab-active={$page.url.pathname === data.pathname}
-		class="tab transition-all hover:opacity-100">{data.label}</a
-	>
-{/snippet}
