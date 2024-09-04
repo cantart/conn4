@@ -7,8 +7,6 @@
 	import { doc, setDoc } from 'firebase/firestore';
 	import { collections, type Doc } from '$lib/firestore';
 	import { page } from '$app/stores';
-	import AuthButton from '$lib/AuthButton.svelte';
-	import { theme, themes } from '$lib/theme.svelte';
 
 	$effect(() => {
 		onAuthStateChanged(auth, (user) => {
@@ -35,7 +33,6 @@
 
 <div
 	class="flex min-h-screen flex-col items-center justify-center gap-2 scrollbar-track-transparent scrollbar-thumb-white"
-	data-theme={theme.value}
 >
 	<div class="navbar bg-base-100">
 		<div class="navbar-start sm:invisible">
