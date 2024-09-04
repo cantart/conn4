@@ -4,6 +4,13 @@
 
 <div class="flex max-w-96 flex-wrap justify-center gap-2 transition-all">
 	{#each themes as t}
-		<button data-theme={t} class="btn" data-set-theme={t} data-act-class="ACTIVECLASS">{t}</button>
+		<button
+			data-theme={t}
+			class="btn"
+			onclick={() => {
+				document.documentElement.setAttribute('data-theme', t);
+				localStorage.setItem('theme', t);
+			}}>{t}</button
+		>
 	{/each}
 </div>
