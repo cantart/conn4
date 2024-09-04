@@ -53,9 +53,7 @@
 						/>
 					</svg>
 				</div>
-				<ul
-					class="menu dropdown-content menu-sm z-[1] mt-3 w-52 rounded-box bg-base-100 p-2 shadow"
-				>
+				<ul class="menu dropdown-content z-[1] w-40 rounded-box bg-base-100 p-2 shadow">
 					{#each pages as p}
 						<li>
 							<a href={p.pathname} class:active={$page.url.pathname === p.pathname}>
