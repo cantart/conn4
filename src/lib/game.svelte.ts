@@ -15,6 +15,13 @@ export type Player = {
 	name: string;
 };
 
+export type GameState = {
+	wonPlayer: { player: Player; coordinates: [number, number][] } | null;
+	table: { playerId: string | null }[][];
+	sw: boolean;
+	latestPiecePosition: [number, number] | null;
+};
+
 export function createGame(args: { players: [Player, Player] }) {
 	let wonPlayer = $state<{ player: Player; coordinates: [number, number][] } | null>(null);
 	let table = $state<{ playerId: string | null }[][]>(createTable());
