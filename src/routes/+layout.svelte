@@ -7,6 +7,7 @@
 	import { doc, setDoc } from 'firebase/firestore';
 	import { collections, type Doc } from '$lib/firestore';
 	import { page } from '$app/stores';
+	import AuthButton from '$lib/AuthButton.svelte';
 
 	$effect(() => {
 		onAuthStateChanged(auth, (user) => {
@@ -35,8 +36,8 @@
 	class="flex min-h-screen flex-col items-center justify-center gap-2 scrollbar-track-transparent scrollbar-thumb-white"
 >
 	<div class="navbar bg-base-100">
-		<div class="navbar-start sm:invisible">
-			<div class="dropdown">
+		<div class="navbar-start">
+			<div class="dropdown sm:hidden">
 				<div tabindex="0" role="button" class="btn btn-circle btn-ghost">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -64,8 +65,9 @@
 					{/each}
 				</ul>
 			</div>
+			<AuthButton size="btn-sm" />
 		</div>
-		<div class="navbar-center hidden sm:block">
+		<div class="navbar-center hidden sm:flex">
 			<ul class="menu menu-horizontal rounded-box bg-base-200">
 				{#each pages as p}
 					<li>
