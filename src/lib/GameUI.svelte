@@ -15,7 +15,7 @@
 
 <div class="flex flex-col justify-center gap-2">
 	<div class="flex flex-wrap justify-center gap-4">
-		{#each props.game.players as player, i}
+		{#each props.game.players as player, i (player.id)}
 			<span
 				class:opacity-25={props.game.currentPlayerTurn().id !== player.id}
 				class="flex items-center gap-2 transition-all"
@@ -28,17 +28,17 @@
 		{/each}
 	</div>
 
-	<div class="w-screen overflow-x-auto text-center scrollbar-thin">
+	<div class="scrollbar-thin w-screen overflow-x-auto text-center">
 		<div in:slide class="inline-block">
-			{#each props.game.table as row, i}
+			{#each props.game.table as row, i (i)}
 				<div class="flex justify-center">
-					{#each row as cell, j}
+					{#each row as cell, j (j)}
 						{@const halfOpacity =
 							!!props.game.wonPlayer &&
 							!props.game.wonPlayer.coordinates.some(([row, col]) => row === i && col === j)}
 						<button
 							class:cursor-auto={props.isColumnCannotDrop}
-							class="grid aspect-square w-14 place-items-center border border-neutral md:w-16 lg:w-20"
+							class="border-neutral grid aspect-square w-14 place-items-center border md:w-16 lg:w-20"
 							onclick={() => {
 								if (props.isColumnCannotDrop) return;
 								props.onDrop(j);
@@ -49,17 +49,16 @@
 									class="h-full w-full {useLatestPieceRing &&
 										props.game.latestPiecePosition?.[0] === i &&
 										props.game.latestPiecePosition?.[1] === j &&
-										'z-10 rounded-full ring-4 ring-accent'}"
+										'ring-accent z-10 rounded-full ring-4'}"
 									in:fly={{ y: -10, easing: expoOut }}
 									out:scale={{
 										delay: Math.random() * 300,
-										easing: expoInOut,
+										easing: expoInOut
 									}}
 								>
 									{@render piece({
 										halfOpacity,
-										skin:
-											cell.playerId === props.game.players[0].id ? 'bg-primary' : 'bg-secondary',
+										skin: cell.playerId === props.game.players[0].id ? 'bg-primary' : 'bg-secondary'
 									})}
 								</div>
 							{/if}
@@ -79,7 +78,7 @@
 				class="btn btn-accent btn-sm"
 				onclick={props.onRestart}
 				in:fade={{
-					delay: 500,
+					delay: 500
 				}}>Restart</button
 			>
 		</div>

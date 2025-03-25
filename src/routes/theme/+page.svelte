@@ -3,7 +3,7 @@
 </script>
 
 <div class="flex max-w-[44rem] flex-wrap justify-center gap-2 transition-all">
-	{#each themes as t}
+	{#each themes as t (t)}
 		<button
 			data-theme={t}
 			class="btn"
@@ -13,10 +13,10 @@
 			}}
 		>
 			<div class="flex -space-x-2">
-				<div class="aspect-square w-4 rounded-full bg-neutral"></div>
-				<div class="aspect-square w-4 rounded-full bg-accent"></div>
-				<div class="aspect-square w-4 rounded-full bg-secondary"></div>
-				<div class="aspect-square w-4 rounded-full bg-primary"></div>
+				<div class="bg-neutral aspect-square w-4 rounded-full"></div>
+				<div class="bg-accent aspect-square w-4 rounded-full"></div>
+				<div class="bg-secondary aspect-square w-4 rounded-full"></div>
+				<div class="bg-primary aspect-square w-4 rounded-full"></div>
 			</div>
 			{t}</button
 		>

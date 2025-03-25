@@ -1,39 +1,17 @@
 <script lang="ts">
-	import { auth } from '$lib/firebase.client';
 	import '../app.css';
-	import { session } from '$lib/session.svelte';
 	let { children } = $props();
-	import { onAuthStateChanged } from 'firebase/auth';
-	import { doc, setDoc } from 'firebase/firestore';
-	import { collections, type Doc } from '$lib/firestore';
-	import { page } from '$app/stores';
-	import AuthButton from '$lib/AuthButton.svelte';
-
-	$effect(() => {
-		onAuthStateChanged(auth, (user) => {
-			session.setUser(user);
-			// update user to db
-			if (user) {
-				const data: Doc['users'] = {
-					displayName: user.displayName,
-					photoURL: user.photoURL,
-				};
-				const docRef = doc(collections.userInfos(), user.uid);
-				setDoc(docRef, data);
-			}
-		});
-	});
+	import { page } from '$app/state';
 
 	const pages = [
 		{ pathname: '/', label: 'offline', icon: '😪' },
-		{ pathname: '/multiplayer', label: 'online', icon: '🤼' },
 		{ pathname: '/theme', label: 'theme', icon: '🎨' },
-		{ pathname: '/feedback', label: 'feedback', icon: '💬' },
+		{ pathname: '/feedback', label: 'feedback', icon: '💬' }
 	] as const;
 </script>
 
 <div
-	class="flex min-h-screen flex-col items-center justify-center gap-2 scrollbar-track-transparent scrollbar-thumb-white"
+	class="scrollbar-track-transparent scrollbar-thumb-white flex min-h-screen flex-col items-center justify-center gap-2"
 >
 	<div class="navbar bg-base-100">
 		<div class="navbar-start">
@@ -54,10 +32,10 @@
 						/>
 					</svg>
 				</div>
-				<ul class="menu dropdown-content z-[1] w-40 rounded-box bg-base-100 p-2 shadow">
-					{#each pages as p}
+				<ul class="menu dropdown-content rounded-box bg-base-100 z-[1] w-40 p-2 shadow">
+					{#each pages as p (p.pathname)}
 						<li>
-							<a href={p.pathname} class:active={$page.url.pathname === p.pathname}>
+							<a href={p.pathname} class:active={page.url.pathname === p.pathname}>
 								{p.icon}
 								{p.label}
 							</a>
@@ -65,15 +43,14 @@
 					{/each}
 				</ul>
 			</div>
-			<AuthButton size="btn-sm" />
 		</div>
 		<div class="navbar-center hidden sm:flex">
 			<ul class="menu menu-horizontal rounded-box bg-base-200">
-				{#each pages as p}
+				{#each pages as p (p.pathname)}
 					<li>
-						<a href={p.pathname} class:active={$page.url.pathname === p.pathname}>
+						<a href={p.pathname} class:active={page.url.pathname === p.pathname}>
 							{p.icon}
-							{#if $page.url.pathname === p.pathname}
+							{#if page.url.pathname === p.pathname}
 								{p.label}
 							{/if}
 						</a>
