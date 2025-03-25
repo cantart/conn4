@@ -34,6 +34,8 @@ import {
 // Import and reexport all reducer arg types
 import { Hello } from "./hello_reducer.ts";
 export { Hello };
+import { HelloWithText } from "./hello_with_text_reducer.ts";
+export { HelloWithText };
 import { IdentityConnected } from "./identity_connected_reducer.ts";
 export { IdentityConnected };
 import { IdentityDisconnected } from "./identity_disconnected_reducer.ts";
@@ -61,6 +63,10 @@ const REMOTE_MODULE = {
     hello: {
       reducerName: "hello",
       argsType: Hello.getTypeScriptAlgebraicType(),
+    },
+    hello_with_text: {
+      reducerName: "hello_with_text",
+      argsType: HelloWithText.getTypeScriptAlgebraicType(),
     },
     identity_connected: {
       reducerName: "identity_connected",
@@ -102,6 +108,7 @@ const REMOTE_MODULE = {
 // A type representing all the possible variants of a reducer.
 export type Reducer = never
 | { name: "Hello", args: Hello }
+| { name: "HelloWithText", args: HelloWithText }
 | { name: "IdentityConnected", args: IdentityConnected }
 | { name: "IdentityDisconnected", args: IdentityDisconnected }
 | { name: "SetName", args: SetName }
@@ -120,6 +127,22 @@ export class RemoteReducers {
 
   removeOnHello(callback: (ctx: ReducerEventContext) => void) {
     this.connection.offReducer("hello", callback);
+  }
+
+  helloWithText(text: string) {
+    const __args = { text };
+    let __writer = new BinaryWriter(1024);
+    HelloWithText.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("hello_with_text", __argsBuffer, this.setCallReducerFlags.helloWithTextFlags);
+  }
+
+  onHelloWithText(callback: (ctx: ReducerEventContext, text: string) => void) {
+    this.connection.onReducer("hello_with_text", callback);
+  }
+
+  removeOnHelloWithText(callback: (ctx: ReducerEventContext, text: string) => void) {
+    this.connection.offReducer("hello_with_text", callback);
   }
 
   onIdentityConnected(callback: (ctx: ReducerEventContext) => void) {
@@ -160,6 +183,11 @@ export class SetReducerFlags {
   helloFlags: CallReducerFlags = 'FullUpdate';
   hello(flags: CallReducerFlags) {
     this.helloFlags = flags;
+  }
+
+  helloWithTextFlags: CallReducerFlags = 'FullUpdate';
+  helloWithText(flags: CallReducerFlags) {
+    this.helloWithTextFlags = flags;
   }
 
   setNameFlags: CallReducerFlags = 'FullUpdate';

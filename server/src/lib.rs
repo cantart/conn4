@@ -74,3 +74,13 @@ pub fn hello(ctx: &ReducerContext) -> Result<(), String> {
     log::info!("Hello from {:?}", ctx.sender);
     Ok(())
 }
+
+#[spacetimedb::reducer]
+pub fn hello_with_text(ctx: &ReducerContext, text: String) -> Result<(), String> {
+    if text.is_empty() {
+        return Err("Text must not be empty".to_string());
+    }
+
+    log::info!("Hello from {:?} with text: {}", ctx.sender, text);
+    Ok(())
+}
