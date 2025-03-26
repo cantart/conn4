@@ -10,6 +10,7 @@
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler",
+		// for spacetimedb client SDK
 		"verbatimModuleSyntax": false,
 	},
 	// Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
