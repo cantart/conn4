@@ -2,9 +2,11 @@
 	import type { Identity } from '@clockworklabs/spacetimedb-sdk';
 	import { DbConnection, Player, type ErrorContext } from '../../module_bindings';
 	import { SvelteMap } from 'svelte/reactivity';
+	import { beforeNavigate } from '$app/navigation';
 
-	let identity = $state<Identity | null>(null);
+	let you = $state<{ ident: Identity; name: string | undefined } | null>(null);
 	let connected = $state(false);
+	let name = $state<string | undefined>(undefined);
 
 	const subscribeToQueries = (conn: DbConnection, queries: string[], onReady?: () => undefined) => {
 		let count = 0;
@@ -25,14 +27,15 @@
 	let players = new SvelteMap<string, Player>();
 
 	const onConnect = (conn: DbConnection, ident: Identity, token: string) => {
-		identity = ident;
 		localStorage.setItem('auth_token', token);
 		connected = true;
-		console.log('Connected to the database with identity:', ident.toHexString());
 
 		subscribeToQueries(conn, ['SELECT * FROM player'], () => {
 			for (const player of conn.db.player.iter()) {
 				players.set(player.identity.toHexString(), player);
+				if (player.identity.toHexString() === ident.toHexString()) {
+					you = { ident: player.identity, name: player.name };
+				}
 			}
 		});
 	};
@@ -59,20 +62,42 @@
 	});
 	conn.db.player.onUpdate((ctx, o, n) => {
 		players.set(n.identity.toHexString(), n);
+		if (n.identity.toHexString() === you?.ident.toHexString()) {
+			name = n.name;
+			you = { ident: n.identity, name: n.name };
+		}
 	});
 	conn.db.player.onDelete((ctx, player) => {
 		players.delete(player.identity.toHexString());
 	});
+
+	beforeNavigate(() => {
+		conn?.disconnect();
+	});
+
+	const onNameSubmit = (
+		e: SubmitEvent & {
+			currentTarget: EventTarget & HTMLFormElement;
+		}
+	) => {
+		e.preventDefault();
+		const newName = new FormData(e.currentTarget).get('name') as string;
+		if (!newName || newName === you?.name) return;
+
+		conn?.reducers.setName(newName);
+	};
 </script>
 
-{#if connected && identity}
-	<h1>Connected!</h1>
-	<h2>Players:</h2>
-	{#each Array.from(players.entries()) as [identHex, player] (identHex)}
-		<p class={player.online ? 'text-green-400' : ''}>
-			{identHex} - {player.name}
-		</p>
-	{/each}
+{#if connected && you}
+	<div class="flex flex-col gap-4 text-center">
+		{#if you.name}
+			<h1>Hello, {you.name}!</h1>
+		{/if}
+		<form onsubmit={onNameSubmit} class="flex flex-col gap-4">
+			<input name="name" type="text" placeholder="Enter your name" bind:value={name} />
+			<button type="submit" class="btn btn-primary">Submit</button>
+		</form>
+	</div>
 {:else}
 	<h1>Connecting...</h1>
 {/if}
