@@ -31,6 +31,9 @@ export const themes = [
 	'dim',
 	'nord',
 	'sunset',
+	'caramellatte',
+	// 'silk',
+	'abyss'
 ] as const;
 
 export type Theme = (typeof themes)[number];
