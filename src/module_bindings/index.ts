@@ -32,6 +32,8 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 
 // Import and reexport all reducer arg types
+import { CreateRoom } from "./create_room_reducer.ts";
+export { CreateRoom };
 import { Hello } from "./hello_reducer.ts";
 export { Hello };
 import { HelloWithText } from "./hello_with_text_reducer.ts";
@@ -40,26 +42,79 @@ import { IdentityConnected } from "./identity_connected_reducer.ts";
 export { IdentityConnected };
 import { IdentityDisconnected } from "./identity_disconnected_reducer.ts";
 export { IdentityDisconnected };
+import { JoinToRoom } from "./join_to_room_reducer.ts";
+export { JoinToRoom };
+import { LeaveRoom } from "./leave_room_reducer.ts";
+export { LeaveRoom };
+import { SendGlobalMessage } from "./send_global_message_reducer.ts";
+export { SendGlobalMessage };
+import { SendMessage } from "./send_message_reducer.ts";
+export { SendMessage };
 import { SetName } from "./set_name_reducer.ts";
 export { SetName };
 
 // Import and reexport all table handle types
+import { GameTableHandle } from "./game_table.ts";
+export { GameTableHandle };
+import { GlobalMessageTableHandle } from "./global_message_table.ts";
+export { GlobalMessageTableHandle };
+import { JoinRoomTableHandle } from "./join_room_table.ts";
+export { JoinRoomTableHandle };
+import { MessageTableHandle } from "./message_table.ts";
+export { MessageTableHandle };
 import { PlayerTableHandle } from "./player_table.ts";
 export { PlayerTableHandle };
+import { RoomTableHandle } from "./room_table.ts";
+export { RoomTableHandle };
 
 // Import and reexport all types
+import { Game } from "./game_type.ts";
+export { Game };
+import { GlobalMessage } from "./global_message_type.ts";
+export { GlobalMessage };
+import { JoinRoom } from "./join_room_type.ts";
+export { JoinRoom };
+import { Message } from "./message_type.ts";
+export { Message };
 import { Player } from "./player_type.ts";
 export { Player };
+import { Room } from "./room_type.ts";
+export { Room };
 
 const REMOTE_MODULE = {
   tables: {
+    game: {
+      tableName: "game",
+      rowType: Game.getTypeScriptAlgebraicType(),
+    },
+    global_message: {
+      tableName: "global_message",
+      rowType: GlobalMessage.getTypeScriptAlgebraicType(),
+    },
+    join_room: {
+      tableName: "join_room",
+      rowType: JoinRoom.getTypeScriptAlgebraicType(),
+    },
+    message: {
+      tableName: "message",
+      rowType: Message.getTypeScriptAlgebraicType(),
+    },
     player: {
       tableName: "player",
       rowType: Player.getTypeScriptAlgebraicType(),
       primaryKey: "identity",
     },
+    room: {
+      tableName: "room",
+      rowType: Room.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
+    },
   },
   reducers: {
+    create_room: {
+      reducerName: "create_room",
+      argsType: CreateRoom.getTypeScriptAlgebraicType(),
+    },
     hello: {
       reducerName: "hello",
       argsType: Hello.getTypeScriptAlgebraicType(),
@@ -75,6 +130,22 @@ const REMOTE_MODULE = {
     identity_disconnected: {
       reducerName: "identity_disconnected",
       argsType: IdentityDisconnected.getTypeScriptAlgebraicType(),
+    },
+    join_to_room: {
+      reducerName: "join_to_room",
+      argsType: JoinToRoom.getTypeScriptAlgebraicType(),
+    },
+    leave_room: {
+      reducerName: "leave_room",
+      argsType: LeaveRoom.getTypeScriptAlgebraicType(),
+    },
+    send_global_message: {
+      reducerName: "send_global_message",
+      argsType: SendGlobalMessage.getTypeScriptAlgebraicType(),
+    },
+    send_message: {
+      reducerName: "send_message",
+      argsType: SendMessage.getTypeScriptAlgebraicType(),
     },
     set_name: {
       reducerName: "set_name",
@@ -107,15 +178,32 @@ const REMOTE_MODULE = {
 
 // A type representing all the possible variants of a reducer.
 export type Reducer = never
+| { name: "CreateRoom", args: CreateRoom }
 | { name: "Hello", args: Hello }
 | { name: "HelloWithText", args: HelloWithText }
 | { name: "IdentityConnected", args: IdentityConnected }
 | { name: "IdentityDisconnected", args: IdentityDisconnected }
+| { name: "JoinToRoom", args: JoinToRoom }
+| { name: "LeaveRoom", args: LeaveRoom }
+| { name: "SendGlobalMessage", args: SendGlobalMessage }
+| { name: "SendMessage", args: SendMessage }
 | { name: "SetName", args: SetName }
 ;
 
 export class RemoteReducers {
   constructor(private connection: DbConnectionImpl, private setCallReducerFlags: SetReducerFlags) {}
+
+  createRoom() {
+    this.connection.callReducer("create_room", new Uint8Array(0), this.setCallReducerFlags.createRoomFlags);
+  }
+
+  onCreateRoom(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.onReducer("create_room", callback);
+  }
+
+  removeOnCreateRoom(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.offReducer("create_room", callback);
+  }
 
   hello() {
     this.connection.callReducer("hello", new Uint8Array(0), this.setCallReducerFlags.helloFlags);
@@ -161,6 +249,66 @@ export class RemoteReducers {
     this.connection.offReducer("identity_disconnected", callback);
   }
 
+  joinToRoom(roomId: bigint) {
+    const __args = { roomId };
+    let __writer = new BinaryWriter(1024);
+    JoinToRoom.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("join_to_room", __argsBuffer, this.setCallReducerFlags.joinToRoomFlags);
+  }
+
+  onJoinToRoom(callback: (ctx: ReducerEventContext, roomId: bigint) => void) {
+    this.connection.onReducer("join_to_room", callback);
+  }
+
+  removeOnJoinToRoom(callback: (ctx: ReducerEventContext, roomId: bigint) => void) {
+    this.connection.offReducer("join_to_room", callback);
+  }
+
+  leaveRoom() {
+    this.connection.callReducer("leave_room", new Uint8Array(0), this.setCallReducerFlags.leaveRoomFlags);
+  }
+
+  onLeaveRoom(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.onReducer("leave_room", callback);
+  }
+
+  removeOnLeaveRoom(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.offReducer("leave_room", callback);
+  }
+
+  sendGlobalMessage(text: string) {
+    const __args = { text };
+    let __writer = new BinaryWriter(1024);
+    SendGlobalMessage.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("send_global_message", __argsBuffer, this.setCallReducerFlags.sendGlobalMessageFlags);
+  }
+
+  onSendGlobalMessage(callback: (ctx: ReducerEventContext, text: string) => void) {
+    this.connection.onReducer("send_global_message", callback);
+  }
+
+  removeOnSendGlobalMessage(callback: (ctx: ReducerEventContext, text: string) => void) {
+    this.connection.offReducer("send_global_message", callback);
+  }
+
+  sendMessage(text: string) {
+    const __args = { text };
+    let __writer = new BinaryWriter(1024);
+    SendMessage.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("send_message", __argsBuffer, this.setCallReducerFlags.sendMessageFlags);
+  }
+
+  onSendMessage(callback: (ctx: ReducerEventContext, text: string) => void) {
+    this.connection.onReducer("send_message", callback);
+  }
+
+  removeOnSendMessage(callback: (ctx: ReducerEventContext, text: string) => void) {
+    this.connection.offReducer("send_message", callback);
+  }
+
   setName(name: string) {
     const __args = { name };
     let __writer = new BinaryWriter(1024);
@@ -180,6 +328,11 @@ export class RemoteReducers {
 }
 
 export class SetReducerFlags {
+  createRoomFlags: CallReducerFlags = 'FullUpdate';
+  createRoom(flags: CallReducerFlags) {
+    this.createRoomFlags = flags;
+  }
+
   helloFlags: CallReducerFlags = 'FullUpdate';
   hello(flags: CallReducerFlags) {
     this.helloFlags = flags;
@@ -188,6 +341,26 @@ export class SetReducerFlags {
   helloWithTextFlags: CallReducerFlags = 'FullUpdate';
   helloWithText(flags: CallReducerFlags) {
     this.helloWithTextFlags = flags;
+  }
+
+  joinToRoomFlags: CallReducerFlags = 'FullUpdate';
+  joinToRoom(flags: CallReducerFlags) {
+    this.joinToRoomFlags = flags;
+  }
+
+  leaveRoomFlags: CallReducerFlags = 'FullUpdate';
+  leaveRoom(flags: CallReducerFlags) {
+    this.leaveRoomFlags = flags;
+  }
+
+  sendGlobalMessageFlags: CallReducerFlags = 'FullUpdate';
+  sendGlobalMessage(flags: CallReducerFlags) {
+    this.sendGlobalMessageFlags = flags;
+  }
+
+  sendMessageFlags: CallReducerFlags = 'FullUpdate';
+  sendMessage(flags: CallReducerFlags) {
+    this.sendMessageFlags = flags;
   }
 
   setNameFlags: CallReducerFlags = 'FullUpdate';
@@ -200,8 +373,28 @@ export class SetReducerFlags {
 export class RemoteTables {
   constructor(private connection: DbConnectionImpl) {}
 
+  get game(): GameTableHandle {
+    return new GameTableHandle(this.connection.clientCache.getOrCreateTable<Game>(REMOTE_MODULE.tables.game));
+  }
+
+  get globalMessage(): GlobalMessageTableHandle {
+    return new GlobalMessageTableHandle(this.connection.clientCache.getOrCreateTable<GlobalMessage>(REMOTE_MODULE.tables.global_message));
+  }
+
+  get joinRoom(): JoinRoomTableHandle {
+    return new JoinRoomTableHandle(this.connection.clientCache.getOrCreateTable<JoinRoom>(REMOTE_MODULE.tables.join_room));
+  }
+
+  get message(): MessageTableHandle {
+    return new MessageTableHandle(this.connection.clientCache.getOrCreateTable<Message>(REMOTE_MODULE.tables.message));
+  }
+
   get player(): PlayerTableHandle {
     return new PlayerTableHandle(this.connection.clientCache.getOrCreateTable<Player>(REMOTE_MODULE.tables.player));
+  }
+
+  get room(): RoomTableHandle {
+    return new RoomTableHandle(this.connection.clientCache.getOrCreateTable<Room>(REMOTE_MODULE.tables.room));
   }
 }
 

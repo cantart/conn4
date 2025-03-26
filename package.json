@@ -19,7 +19,8 @@
 		"modgen": "spacetime generate --lang typescript --out-dir src/module_bindings --project-path server",
 		"modpub": "spacetime publish --project-path server fial",
 		"db": "spacetime start",
-		"logs": "spacetime logs fial"
+		"logs": "spacetime logs fial",
+		"sql": "spacetime sql fial"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
