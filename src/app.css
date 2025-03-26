@@ -3,3 +3,9 @@
 @plugin "daisyui" {
 	themes: all;
 }
+
+@layer base {
+	input[type='text'] {
+		@apply bg-transparent;
+	}
+}
