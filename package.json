@@ -17,6 +17,7 @@
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test",
 		"modgen": "spacetime generate --lang typescript --out-dir src/module_bindings --project-path server",
+		"modpub": "spacetime publish --project-path server fial",
 		"db": "spacetime start",
 		"logs": "spacetime logs fial"
 	},

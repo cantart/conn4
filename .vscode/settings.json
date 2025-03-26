@@ -3,6 +3,7 @@
         "clockworklabs",
         "fial",
         "modgen",
+        "modpub",
         "spacetimedb"
     ]
 }
