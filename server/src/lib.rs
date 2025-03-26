@@ -4,7 +4,6 @@ use spacetimedb::{table, Identity, ReducerContext, Table};
 pub struct Player {
     #[primary_key]
     identity: Identity,
-    #[unique]
     name: Option<String>,
     online: bool,
 }
