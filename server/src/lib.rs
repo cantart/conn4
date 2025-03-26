@@ -1,4 +1,4 @@
-use spacetimedb::{table, Identity, ReducerContext, Table};
+use spacetimedb::{table, Identity, ReducerContext, Table, Timestamp};
 
 #[table(name = player, public)]
 pub struct Player {
@@ -6,6 +6,131 @@ pub struct Player {
     identity: Identity,
     name: Option<String>,
     online: bool,
+}
+
+#[table(name = game, public)]
+pub struct Game {
+    room_id: u64,
+    cells: Vec<Vec<Identity>>,
+    rows: u32,
+}
+
+#[table(name = room, public)]
+pub struct Room {
+    #[primary_key]
+    #[auto_inc]
+    id: u64,
+}
+
+#[table(name = message, public)]
+pub struct Message {
+    room_id: u64,
+    sender: Identity,
+    #[index(btree)]
+    sent_at: Timestamp,
+    text: String,
+}
+
+#[table(name = join_room, public, index(name = joiner_and_is_owner, btree(columns = [joiner, is_owner])))]
+pub struct JoinRoom {
+    #[unique]
+    room_id: u64,
+    #[unique]
+    joiner: Identity,
+    is_owner: bool,
+}
+
+#[table(name = global_message, public)]
+pub struct GlobalMessage {
+    sender: Identity,
+    #[index(btree)]
+    sent_at: Timestamp,
+    text: String,
+}
+
+#[spacetimedb::reducer]
+pub fn send_global_message(ctx: &ReducerContext, text: String) -> Result<(), String> {
+    validate_message_text(&text)?;
+    ctx.db.global_message().try_insert(GlobalMessage {
+        sender: ctx.sender,
+        sent_at: ctx.timestamp,
+        text,
+    })?;
+    Ok(())
+}
+
+#[spacetimedb::reducer]
+pub fn send_message(ctx: &ReducerContext, text: String) -> Result<(), String> {
+    validate_message_text(&text)?;
+    if let Some(jr) = ctx.db.join_room().joiner().find(&ctx.sender) {
+        ctx.db.message().try_insert(Message {
+            room_id: jr.room_id,
+            sender: ctx.sender,
+            sent_at: ctx.timestamp,
+            text,
+        })?;
+        Ok(())
+    } else {
+        Err("Cannot send message when not in a room".to_string())
+    }
+}
+
+fn validate_message_text(text: &str) -> Result<(), String> {
+    if text.is_empty() {
+        Err("Message must not be empty".to_string())
+    } else {
+        Ok(())
+    }
+}
+
+#[spacetimedb::reducer]
+pub fn create_room(ctx: &ReducerContext) -> Result<(), String> {
+    if ctx
+        .db
+        .join_room()
+        .joiner_and_is_owner()
+        .filter((&ctx.sender, true))
+        .count()
+        > 0
+    {
+        Err("Cannot create a room when one already exists".to_string())
+    } else {
+        let room = ctx.db.room().try_insert(Room { id: 0 })?;
+        ctx.db.join_room().try_insert(JoinRoom {
+            room_id: room.id,
+            joiner: ctx.sender,
+            is_owner: true,
+        })?;
+        Ok(())
+    }
+}
+
+#[spacetimedb::reducer]
+pub fn join_to_room(ctx: &ReducerContext, room_id: u64) -> Result<(), String> {
+    if ctx.db.join_room().joiner().find(&ctx.sender).is_some() {
+        Err("Cannot join to a room when already in one".to_string())
+    } else {
+        if ctx.db.room().id().find(room_id).is_none() {
+            return Err("Room does not exist".to_string());
+        }
+        ctx.db.join_room().try_insert(JoinRoom {
+            room_id,
+            joiner: ctx.sender,
+            is_owner: false,
+        })?;
+        Ok(())
+    }
+}
+
+#[spacetimedb::reducer]
+pub fn leave_room(ctx: &ReducerContext) {
+    if let Some(jr) = ctx.db.join_room().joiner().find(&ctx.sender) {
+        ctx.db.join_room().joiner().delete(&ctx.sender);
+        // remove room if no one is in it
+        if ctx.db.join_room().room_id().find(jr.room_id).is_none() {
+            ctx.db.room().id().delete(jr.room_id);
+        }
+    }
 }
 
 #[spacetimedb::reducer(init)]
@@ -44,6 +169,8 @@ pub fn identity_disconnected(ctx: &ReducerContext) {
             ctx.sender
         );
     }
+
+    leave_room(&ctx);
 }
 
 #[spacetimedb::reducer]
