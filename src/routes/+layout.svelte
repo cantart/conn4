@@ -5,6 +5,7 @@
 
 	const pages = [
 		{ pathname: '/', label: 'offline', icon: '😪' },
+		{ pathname: '/online', label: 'online', icon: '✈️' },
 		{ pathname: '/theme', label: 'theme', icon: '🎨' },
 		{ pathname: '/feedback', label: 'feedback', icon: '💬' }
 	] as const;
