@@ -1,4 +1,4 @@
-use spacetimedb::{table, Identity, ReducerContext, Table, Timestamp};
+use spacetimedb::{reducer, table, Identity, ReducerContext, Table, Timestamp};
 
 #[table(name = player, public)]
 pub struct Player {
@@ -48,7 +48,7 @@ pub struct GlobalMessage {
     text: String,
 }
 
-#[spacetimedb::reducer]
+#[reducer]
 pub fn send_global_message(ctx: &ReducerContext, text: String) -> Result<(), String> {
     validate_message_text(&text)?;
     ctx.db.global_message().try_insert(GlobalMessage {
@@ -59,7 +59,7 @@ pub fn send_global_message(ctx: &ReducerContext, text: String) -> Result<(), Str
     Ok(())
 }
 
-#[spacetimedb::reducer]
+#[reducer]
 pub fn send_message(ctx: &ReducerContext, text: String) -> Result<(), String> {
     validate_message_text(&text)?;
     if let Some(jr) = ctx.db.join_room().joiner().find(&ctx.sender) {
@@ -83,7 +83,7 @@ fn validate_message_text(text: &str) -> Result<(), String> {
     }
 }
 
-#[spacetimedb::reducer]
+#[reducer]
 pub fn create_room(ctx: &ReducerContext) -> Result<(), String> {
     if ctx
         .db
@@ -105,7 +105,7 @@ pub fn create_room(ctx: &ReducerContext) -> Result<(), String> {
     }
 }
 
-#[spacetimedb::reducer]
+#[reducer]
 pub fn join_to_room(ctx: &ReducerContext, room_id: u64) -> Result<(), String> {
     if ctx.db.join_room().joiner().find(&ctx.sender).is_some() {
         Err("Cannot join to a room when already in one".to_string())
@@ -122,7 +122,7 @@ pub fn join_to_room(ctx: &ReducerContext, room_id: u64) -> Result<(), String> {
     }
 }
 
-#[spacetimedb::reducer]
+#[reducer]
 pub fn leave_room(ctx: &ReducerContext) {
     if let Some(jr) = ctx.db.join_room().joiner().find(&ctx.sender) {
         ctx.db.join_room().joiner().delete(&ctx.sender);
@@ -133,12 +133,12 @@ pub fn leave_room(ctx: &ReducerContext) {
     }
 }
 
-#[spacetimedb::reducer(init)]
+#[reducer(init)]
 pub fn init(_ctx: &ReducerContext) {
     // Called when the module is initially published
 }
 
-#[spacetimedb::reducer(client_connected)]
+#[reducer(client_connected)]
 pub fn identity_connected(ctx: &ReducerContext) {
     // Called every time a new client connects
     if let Some(player) = ctx.db.player().identity().find(ctx.sender) {
@@ -155,7 +155,7 @@ pub fn identity_connected(ctx: &ReducerContext) {
     }
 }
 
-#[spacetimedb::reducer(client_disconnected)]
+#[reducer(client_disconnected)]
 pub fn identity_disconnected(ctx: &ReducerContext) {
     // Called every time a client disconnects
     if let Some(player) = ctx.db.player().identity().find(ctx.sender) {
@@ -173,7 +173,7 @@ pub fn identity_disconnected(ctx: &ReducerContext) {
     leave_room(&ctx);
 }
 
-#[spacetimedb::reducer]
+#[reducer]
 pub fn set_name(ctx: &ReducerContext, name: String) -> Result<(), String> {
     let name = validate_name(name)?;
     if let Some(player) = ctx.db.player().identity().find(ctx.sender) {
@@ -196,13 +196,13 @@ fn validate_name(name: String) -> Result<String, String> {
     }
 }
 
-#[spacetimedb::reducer]
+#[reducer]
 pub fn hello(ctx: &ReducerContext) -> Result<(), String> {
     log::info!("Hello from {:?}", ctx.sender);
     Ok(())
 }
 
-#[spacetimedb::reducer]
+#[reducer]
 pub fn hello_with_text(ctx: &ReducerContext, text: String) -> Result<(), String> {
     if text.is_empty() {
         return Err("Text must not be empty".to_string());
