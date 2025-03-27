@@ -34,6 +34,8 @@ import {
 // Import and reexport all reducer arg types
 import { CreateRoom } from "./create_room_reducer.ts";
 export { CreateRoom };
+import { DeleteAllGlobalMessages } from "./delete_all_global_messages_reducer.ts";
+export { DeleteAllGlobalMessages };
 import { Hello } from "./hello_reducer.ts";
 export { Hello };
 import { HelloWithText } from "./hello_with_text_reducer.ts";
@@ -54,6 +56,8 @@ import { SetName } from "./set_name_reducer.ts";
 export { SetName };
 
 // Import and reexport all table handle types
+import { DeleteGlobalMessageScheduleTableHandle } from "./delete_global_message_schedule_table.ts";
+export { DeleteGlobalMessageScheduleTableHandle };
 import { GameTableHandle } from "./game_table.ts";
 export { GameTableHandle };
 import { GlobalMessageTableHandle } from "./global_message_table.ts";
@@ -68,6 +72,8 @@ import { RoomTableHandle } from "./room_table.ts";
 export { RoomTableHandle };
 
 // Import and reexport all types
+import { DeleteGlobalMessageSchedule } from "./delete_global_message_schedule_type.ts";
+export { DeleteGlobalMessageSchedule };
 import { Game } from "./game_type.ts";
 export { Game };
 import { GlobalMessage } from "./global_message_type.ts";
@@ -83,6 +89,11 @@ export { Room };
 
 const REMOTE_MODULE = {
   tables: {
+    delete_global_message_schedule: {
+      tableName: "delete_global_message_schedule",
+      rowType: DeleteGlobalMessageSchedule.getTypeScriptAlgebraicType(),
+      primaryKey: "scheduledId",
+    },
     game: {
       tableName: "game",
       rowType: Game.getTypeScriptAlgebraicType(),
@@ -90,6 +101,7 @@ const REMOTE_MODULE = {
     global_message: {
       tableName: "global_message",
       rowType: GlobalMessage.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
     },
     join_room: {
       tableName: "join_room",
@@ -114,6 +126,10 @@ const REMOTE_MODULE = {
     create_room: {
       reducerName: "create_room",
       argsType: CreateRoom.getTypeScriptAlgebraicType(),
+    },
+    delete_all_global_messages: {
+      reducerName: "delete_all_global_messages",
+      argsType: DeleteAllGlobalMessages.getTypeScriptAlgebraicType(),
     },
     hello: {
       reducerName: "hello",
@@ -179,6 +195,7 @@ const REMOTE_MODULE = {
 // A type representing all the possible variants of a reducer.
 export type Reducer = never
 | { name: "CreateRoom", args: CreateRoom }
+| { name: "DeleteAllGlobalMessages", args: DeleteAllGlobalMessages }
 | { name: "Hello", args: Hello }
 | { name: "HelloWithText", args: HelloWithText }
 | { name: "IdentityConnected", args: IdentityConnected }
@@ -203,6 +220,22 @@ export class RemoteReducers {
 
   removeOnCreateRoom(callback: (ctx: ReducerEventContext) => void) {
     this.connection.offReducer("create_room", callback);
+  }
+
+  deleteAllGlobalMessages(arg: DeleteGlobalMessageSchedule) {
+    const __args = { arg };
+    let __writer = new BinaryWriter(1024);
+    DeleteAllGlobalMessages.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("delete_all_global_messages", __argsBuffer, this.setCallReducerFlags.deleteAllGlobalMessagesFlags);
+  }
+
+  onDeleteAllGlobalMessages(callback: (ctx: ReducerEventContext, arg: DeleteGlobalMessageSchedule) => void) {
+    this.connection.onReducer("delete_all_global_messages", callback);
+  }
+
+  removeOnDeleteAllGlobalMessages(callback: (ctx: ReducerEventContext, arg: DeleteGlobalMessageSchedule) => void) {
+    this.connection.offReducer("delete_all_global_messages", callback);
   }
 
   hello() {
@@ -333,6 +366,11 @@ export class SetReducerFlags {
     this.createRoomFlags = flags;
   }
 
+  deleteAllGlobalMessagesFlags: CallReducerFlags = 'FullUpdate';
+  deleteAllGlobalMessages(flags: CallReducerFlags) {
+    this.deleteAllGlobalMessagesFlags = flags;
+  }
+
   helloFlags: CallReducerFlags = 'FullUpdate';
   hello(flags: CallReducerFlags) {
     this.helloFlags = flags;
@@ -372,6 +410,10 @@ export class SetReducerFlags {
 
 export class RemoteTables {
   constructor(private connection: DbConnectionImpl) {}
+
+  get deleteGlobalMessageSchedule(): DeleteGlobalMessageScheduleTableHandle {
+    return new DeleteGlobalMessageScheduleTableHandle(this.connection.clientCache.getOrCreateTable<DeleteGlobalMessageSchedule>(REMOTE_MODULE.tables.delete_global_message_schedule));
+  }
 
   get game(): GameTableHandle {
     return new GameTableHandle(this.connection.clientCache.getOrCreateTable<Game>(REMOTE_MODULE.tables.game));

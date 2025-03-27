@@ -30,34 +30,32 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-export type GlobalMessage = {
-  id: bigint,
-  sender: Identity,
-  text: string,
+export type DeleteGlobalMessageSchedule = {
+  scheduledId: bigint,
+  scheduledAt: { tag: "Interval", value: TimeDuration } | { tag: "Time", value: Timestamp },
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace GlobalMessage {
+export namespace DeleteGlobalMessageSchedule {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("id", AlgebraicType.createU64Type()),
-      new ProductTypeElement("sender", AlgebraicType.createIdentityType()),
-      new ProductTypeElement("text", AlgebraicType.createStringType()),
+      new ProductTypeElement("scheduledId", AlgebraicType.createU64Type()),
+      new ProductTypeElement("scheduledAt", AlgebraicType.createScheduleAtType()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: GlobalMessage): void {
-    GlobalMessage.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: DeleteGlobalMessageSchedule): void {
+    DeleteGlobalMessageSchedule.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): GlobalMessage {
-    return GlobalMessage.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): DeleteGlobalMessageSchedule {
+    return DeleteGlobalMessageSchedule.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

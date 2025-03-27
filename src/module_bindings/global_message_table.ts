@@ -57,6 +57,28 @@ export class GlobalMessageTableHandle {
   iter(): Iterable<GlobalMessage> {
     return this.tableCache.iter();
   }
+  /**
+   * Access to the `id` unique index on the table `global_message`,
+   * which allows point queries on the field of the same name
+   * via the [`GlobalMessageIdUnique.find`] method.
+   *
+   * Users are encouraged not to explicitly reference this type,
+   * but to directly chain method calls,
+   * like `ctx.db.globalMessage.id().find(...)`.
+   *
+   * Get a handle on the `id` unique index on the table `global_message`.
+   */
+  id = {
+    // Find the subscribed row whose `id` column value is equal to `col_val`,
+    // if such a row is present in the client cache.
+    find: (col_val: bigint): GlobalMessage | undefined => {
+      for (let row of this.tableCache.iter()) {
+        if (deepEqual(row.id, col_val)) {
+          return row;
+        }
+      }
+    },
+  };
 
   onInsert = (cb: (ctx: EventContext, row: GlobalMessage) => void) => {
     return this.tableCache.onInsert(cb);
@@ -73,4 +95,12 @@ export class GlobalMessageTableHandle {
   removeOnDelete = (cb: (ctx: EventContext, row: GlobalMessage) => void) => {
     return this.tableCache.removeOnDelete(cb);
   }
-}
+
+  // Updates are only defined for tables with primary keys.
+  onUpdate = (cb: (ctx: EventContext, oldRow: GlobalMessage, newRow: GlobalMessage) => void) => {
+    return this.tableCache.onUpdate(cb);
+  }
+
+  removeOnUpdate = (cb: (ctx: EventContext, onRow: GlobalMessage, newRow: GlobalMessage) => void) => {
+    return this.tableCache.removeOnUpdate(cb);
+  }}
