@@ -1,4 +1,8 @@
-use spacetimedb::{reducer, table, Identity, ReducerContext, Table, Timestamp};
+use std::time::Duration;
+
+use spacetimedb::{
+    reducer, table, Identity, ReducerContext, ScheduleAt, Table, TimeDuration, Timestamp,
+};
 
 #[table(name = player, public)]
 pub struct Player {
@@ -40,11 +44,27 @@ pub struct JoinRoom {
     is_owner: bool,
 }
 
+#[table(name = delete_global_message_schedule, scheduled(delete_all_global_messages))]
+struct DeleteGlobalMessageSchedule {
+    #[primary_key]
+    #[auto_inc]
+    scheduled_id: u64,
+    scheduled_at: ScheduleAt,
+}
+
+#[reducer]
+fn delete_all_global_messages(ctx: &ReducerContext, _arg: DeleteGlobalMessageSchedule) {
+    for e in ctx.db.global_message().iter() {
+        ctx.db.global_message().id().delete(e.id);
+    }
+}
+
 #[table(name = global_message, public)]
 pub struct GlobalMessage {
+    #[primary_key]
+    #[auto_inc]
+    id: u64,
     sender: Identity,
-    #[index(btree)]
-    sent_at: Timestamp,
     text: String,
 }
 
@@ -52,8 +72,8 @@ pub struct GlobalMessage {
 pub fn send_global_message(ctx: &ReducerContext, text: String) -> Result<(), String> {
     validate_message_text(&text)?;
     ctx.db.global_message().try_insert(GlobalMessage {
+        id: 0,
         sender: ctx.sender,
-        sent_at: ctx.timestamp,
         text,
     })?;
     Ok(())
@@ -134,8 +154,14 @@ pub fn leave_room(ctx: &ReducerContext) {
 }
 
 #[reducer(init)]
-pub fn init(_ctx: &ReducerContext) {
+pub fn init(ctx: &ReducerContext) {
     // Called when the module is initially published
+    ctx.db
+        .delete_global_message_schedule()
+        .insert(DeleteGlobalMessageSchedule {
+            scheduled_id: 0,
+            scheduled_at: ScheduleAt::Interval(TimeDuration::from_duration(Duration::from_secs(1))),
+        });
 }
 
 #[reducer(client_connected)]
