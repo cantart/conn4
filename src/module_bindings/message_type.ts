@@ -31,7 +31,7 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 export type Message = {
-  roomId: bigint,
+  roomId: number,
   sender: Identity,
   sentAt: Timestamp,
   text: string,
@@ -47,7 +47,7 @@ export namespace Message {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("roomId", AlgebraicType.createU64Type()),
+      new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
       new ProductTypeElement("sender", AlgebraicType.createIdentityType()),
       new ProductTypeElement("sentAt", AlgebraicType.createTimestampType()),
       new ProductTypeElement("text", AlgebraicType.createStringType()),

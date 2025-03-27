@@ -71,7 +71,7 @@ export class JoinRoomTableHandle {
   room_id = {
     // Find the subscribed row whose `room_id` column value is equal to `col_val`,
     // if such a row is present in the client cache.
-    find: (col_val: bigint): JoinRoom | undefined => {
+    find: (col_val: number): JoinRoom | undefined => {
       for (let row of this.tableCache.iter()) {
         if (deepEqual(row.room_id, col_val)) {
           return row;
@@ -80,22 +80,44 @@ export class JoinRoomTableHandle {
     },
   };
   /**
-   * Access to the `joiner` unique index on the table `join_room`,
+   * Access to the `joiner_id` unique index on the table `join_room`,
    * which allows point queries on the field of the same name
-   * via the [`JoinRoomJoinerUnique.find`] method.
+   * via the [`JoinRoomJoinerIdUnique.find`] method.
    *
    * Users are encouraged not to explicitly reference this type,
    * but to directly chain method calls,
-   * like `ctx.db.joinRoom.joiner().find(...)`.
+   * like `ctx.db.joinRoom.joiner_id().find(...)`.
    *
-   * Get a handle on the `joiner` unique index on the table `join_room`.
+   * Get a handle on the `joiner_id` unique index on the table `join_room`.
    */
-  joiner = {
-    // Find the subscribed row whose `joiner` column value is equal to `col_val`,
+  joiner_id = {
+    // Find the subscribed row whose `joiner_id` column value is equal to `col_val`,
+    // if such a row is present in the client cache.
+    find: (col_val: number): JoinRoom | undefined => {
+      for (let row of this.tableCache.iter()) {
+        if (deepEqual(row.joiner_id, col_val)) {
+          return row;
+        }
+      }
+    },
+  };
+  /**
+   * Access to the `joiner_identity` unique index on the table `join_room`,
+   * which allows point queries on the field of the same name
+   * via the [`JoinRoomJoinerIdentityUnique.find`] method.
+   *
+   * Users are encouraged not to explicitly reference this type,
+   * but to directly chain method calls,
+   * like `ctx.db.joinRoom.joiner_identity().find(...)`.
+   *
+   * Get a handle on the `joiner_identity` unique index on the table `join_room`.
+   */
+  joiner_identity = {
+    // Find the subscribed row whose `joiner_identity` column value is equal to `col_val`,
     // if such a row is present in the client cache.
     find: (col_val: Identity): JoinRoom | undefined => {
       for (let row of this.tableCache.iter()) {
-        if (deepEqual(row.joiner, col_val)) {
+        if (deepEqual(row.joiner_identity, col_val)) {
           return row;
         }
       }

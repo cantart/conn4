@@ -31,8 +31,9 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 export type JoinRoom = {
-  roomId: bigint,
-  joiner: Identity,
+  roomId: number,
+  joinerId: number,
+  joinerIdentity: Identity,
   isOwner: boolean,
 };
 
@@ -46,8 +47,9 @@ export namespace JoinRoom {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("roomId", AlgebraicType.createU64Type()),
-      new ProductTypeElement("joiner", AlgebraicType.createIdentityType()),
+      new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
+      new ProductTypeElement("joinerId", AlgebraicType.createU32Type()),
+      new ProductTypeElement("joinerIdentity", AlgebraicType.createIdentityType()),
       new ProductTypeElement("isOwner", AlgebraicType.createBoolType()),
     ]);
   }

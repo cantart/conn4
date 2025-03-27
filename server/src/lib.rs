@@ -7,6 +7,9 @@ use spacetimedb::{
 #[table(name = player, public)]
 pub struct Player {
     #[primary_key]
+    #[auto_inc]
+    id: u32,
+    #[unique]
     identity: Identity,
     name: Option<String>,
     online: bool,
@@ -14,7 +17,7 @@ pub struct Player {
 
 #[table(name = game, public)]
 pub struct Game {
-    room_id: u64,
+    room_id: u32,
     cells: Vec<Vec<Identity>>,
     rows: u32,
 }
@@ -23,24 +26,26 @@ pub struct Game {
 pub struct Room {
     #[primary_key]
     #[auto_inc]
-    id: u64,
+    id: u32,
 }
 
 #[table(name = message, public)]
 pub struct Message {
-    room_id: u64,
+    room_id: u32,
     sender: Identity,
     #[index(btree)]
     sent_at: Timestamp,
     text: String,
 }
 
-#[table(name = join_room, public, index(name = joiner_and_is_owner, btree(columns = [joiner, is_owner])))]
+#[table(name = join_room, public)]
 pub struct JoinRoom {
     #[unique]
-    room_id: u64,
+    room_id: u32,
     #[unique]
-    joiner: Identity,
+    joiner_id: u32,
+    #[unique]
+    joiner_identity: Identity,
     is_owner: bool,
 }
 
@@ -63,7 +68,7 @@ fn delete_all_global_messages(ctx: &ReducerContext, _arg: DeleteGlobalMessageSch
 pub struct GlobalMessage {
     #[primary_key]
     #[auto_inc]
-    id: u64,
+    id: u32,
     sender: Identity,
     text: String,
 }
@@ -79,10 +84,15 @@ pub fn send_global_message(ctx: &ReducerContext, text: String) -> Result<(), Str
     Ok(())
 }
 
+fn find_sender_player(ctx: &ReducerContext) -> Player {
+    ctx.db.player().identity().find(ctx.sender).unwrap()
+}
+
 #[reducer]
 pub fn send_message(ctx: &ReducerContext, text: String) -> Result<(), String> {
     validate_message_text(&text)?;
-    if let Some(jr) = ctx.db.join_room().joiner().find(&ctx.sender) {
+    let player = find_sender_player(ctx);
+    if let Some(jr) = ctx.db.join_room().joiner_id().find(player.id) {
         ctx.db.message().try_insert(Message {
             room_id: jr.room_id,
             sender: ctx.sender,
@@ -105,38 +115,33 @@ fn validate_message_text(text: &str) -> Result<(), String> {
 
 #[reducer]
 pub fn create_room(ctx: &ReducerContext) -> Result<(), String> {
-    if ctx
-        .db
-        .join_room()
-        .joiner_and_is_owner()
-        .filter((&ctx.sender, true))
-        .count()
-        > 0
-    {
-        Err("Cannot create a room when one already exists".to_string())
-    } else {
-        let room = ctx.db.room().try_insert(Room { id: 0 })?;
-        ctx.db.join_room().try_insert(JoinRoom {
-            room_id: room.id,
-            joiner: ctx.sender,
-            is_owner: true,
-        })?;
-        Ok(())
-    }
+    let room = ctx.db.room().try_insert(Room { id: 0 })?;
+    join_to_room(ctx, room.id)
 }
 
 #[reducer]
-pub fn join_to_room(ctx: &ReducerContext, room_id: u64) -> Result<(), String> {
-    if ctx.db.join_room().joiner().find(&ctx.sender).is_some() {
+pub fn join_to_room(ctx: &ReducerContext, room_id: u32) -> Result<(), String> {
+    if ctx
+        .db
+        .join_room()
+        .joiner_identity()
+        .find(&ctx.sender)
+        .is_some()
+    {
         Err("Cannot join to a room when already in one".to_string())
     } else {
         if ctx.db.room().id().find(room_id).is_none() {
             return Err("Room does not exist".to_string());
         }
+        let player = find_sender_player(ctx);
+        if player.name.is_none() {
+            return Err("Cannot join to a room without a name".to_string());
+        }
         ctx.db.join_room().try_insert(JoinRoom {
+            joiner_id: player.id,
             room_id,
-            joiner: ctx.sender,
-            is_owner: false,
+            joiner_identity: ctx.sender,
+            is_owner: ctx.db.join_room().room_id().find(room_id).is_none(),
         })?;
         Ok(())
     }
@@ -144,8 +149,8 @@ pub fn join_to_room(ctx: &ReducerContext, room_id: u64) -> Result<(), String> {
 
 #[reducer]
 pub fn leave_room(ctx: &ReducerContext) {
-    if let Some(jr) = ctx.db.join_room().joiner().find(&ctx.sender) {
-        ctx.db.join_room().joiner().delete(&ctx.sender);
+    if let Some(jr) = ctx.db.join_room().joiner_identity().find(&ctx.sender) {
+        ctx.db.join_room().joiner_identity().delete(&ctx.sender);
         // remove room if no one is in it
         if ctx.db.join_room().room_id().find(jr.room_id).is_none() {
             ctx.db.room().id().delete(jr.room_id);
@@ -174,6 +179,7 @@ pub fn identity_connected(ctx: &ReducerContext) {
         });
     } else {
         ctx.db.player().insert(Player {
+            id: 0,
             identity: ctx.sender,
             name: None,
             online: true,

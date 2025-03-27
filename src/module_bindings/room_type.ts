@@ -31,7 +31,7 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 export type Room = {
-  id: bigint,
+  id: number,
 };
 
 /**
@@ -44,7 +44,7 @@ export namespace Room {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("id", AlgebraicType.createU64Type()),
+      new ProductTypeElement("id", AlgebraicType.createU32Type()),
     ]);
   }
 

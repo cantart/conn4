@@ -31,7 +31,7 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 export type Game = {
-  roomId: bigint,
+  roomId: number,
   cells: Identity[][],
   rows: number,
 };
@@ -46,7 +46,7 @@ export namespace Game {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("roomId", AlgebraicType.createU64Type()),
+      new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
       new ProductTypeElement("cells", AlgebraicType.createArrayType(AlgebraicType.createArrayType(AlgebraicType.createIdentityType()))),
       new ProductTypeElement("rows", AlgebraicType.createU32Type()),
     ]);

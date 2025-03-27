@@ -114,7 +114,7 @@ const REMOTE_MODULE = {
     player: {
       tableName: "player",
       rowType: Player.getTypeScriptAlgebraicType(),
-      primaryKey: "identity",
+      primaryKey: "id",
     },
     room: {
       tableName: "room",
@@ -282,7 +282,7 @@ export class RemoteReducers {
     this.connection.offReducer("identity_disconnected", callback);
   }
 
-  joinToRoom(roomId: bigint) {
+  joinToRoom(roomId: number) {
     const __args = { roomId };
     let __writer = new BinaryWriter(1024);
     JoinToRoom.getTypeScriptAlgebraicType().serialize(__writer, __args);
@@ -290,11 +290,11 @@ export class RemoteReducers {
     this.connection.callReducer("join_to_room", __argsBuffer, this.setCallReducerFlags.joinToRoomFlags);
   }
 
-  onJoinToRoom(callback: (ctx: ReducerEventContext, roomId: bigint) => void) {
+  onJoinToRoom(callback: (ctx: ReducerEventContext, roomId: number) => void) {
     this.connection.onReducer("join_to_room", callback);
   }
 
-  removeOnJoinToRoom(callback: (ctx: ReducerEventContext, roomId: bigint) => void) {
+  removeOnJoinToRoom(callback: (ctx: ReducerEventContext, roomId: number) => void) {
     this.connection.offReducer("join_to_room", callback);
   }
 

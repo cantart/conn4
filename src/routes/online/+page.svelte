@@ -10,22 +10,27 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { beforeNavigate, goto } from '$app/navigation';
 
-	let you = $state<{ ident: Identity; identStr: string; name: string | undefined } | null>(null);
+	let you = $state<{ id: number; name: string | undefined } | null>(null);
 	let connected = $state(false);
 	let name = $state<string | undefined>(undefined);
 	let globalMessages = $state<GlobalMessage[]>([]);
 	let yourJoinRoom = $state<JoinRoom | null>(null);
-	import { setContext } from 'svelte';
+	import type { SubscriptionHandle } from '$lib';
+	import { db } from '$lib/db.svelte';
 
-	let players = new SvelteMap<string, Player>();
+	let players = new SvelteMap<number, Player>();
 	let nameUpdating = $state(false);
 	let nameEditing = $state(false);
+	let creatingRoom = $state(false);
+	let globalMsgSubHandle = $state<SubscriptionHandle | null>(null);
+	let playerSubHandle = $state<SubscriptionHandle | null>(null);
+	let yourJoinRoomHandle = $state<SubscriptionHandle | null>(null);
 
 	const onConnect = (conn: DbConnection, ident: Identity, token: string) => {
 		localStorage.setItem('auth_token', token);
 		connected = true;
 
-		const globalMsgSubHandle = conn
+		globalMsgSubHandle = conn
 			.subscriptionBuilder()
 			.onApplied(() => {
 				for (const msg of conn.db.globalMessage.iter()) {
@@ -37,63 +42,41 @@
 			})
 			.subscribe('SELECT * FROM global_message');
 
-		const playerSubHandle = conn
+		playerSubHandle = conn
 			.subscriptionBuilder()
 			.onApplied(() => {
 				for (const player of conn.db.player.iter()) {
-					players.set(player.identity.toHexString(), player);
+					players.set(player.id, player);
 					if (player.identity.toHexString() === ident.toHexString()) {
 						you = {
-							ident: player.identity,
-							name: player.name,
-							identStr: player.identity.toHexString()
+							id: player.id,
+							name: player.name
 						};
 						name = player.name;
 
+						conn.db.joinRoom.onInsert((ctx, room) => {
+							if (room.joinerId === you?.id) {
+								yourJoinRoom = room;
+								conn.db.joinRoom.removeOnInsert(() => {});
+							}
+						});
 						// set up your join room listener
-						const yourJoinRoomHandle = conn
+						yourJoinRoomHandle = conn
 							.subscriptionBuilder()
 							.onApplied(() => {
 								for (const room of conn.db.joinRoom.iter()) {
+									console.log(room);
 									if (yourJoinRoom) {
 										console.error('Your join room already exists:', yourJoinRoom);
 										break;
 									}
 									yourJoinRoom = room;
 								}
-
-								if (yourJoinRoom) {
-									// Go to your room
-
-									// unsubscribe subscriptions
-									playerSubHandle.unsubscribe();
-									globalMsgSubHandle.unsubscribe();
-
-									const allJoinRoomHandle = conn
-										.subscriptionBuilder()
-										.onApplied(() => {
-											if (!yourJoinRoom) {
-												console.error('Your join room is null:', yourJoinRoom);
-												return;
-											}
-											setContext('conn', conn);
-											setContext('allJoinRoomHandle', allJoinRoomHandle);
-											goto(`/online/r/${yourJoinRoom.roomId}`);
-										})
-										.onError((ctx) => {
-											console.error('Error fetching all join rooms:', ctx.event);
-										})
-										.subscribe(`SELECT * FROM join_room WHERE roomId = '${yourJoinRoom.roomId}'`);
-
-									if (allJoinRoomHandle.isActive()) {
-										yourJoinRoomHandle.unsubscribe();
-									}
-								}
 							})
 							.onError((ctx) => {
 								console.error('Error fetching your join room:', ctx.event);
 							})
-							.subscribe(`SELECT * FROM join_room WHERE joiner = '${you.ident.toHexString()}'`);
+							.subscribe(`SELECT * FROM join_room WHERE joiner_id = '${you.id}'`);
 					}
 				}
 			})
@@ -111,29 +94,27 @@
 		console.log('Error connecting to SpacetimeDB:', error);
 	};
 
-	let conn = $state(
-		DbConnection.builder()
-			.withUri('ws://localhost:3000')
-			.withModuleName('fial')
-			.withToken(localStorage.getItem('auth_token') || '')
-			.onConnect(onConnect)
-			.onDisconnect(onDisconnect)
-			.onConnectError(onConnectError)
-			.build()
-	);
+	const conn = DbConnection.builder()
+		.withUri('ws://localhost:3000')
+		.withModuleName('fial')
+		.withToken(localStorage.getItem('auth_token') || '')
+		.onConnect(onConnect)
+		.onDisconnect(onDisconnect)
+		.onConnectError(onConnectError)
+		.build();
 
 	conn.db.player.onInsert((ctx, player) => {
-		players.set(player.identity.toHexString(), player);
+		players.set(player.id, player);
 	});
 	conn.db.player.onUpdate((ctx, o, n) => {
-		players.set(n.identity.toHexString(), n);
-		if (n.identity.toHexString() === you?.ident.toHexString()) {
+		players.set(n.id, n);
+		if (n.id === you?.id) {
 			name = n.name;
-			you = { ident: n.identity, name: n.name, identStr: n.identity.toHexString() };
+			you = { name: n.name, id: n.id };
 		}
 	});
 	conn.db.player.onDelete((ctx, player) => {
-		players.delete(player.identity.toHexString());
+		players.delete(player.id);
 	});
 
 	conn.db.globalMessage.onInsert((ctx, msg) => {
@@ -156,7 +137,82 @@
 		conn?.reducers.setName(newName);
 		nameUpdating = true;
 	};
+
+	const createRoom = () => {
+		if (!conn) {
+			console.error('Connection is null:', conn);
+			return;
+		}
+
+		conn.reducers.createRoom();
+		creatingRoom = true;
+		conn.reducers.onCreateRoom((ctx) => {
+			if (ctx.event.status.tag === 'Failed') {
+				console.error('Failed to create room:', ctx.event.status.value);
+			}
+		});
+	};
+
+	db.conn = conn;
+
+	$effect(() => {
+		if (yourJoinRoom) {
+			// Go to your room
+
+			// unsubscribe subscriptions
+			// TODO: We can't we call unsubscribe??
+			// playerSubHandle?.unsubscribe();
+			// globalMsgSubHandle?.unsubscribe();
+
+			const allJoinRoomHandle = conn
+				.subscriptionBuilder()
+				.onApplied(() => {
+					if (!yourJoinRoom) {
+						console.error('Your join room is null:', yourJoinRoom);
+						return;
+					}
+					if (creatingRoom) {
+						creatingRoom = false;
+					}
+				})
+				.onError((ctx) => {
+					console.error('Error fetching all join rooms:', ctx.event);
+				})
+				.subscribe(`SELECT * FROM join_room WHERE room_id = '${yourJoinRoom.roomId}'`);
+
+			if (yourJoinRoomHandle?.isActive()) {
+				// TODO: We can't we call unsubscribe??
+				// yourJoinRoomHandle?.unsubscribe();
+				db.r = {
+					allJoinRoomHandle
+				};
+				console.log('weofweifj');
+			}
+
+			goto(`/online/r/${yourJoinRoom.roomId}`);
+		}
+	});
 </script>
+
+{#snippet nameInputForm()}
+	<form onsubmit={onNameSubmit} class="flex flex-col gap-4">
+		<input
+			class="input"
+			name="name"
+			type="text"
+			placeholder="Enter your name"
+			bind:value={name}
+			disabled={nameUpdating}
+		/>
+		<button type="submit" class="btn btn-primary">
+			{#if nameUpdating}
+				<span class="loading loading-spinner loading-md"></span>
+			{:else}
+				Change
+			{/if}
+		</button>
+	</form>
+{/snippet}
 
 {#if connected && you}
 	<div class="flex flex-col gap-4 text-center">
@@ -171,38 +227,35 @@
 				>
 			</div>
 		{/if}
-		<form onsubmit={onNameSubmit} class="flex flex-col gap-4 {nameEditing ? '' : 'hidden'}">
-			<input
-				class="input"
-				name="name"
-				type="text"
-				placeholder="Enter your name"
-				bind:value={name}
-				disabled={nameUpdating}
-			/>
-			<button type="submit" class="btn btn-primary">
-				{#if nameUpdating}
-					<span class="loading loading-spinner loading-md"></span>
-				{:else}
-					Change
-				{/if}
-			</button>
-		</form>
+		{#if !you.name}
+			{@render nameInputForm()}
+		{:else if nameEditing}
+			{@render nameInputForm()}
+		{/if}
 		{#if you.name}
-			<h2>Global Messages</h2>
-			<form
-				class="flex items-center gap-2"
-				onsubmit={(e) => {
-					e.preventDefault();
-					const text = new FormData(e.currentTarget).get('text') as string;
-					if (!text) return;
-					conn?.reducers.sendGlobalMessage(text);
-					e.currentTarget.reset();
-				}}
-			>
-				<input name="text" class="input input-ghost" type="text" placeholder="Enter a message" />
-				<button type="submit" class="btn btn-primary">Send</button>
-			</form>
+			<div>
+				<button onclick={createRoom} class="btn btn-primary" disabled={creatingRoom}
+					>Create Room{#if creatingRoom}
+						<span class="loading loading-spinner loading-md"></span>
+					{/if}</button
+				>
+			</div>
+			<div class="space-y-2">
+				<h2>Global Messages</h2>
+				<form
+					class="flex items-center gap-2"
+					onsubmit={(e) => {
+						e.preventDefault();
+						const text = new FormData(e.currentTarget).get('text') as string;
+						if (!text) return;
+						conn?.reducers.sendGlobalMessage(text);
+						e.currentTarget.reset();
+					}}
+				>
+					<input name="text" class="input input-ghost" type="text" placeholder="Enter a message" />
+					<button type="submit" class="btn btn-primary">Send</button>
+				</form>
+			</div>
 		{/if}
 	</div>
 {:else}

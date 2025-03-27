@@ -31,7 +31,7 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 export type GlobalMessage = {
-  id: bigint,
+  id: number,
   sender: Identity,
   text: string,
 };
@@ -46,7 +46,7 @@ export namespace GlobalMessage {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("id", AlgebraicType.createU64Type()),
+      new ProductTypeElement("id", AlgebraicType.createU32Type()),
       new ProductTypeElement("sender", AlgebraicType.createIdentityType()),
       new ProductTypeElement("text", AlgebraicType.createStringType()),
     ]);
