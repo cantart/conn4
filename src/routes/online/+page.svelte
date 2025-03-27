@@ -1,29 +1,21 @@
 <script lang="ts">
 	import type { Identity } from '@clockworklabs/spacetimedb-sdk';
-	import { DbConnection, GlobalMessage, Player, type ErrorContext } from '../../module_bindings';
+	import {
+		DbConnection,
+		GlobalMessage,
+		JoinRoom,
+		Player,
+		type ErrorContext
+	} from '../../module_bindings';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { beforeNavigate } from '$app/navigation';
+	import { beforeNavigate, goto } from '$app/navigation';
 
 	let you = $state<{ ident: Identity; identStr: string; name: string | undefined } | null>(null);
 	let connected = $state(false);
 	let name = $state<string | undefined>(undefined);
 	let globalMessages = $state<GlobalMessage[]>([]);
-
-	const subscribeToPlayers = (conn: DbConnection, queries: string[], onReady?: () => undefined) => {
-		let count = 0;
-		for (const query of queries) {
-			conn
-				?.subscriptionBuilder()
-				.onApplied(() => {
-					count++;
-					if (count === queries.length) {
-						console.log('SDK client cache initialized.');
-						onReady?.();
-					}
-				})
-				.subscribe(query);
-		}
-	};
+	let yourJoinRoom = $state<JoinRoom | null>(null);
+	import { setContext } from 'svelte';
 
 	let players = new SvelteMap<string, Player>();
 	let nameUpdating = $state(false);
@@ -33,32 +25,79 @@
 		localStorage.setItem('auth_token', token);
 		connected = true;
 
-		subscribeToPlayers(conn, ['SELECT * FROM player'], () => {
-			for (const player of conn.db.player.iter()) {
-				players.set(player.identity.toHexString(), player);
-				if (player.identity.toHexString() === ident.toHexString()) {
-					you = {
-						ident: player.identity,
-						name: player.name,
-						identStr: player.identity.toHexString()
-					};
-					name = player.name;
-				}
-			}
-		});
-
-		conn
+		const globalMsgSubHandle = conn
 			.subscriptionBuilder()
 			.onApplied(() => {
 				for (const msg of conn.db.globalMessage.iter()) {
 					globalMessages.push(msg);
 				}
-				console.log(globalMessages);
 			})
 			.onError((ctx) => {
 				console.error('Error fetching global messages:', ctx.event);
 			})
 			.subscribe('SELECT * FROM global_message');
+
+		const playerSubHandle = conn
+			.subscriptionBuilder()
+			.onApplied(() => {
+				for (const player of conn.db.player.iter()) {
+					players.set(player.identity.toHexString(), player);
+					if (player.identity.toHexString() === ident.toHexString()) {
+						you = {
+							ident: player.identity,
+							name: player.name,
+							identStr: player.identity.toHexString()
+						};
+						name = player.name;
+
+						// set up your join room listener
+						const yourJoinRoomHandle = conn
+							.subscriptionBuilder()
+							.onApplied(() => {
+								for (const room of conn.db.joinRoom.iter()) {
+									if (yourJoinRoom) {
+										console.error('Your join room already exists:', yourJoinRoom);
+										break;
+									}
+									yourJoinRoom = room;
+								}
+
+								if (yourJoinRoom) {
+									// Go to your room
+
+									// unsubscribe subscriptions
+									playerSubHandle.unsubscribe();
+									globalMsgSubHandle.unsubscribe();
+
+									const allJoinRoomHandle = conn
+										.subscriptionBuilder()
+										.onApplied(() => {
+											if (!yourJoinRoom) {
+												console.error('Your join room is null:', yourJoinRoom);
+												return;
+											}
+											setContext('conn', conn);
+											setContext('allJoinRoomHandle', allJoinRoomHandle);
+											goto(`/online/r/${yourJoinRoom.roomId}`);
+										})
+										.onError((ctx) => {
+											console.error('Error fetching all join rooms:', ctx.event);
+										})
+										.subscribe(`SELECT * FROM join_room WHERE roomId = '${yourJoinRoom.roomId}'`);
+
+									if (allJoinRoomHandle.isActive()) {
+										yourJoinRoomHandle.unsubscribe();
+									}
+								}
+							})
+							.onError((ctx) => {
+								console.error('Error fetching your join room:', ctx.event);
+							})
+							.subscribe(`SELECT * FROM join_room WHERE joiner = '${you.ident.toHexString()}'`);
+					}
+				}
+			})
+			.subscribe(['SELECT * FROM player']);
 
 		conn.reducers.onSetName(() => {
 			nameUpdating = false;
