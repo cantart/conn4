@@ -8,7 +8,6 @@
 	let connected = $state(false);
 	let name = $state<string | undefined>(undefined);
 	let globalMessages = $state<GlobalMessage[]>([]);
-	let globalMessagesReversed = $derived(globalMessages.slice().reverse());
 
 	const subscribeToPlayers = (conn: DbConnection, queries: string[], onReady?: () => undefined) => {
 		let count = 0;
@@ -117,7 +116,13 @@
 			<h1>Hello, {you.name}!</h1>
 		{/if}
 		<form onsubmit={onNameSubmit} class="flex flex-col gap-4">
-			<input name="name" type="text" placeholder="Enter your name" bind:value={name} />
+			<input
+				class="input"
+				name="name"
+				type="text"
+				placeholder="Enter your name"
+				bind:value={name}
+			/>
 			<button type="submit" class="btn btn-primary">Submit</button>
 		</form>
 		{#if you.name}
@@ -132,16 +137,9 @@
 					e.currentTarget.reset();
 				}}
 			>
-				<input name="text" type="text" placeholder="Enter a message" />
+				<input name="text" class="input input-ghost" type="text" placeholder="Enter a message" />
 				<button type="submit" class="btn btn-primary">Send</button>
 			</form>
-			<ol class="flex h-52 flex-col-reverse overflow-auto">
-				{#each globalMessagesReversed as msg, i (i)}
-					<li class="text-left {msg.sender.toHexString() === you.identStr ? 'text-right' : ''}">
-						{msg.text}
-					</li>
-				{/each}
-			</ol>
 		{/if}
 	</div>
 {:else}

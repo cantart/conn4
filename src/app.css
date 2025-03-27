@@ -1,11 +1,4 @@
 @import 'tailwindcss';
-@plugin '@tailwindcss/forms';
 @plugin "daisyui" {
 	themes: all;
-}
-
-@layer base {
-	input[type='text'] {
-		@apply bg-transparent;
-	}
 }
