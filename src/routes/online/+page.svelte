@@ -26,6 +26,8 @@
 	};
 
 	let players = new SvelteMap<string, Player>();
+	let nameUpdating = $state(false);
+	let nameEditing = $state(false);
 
 	const onConnect = (conn: DbConnection, ident: Identity, token: string) => {
 		localStorage.setItem('auth_token', token);
@@ -56,6 +58,10 @@
 				console.error('Error fetching global messages:', ctx.event);
 			})
 			.subscribe('SELECT * FROM global_message');
+
+		conn.reducers.onSetName(() => {
+			nameUpdating = false;
+		});
 	};
 	const onDisconnect = () => {
 		connected = false;
@@ -107,21 +113,31 @@
 		if (!newName || newName === you?.name) return;
 
 		conn?.reducers.setName(newName);
+		nameUpdating = true;
 	};
 </script>
 
 {#if connected && you}
 	<div class="flex flex-col gap-4 text-center">
 		{#if you.name}
-			<h1>Hello, {you.name}!</h1>
+			<div class="flex items-center justify-center gap-2">
+				<h1>Hello, <span class="font-bold">{you.name}</span>!</h1>
+				<button
+					onclick={() => {
+						nameEditing = !nameEditing;
+					}}
+					class="btn btn-xs">{nameEditing ? 'Cancel' : 'Edit'}</button
+				>
+			</div>
 		{/if}
-		<form onsubmit={onNameSubmit} class="flex flex-col gap-4">
+		<form onsubmit={onNameSubmit} class="flex flex-col gap-4 {nameEditing ? '' : 'hidden'}">
 			<input
 				class="input"
 				name="name"
 				type="text"
 				placeholder="Enter your name"
 				bind:value={name}
+				disabled={nameUpdating}
 			/>
 			<button type="submit" class="btn btn-primary">Submit</button>
 		</form>
