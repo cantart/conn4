@@ -42,6 +42,7 @@
 						name: player.name,
 						identStr: player.identity.toHexString()
 					};
+					name = player.name;
 				}
 			}
 		});
@@ -61,6 +62,7 @@
 
 		conn.reducers.onSetName(() => {
 			nameUpdating = false;
+			nameEditing = false;
 		});
 	};
 	const onDisconnect = () => {
