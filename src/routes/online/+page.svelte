@@ -139,7 +139,13 @@
 				bind:value={name}
 				disabled={nameUpdating}
 			/>
-			<button type="submit" class="btn btn-primary">Submit</button>
+			<button type="submit" class="btn btn-primary">
+				{#if nameUpdating}
+					<span class="loading loading-spinner loading-md"></span>
+				{:else}
+					Change
+				{/if}
+			</button>
 		</form>
 		{#if you.name}
 			<h2>Global Messages</h2>
