@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { SubscriptionHandle, You } from '$lib';
 	import { DbConnection, GlobalMessage, JoinRoom } from '../../module_bindings';
+	import { onDestroy } from 'svelte';
 
 	let {
 		conn,
@@ -36,18 +37,22 @@
 	conn.db.globalMessage.onInsert((ctx, msg) => {
 		globalMessages.push(msg);
 	});
-
 	conn.db.joinRoom.onInsert((ctx, room) => {
 		if (room.joinerId === you?.id) {
 			yourJoinRoom = room;
 			conn.db.joinRoom.removeOnInsert(() => {});
 		}
 	});
-
 	conn.reducers.onSetName(() => {
 		nameUpdating = false;
 		nameEditing = false;
 	});
+
+	function removeUpdateListeners() {
+		conn.db.globalMessage.removeOnInsert(() => {});
+		conn.db.joinRoom.removeOnInsert(() => {});
+		conn.reducers.removeOnSetName(() => {});
+	}
 
 	function enterRoom(yourJoinRoom: JoinRoom) {
 		if (globalMsgSubHandle?.isActive()) {
@@ -126,6 +131,10 @@
 		if (yourJoinRoom) {
 			enterRoom(yourJoinRoom);
 		}
+	});
+
+	onDestroy(() => {
+		removeUpdateListeners();
 	});
 </script>
 

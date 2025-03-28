@@ -5,6 +5,7 @@
 	import type { SubscriptionHandle, You } from '$lib';
 	import Home from '$lib/online/Home.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
+	import Room from '$lib/online/Room.svelte';
 
 	let s = $state<
 		| {
@@ -20,6 +21,7 @@
 	>({
 		page: 'init'
 	});
+
 	let players = new SvelteMap<number, Player>();
 	let you = $state<You | null>(null);
 
@@ -92,7 +94,7 @@
 		}}
 	/>
 {:else if s.page === 'room'}
-	<h1>TODO: You are in a room now!</h1>
+	<Room allJoinRoomHandle={s.allJoinRoomHandle} />
 {:else}
 	<h1>Not implemented yet</h1>
 {/if}
