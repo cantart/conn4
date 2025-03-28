@@ -160,9 +160,12 @@
 			// Go to your room
 
 			// unsubscribe subscriptions
-			// TODO: We can't we call unsubscribe??
-			// playerSubHandle?.unsubscribe();
-			// globalMsgSubHandle?.unsubscribe();
+			if (playerSubHandle?.isActive()) {
+				playerSubHandle?.unsubscribe();
+			}
+			if (globalMsgSubHandle?.isActive()) {
+				globalMsgSubHandle?.unsubscribe();
+			}
 
 			const allJoinRoomHandle = conn
 				.subscriptionBuilder()
@@ -181,12 +184,10 @@
 				.subscribe(`SELECT * FROM join_room WHERE room_id = '${yourJoinRoom.roomId}'`);
 
 			if (yourJoinRoomHandle?.isActive()) {
-				// TODO: We can't we call unsubscribe??
-				// yourJoinRoomHandle?.unsubscribe();
+				yourJoinRoomHandle?.unsubscribe();
 				db.r = {
 					allJoinRoomHandle
 				};
-				console.log('weofweifj');
 			}
 
 			goto(`/online/r/${yourJoinRoom.roomId}`);
