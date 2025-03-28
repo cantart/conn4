@@ -20,6 +20,8 @@
 	let nameEditing = $state(false);
 	let creatingRoom = $state(false);
 
+    // TODO: List all rooms
+
 	let globalMsgSubHandle = conn
 		.subscriptionBuilder()
 		.onApplied(() => {
