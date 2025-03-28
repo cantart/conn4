@@ -117,4 +117,12 @@ export class JoinRoomTableHandle {
   removeOnDelete = (cb: (ctx: EventContext, row: JoinRoom) => void) => {
     return this.tableCache.removeOnDelete(cb);
   }
-}
+
+  // Updates are only defined for tables with primary keys.
+  onUpdate = (cb: (ctx: EventContext, oldRow: JoinRoom, newRow: JoinRoom) => void) => {
+    return this.tableCache.onUpdate(cb);
+  }
+
+  removeOnUpdate = (cb: (ctx: EventContext, onRow: JoinRoom, newRow: JoinRoom) => void) => {
+    return this.tableCache.removeOnUpdate(cb);
+  }}

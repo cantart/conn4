@@ -44,7 +44,7 @@ pub struct Message {
 pub struct JoinRoom {
     #[index(btree)]
     room_id: u32,
-    #[unique]
+    #[primary_key]
     joiner_id: u32,
     #[unique]
     joiner_identity: Identity,

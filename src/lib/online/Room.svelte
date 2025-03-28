@@ -16,10 +16,33 @@
 		}
 	});
 
+	conn.db.joinRoom.onInsert((ctx, jr) => {
+		joinRooms.push(jr);
+	});
+	conn.db.joinRoom.onDelete((ctx, jr) => {
+		const index = joinRooms.findIndex((j) => j.joinerId === jr.joinerId);
+		if (index !== -1) {
+			joinRooms.splice(index, 1);
+		} else {
+			throw new Error(`Join room not found for deletion: ${jr.joinerId}`);
+		}
+	});
+	conn.db.joinRoom.onUpdate((ctx, o, n) => {
+		const index = joinRooms.findIndex((j) => j.joinerId === o.joinerId);
+		if (index !== -1) {
+			joinRooms[index] = n;
+		} else {
+			throw new Error(`Join room not found for update: ${o.joinerId}`);
+		}
+	});
 	onDestroy(() => {
 		if (allJoinRoomHandle.isActive()) {
 			allJoinRoomHandle.unsubscribe();
 		}
+		useRoom.stop();
+		conn.db.joinRoom.removeOnInsert(() => {});
+		conn.db.joinRoom.removeOnDelete(() => {});
+		conn.db.joinRoom.removeOnUpdate(() => {});
 	});
 </script>
 

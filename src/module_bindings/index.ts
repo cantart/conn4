@@ -106,6 +106,7 @@ const REMOTE_MODULE = {
     join_room: {
       tableName: "join_room",
       rowType: JoinRoom.getTypeScriptAlgebraicType(),
+      primaryKey: "joinerId",
     },
     message: {
       tableName: "message",
