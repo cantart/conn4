@@ -8,7 +8,7 @@
 		type ErrorContext
 	} from '../../module_bindings';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { beforeNavigate, goto } from '$app/navigation';
+	import { beforeNavigate } from '$app/navigation';
 
 	let you = $state<{ id: number; name: string | undefined } | null>(null);
 	let connected = $state(false);
@@ -16,7 +16,6 @@
 	let globalMessages = $state<GlobalMessage[]>([]);
 	let yourJoinRoom = $state<JoinRoom | null>(null);
 	import type { SubscriptionHandle } from '$lib';
-	import { db } from '$lib/db.svelte';
 
 	let players = new SvelteMap<number, Player>();
 	let nameUpdating = $state(false);
@@ -25,6 +24,7 @@
 	let globalMsgSubHandle = $state<SubscriptionHandle | null>(null);
 	let playerSubHandle = $state<SubscriptionHandle | null>(null);
 	let yourJoinRoomHandle = $state<SubscriptionHandle | null>(null);
+	let allJoinRoomHandle = $state<SubscriptionHandle | null>(null);
 
 	const onConnect = (conn: DbConnection, ident: Identity, token: string) => {
 		localStorage.setItem('auth_token', token);
@@ -53,30 +53,6 @@
 							name: player.name
 						};
 						name = player.name;
-
-						conn.db.joinRoom.onInsert((ctx, room) => {
-							if (room.joinerId === you?.id) {
-								yourJoinRoom = room;
-								conn.db.joinRoom.removeOnInsert(() => {});
-							}
-						});
-						// set up your join room listener
-						yourJoinRoomHandle = conn
-							.subscriptionBuilder()
-							.onApplied(() => {
-								for (const room of conn.db.joinRoom.iter()) {
-									console.log(room);
-									if (yourJoinRoom) {
-										console.error('Your join room already exists:', yourJoinRoom);
-										break;
-									}
-									yourJoinRoom = room;
-								}
-							})
-							.onError((ctx) => {
-								console.error('Error fetching your join room:', ctx.event);
-							})
-							.subscribe(`SELECT * FROM join_room WHERE joiner_id = '${you.id}'`);
 					}
 				}
 			})
@@ -86,7 +62,35 @@
 			nameUpdating = false;
 			nameEditing = false;
 		});
+
+		conn.db.joinRoom.onInsert((ctx, room) => {
+			if (room.joinerId === you?.id) {
+				yourJoinRoom = room;
+				conn.db.joinRoom.removeOnInsert(() => {});
+			}
+		});
 	};
+
+	$effect(() => {
+		if (!you) return;
+		// set up your join room listener
+		yourJoinRoomHandle = conn
+			.subscriptionBuilder()
+			.onApplied(() => {
+				for (const room of conn.db.joinRoom.iter()) {
+					if (yourJoinRoom) {
+						console.error('Your join room already exists:', yourJoinRoom);
+						break;
+					}
+					yourJoinRoom = room;
+				}
+			})
+			.onError((ctx) => {
+				console.error('Error fetching your join room:', ctx.event);
+			})
+			.subscribe(`SELECT * FROM join_room WHERE joiner_id = '${you.id}'`);
+	});
+
 	const onDisconnect = () => {
 		connected = false;
 	};
@@ -122,7 +126,7 @@
 	});
 
 	beforeNavigate(() => {
-		conn?.disconnect();
+		conn.disconnect();
 	});
 
 	const onNameSubmit = (
@@ -153,21 +157,21 @@
 		});
 	};
 
-	db.conn = conn;
-
 	$effect(() => {
 		if (yourJoinRoom) {
 			// Go to your room
 
-			// unsubscribe subscriptions
+			// cancel subscriptions
 			if (playerSubHandle?.isActive()) {
-				playerSubHandle?.unsubscribe();
+				playerSubHandle.unsubscribe();
+				playerSubHandle = null;
 			}
 			if (globalMsgSubHandle?.isActive()) {
-				globalMsgSubHandle?.unsubscribe();
+				globalMsgSubHandle.unsubscribe();
+				globalMsgSubHandle = null;
 			}
 
-			const allJoinRoomHandle = conn
+			allJoinRoomHandle = conn
 				.subscriptionBuilder()
 				.onApplied(() => {
 					if (!yourJoinRoom) {
@@ -184,13 +188,9 @@
 				.subscribe(`SELECT * FROM join_room WHERE room_id = '${yourJoinRoom.roomId}'`);
 
 			if (yourJoinRoomHandle?.isActive()) {
-				yourJoinRoomHandle?.unsubscribe();
-				db.r = {
-					allJoinRoomHandle
-				};
+				yourJoinRoomHandle.unsubscribe();
+				yourJoinRoomHandle = null;
 			}
-
-			goto(`/online/r/${yourJoinRoom.roomId}`);
 		}
 	});
 </script>
@@ -215,7 +215,10 @@
 	</form>
 {/snippet}
 
-{#if connected && you}
+{#if allJoinRoomHandle}
+	<!-- Inside a room -->
+	<h1>TODO: You are in a room now!</h1>
+{:else if connected && you}
 	<div class="flex flex-col gap-4 text-center">
 		{#if you.name}
 			<div class="flex items-center justify-center gap-2">
