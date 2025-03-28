@@ -35,6 +35,7 @@ export type JoinRoom = {
   joinerId: number,
   joinerIdentity: Identity,
   isOwner: boolean,
+  joinedAt: Timestamp,
 };
 
 /**
@@ -51,6 +52,7 @@ export namespace JoinRoom {
       new ProductTypeElement("joinerId", AlgebraicType.createU32Type()),
       new ProductTypeElement("joinerIdentity", AlgebraicType.createIdentityType()),
       new ProductTypeElement("isOwner", AlgebraicType.createBoolType()),
+      new ProductTypeElement("joinedAt", AlgebraicType.createTimestampType()),
     ]);
   }
 

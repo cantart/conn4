@@ -32,6 +32,7 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 export type Room = {
   id: number,
+  title: string,
 };
 
 /**
@@ -45,6 +46,7 @@ export namespace Room {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("id", AlgebraicType.createU32Type()),
+      new ProductTypeElement("title", AlgebraicType.createStringType()),
     ]);
   }
 

@@ -58,28 +58,6 @@ export class JoinRoomTableHandle {
     return this.tableCache.iter();
   }
   /**
-   * Access to the `room_id` unique index on the table `join_room`,
-   * which allows point queries on the field of the same name
-   * via the [`JoinRoomRoomIdUnique.find`] method.
-   *
-   * Users are encouraged not to explicitly reference this type,
-   * but to directly chain method calls,
-   * like `ctx.db.joinRoom.room_id().find(...)`.
-   *
-   * Get a handle on the `room_id` unique index on the table `join_room`.
-   */
-  room_id = {
-    // Find the subscribed row whose `room_id` column value is equal to `col_val`,
-    // if such a row is present in the client cache.
-    find: (col_val: number): JoinRoom | undefined => {
-      for (let row of this.tableCache.iter()) {
-        if (deepEqual(row.room_id, col_val)) {
-          return row;
-        }
-      }
-    },
-  };
-  /**
    * Access to the `joiner_id` unique index on the table `join_room`,
    * which allows point queries on the field of the same name
    * via the [`JoinRoomJoinerIdUnique.find`] method.
