@@ -69,20 +69,20 @@
 				if (creatingRoom) {
 					creatingRoom = false;
 				}
+
+				if (yourJoinRoomHandle?.isActive()) {
+					yourJoinRoomHandle.unsubscribe();
+					yourJoinRoomHandle = null;
+				}
+
+				toRoom({
+					allJoinRoomHandle
+				});
 			})
 			.onError((ctx) => {
 				console.error('Error fetching all join rooms:', ctx.event);
 			})
 			.subscribe(`SELECT * FROM join_room WHERE room_id = '${yourJoinRoom.roomId}'`);
-
-		if (yourJoinRoomHandle?.isActive()) {
-			yourJoinRoomHandle.unsubscribe();
-			yourJoinRoomHandle = null;
-		}
-
-		toRoom({
-			allJoinRoomHandle
-		});
 	}
 
 	function onNameSubmit(
