@@ -55,7 +55,7 @@
 		globalMessages.push(msg);
 	});
 	conn.db.joinRoom.onInsert((ctx, room) => {
-		if (room.joinerId === you?.id) {
+		if (room.joinerId === you.id) {
 			yourJoinRoom = room;
 			conn.db.joinRoom.removeOnInsert(() => {});
 		}
@@ -66,7 +66,7 @@
 	});
 
 	function enterRoom(yourJoinRoom: JoinRoom) {
-		if (globalMsgSubHandle?.isActive()) {
+		if (globalMsgSubHandle.isActive()) {
 			globalMsgSubHandle.unsubscribe();
 		}
 
@@ -98,7 +98,7 @@
 	) {
 		e.preventDefault();
 		const newName = new FormData(e.currentTarget).get('name') as string;
-		if (!newName || newName === you?.name) return;
+		if (!newName || newName === you.name) return;
 
 		conn.reducers.setName(newName);
 		nameUpdating = true;
@@ -149,9 +149,9 @@
 {/snippet}
 
 <div class="flex flex-col gap-4 text-center">
-	{#if you?.name}
+	{#if you.name}
 		<div class="flex items-center justify-center gap-2">
-			<h1>Hello, <span class="font-bold">{you?.name}</span>!</h1>
+			<h1>Hello, <span class="font-bold">{you.name}</span>!</h1>
 			<button
 				onclick={() => {
 					nameEditing = !nameEditing;
@@ -160,12 +160,12 @@
 			>
 		</div>
 	{/if}
-	{#if !you?.name}
+	{#if !you.name}
 		{@render nameInputForm()}
 	{:else if nameEditing}
 		{@render nameInputForm()}
 	{/if}
-	{#if you?.name}
+	{#if you.name}
 		<div>
 			<button onclick={createRoom} class="btn btn-primary" disabled={creatingRoom}
 				>Create Room{#if creatingRoom}
@@ -181,7 +181,7 @@
 					e.preventDefault();
 					const text = new FormData(e.currentTarget).get('text') as string;
 					if (!text) return;
-					conn?.reducers.sendGlobalMessage(text);
+					conn.reducers.sendGlobalMessage(text);
 					e.currentTarget.reset();
 				}}
 			>
