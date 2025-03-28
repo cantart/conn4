@@ -33,6 +33,7 @@ import {
 export type Room = {
   id: number,
   title: string,
+  createdAt: Timestamp,
 };
 
 /**
@@ -47,6 +48,7 @@ export namespace Room {
     return AlgebraicType.createProductType([
       new ProductTypeElement("id", AlgebraicType.createU32Type()),
       new ProductTypeElement("title", AlgebraicType.createStringType()),
+      new ProductTypeElement("createdAt", AlgebraicType.createTimestampType()),
     ]);
   }
 

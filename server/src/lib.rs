@@ -28,6 +28,7 @@ pub struct Room {
     #[auto_inc]
     id: u32,
     title: String,
+    created_at: Timestamp,
 }
 
 #[table(name = message, public)]
@@ -124,6 +125,7 @@ pub fn create_room(ctx: &ReducerContext) -> Result<(), String> {
     let room = ctx.db.room().try_insert(Room {
         id: 0,
         title: player.name.unwrap(),
+        created_at: ctx.timestamp,
     })?;
     join_to_room(ctx, room.id)
 }
