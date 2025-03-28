@@ -57,18 +57,6 @@
 				}
 			})
 			.subscribe(['SELECT * FROM player']);
-
-		conn.reducers.onSetName(() => {
-			nameUpdating = false;
-			nameEditing = false;
-		});
-
-		conn.db.joinRoom.onInsert((ctx, room) => {
-			if (room.joinerId === you?.id) {
-				yourJoinRoom = room;
-				conn.db.joinRoom.removeOnInsert(() => {});
-			}
-		});
 	};
 
 	$effect(() => {
@@ -123,6 +111,18 @@
 
 	conn.db.globalMessage.onInsert((ctx, msg) => {
 		globalMessages.push(msg);
+	});
+
+	conn.db.joinRoom.onInsert((ctx, room) => {
+		if (room.joinerId === you?.id) {
+			yourJoinRoom = room;
+			conn.db.joinRoom.removeOnInsert(() => {});
+		}
+	});
+
+	conn.reducers.onSetName(() => {
+		nameUpdating = false;
+		nameEditing = false;
 	});
 
 	beforeNavigate(() => {
