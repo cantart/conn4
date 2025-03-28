@@ -27,6 +27,7 @@ pub struct Room {
     #[primary_key]
     #[auto_inc]
     id: u32,
+    title: String,
 }
 
 #[table(name = message, public)]
@@ -115,7 +116,14 @@ fn validate_message_text(text: &str) -> Result<(), String> {
 
 #[reducer]
 pub fn create_room(ctx: &ReducerContext) -> Result<(), String> {
-    let room = ctx.db.room().try_insert(Room { id: 0 })?;
+    let player = find_sender_player(ctx);
+    if player.name.is_none() {
+        return Err("Cannot create a room without a name".to_string());
+    }
+    let room = ctx.db.room().try_insert(Room {
+        id: 0,
+        title: player.name.unwrap(),
+    })?;
     join_to_room(ctx, room.id)
 }
 
