@@ -11,7 +11,7 @@
 	}: {
 		conn: DbConnection;
 		you: You;
-		toRoom: (data: { allJoinRoomHandle: SubscriptionHandle }) => void;
+		toRoom: (data: { allJoinRoomHandle: SubscriptionHandle; roomId: number }) => void;
 	} = $props();
 
 	let name = $state(you.name);
@@ -82,7 +82,8 @@
 				}
 
 				toRoom({
-					allJoinRoomHandle
+					allJoinRoomHandle,
+					roomId: yourJoinRoom.roomId
 				});
 			})
 			.onError((ctx) => {
@@ -114,12 +115,15 @@
 		});
 	}
 
+	let joiningRoom = $state(false);
 	function joinRoom(room: Room) {
+		joiningRoom = true;
 		conn.reducers.joinToRoom(room.id);
 	}
 
 	$effect(() => {
 		if (yourJoinRoom) {
+			joiningRoom = false;
 			enterRoom(yourJoinRoom);
 		}
 	});
@@ -183,7 +187,7 @@
 				<ol>
 					{#each useRooms.rooms as room (room.id)}
 						<li>
-							<button class="btn btn-sm" onclick={() => joinRoom(room)}>
+							<button class="btn btn-sm" onclick={() => joinRoom(room)} disabled={joiningRoom}>
 								{room.title}
 							</button>
 						</li>

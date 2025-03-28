@@ -14,6 +14,7 @@
 		| {
 				page: 'room';
 				allJoinRoomHandle: SubscriptionHandle;
+				roomId: number;
 		  }
 		| {
 				page: 'init';
@@ -89,12 +90,13 @@
 		toRoom={(data) => {
 			s = {
 				page: 'room',
-				allJoinRoomHandle: data.allJoinRoomHandle
+				allJoinRoomHandle: data.allJoinRoomHandle,
+				roomId: data.roomId
 			};
 		}}
 	/>
 {:else if s.page === 'room'}
-	<Room allJoinRoomHandle={s.allJoinRoomHandle} />
+	<Room {conn} {players} {...s} />
 {:else}
 	<h1>Not implemented yet</h1>
 {/if}
