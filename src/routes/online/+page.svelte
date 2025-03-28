@@ -2,20 +2,19 @@
 	import type { Identity } from '@clockworklabs/spacetimedb-sdk';
 	import { DbConnection, Player, type ErrorContext } from '../../module_bindings';
 	import { beforeNavigate } from '$app/navigation';
-	import type { SubscriptionHandle, You } from '$lib';
+	import type { You } from '$lib';
 	import Home from '$lib/online/Home.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import Room from '$lib/online/Room.svelte';
+	import type { RoomData } from '$lib/online/types';
 
 	let s = $state<
 		| {
 				page: 'home';
 		  }
-		| {
+		| ({
 				page: 'room';
-				allJoinRoomHandle: SubscriptionHandle;
-				roomId: number;
-		  }
+		  } & Omit<RoomData, 'players' | 'you'>)
 		| {
 				page: 'init';
 		  }
@@ -90,13 +89,12 @@
 		toRoom={(data) => {
 			s = {
 				page: 'room',
-				allJoinRoomHandle: data.allJoinRoomHandle,
-				roomId: data.roomId
+				...data
 			};
 		}}
 	/>
-{:else if s.page === 'room'}
-	<Room {conn} {players} {...s} />
+{:else if s.page === 'room' && you}
+	<Room {...s} {players} {you} />
 {:else}
 	<h1>Not implemented yet</h1>
 {/if}

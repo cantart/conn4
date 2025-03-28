@@ -1,8 +1,9 @@
 <script lang="ts">
-	import type { SubscriptionHandle, You } from '$lib';
+	import type { You } from '$lib';
 	import { DbConnection, GlobalMessage, JoinRoom, Room } from '../../module_bindings';
 	import { onDestroy } from 'svelte';
 	import { UseRooms } from './UseRooms.svelte';
+	import type { RoomData } from './types';
 
 	let {
 		conn,
@@ -11,7 +12,7 @@
 	}: {
 		conn: DbConnection;
 		you: You;
-		toRoom: (data: { allJoinRoomHandle: SubscriptionHandle; roomId: number }) => void;
+		toRoom: (data: Omit<RoomData, 'players' | 'you'>) => void;
 	} = $props();
 
 	let name = $state(you.name);
@@ -65,6 +66,7 @@
 		nameEditing = false;
 	});
 
+	let joiningRoomTitle = $state<string | null>(null);
 	function enterRoom(yourJoinRoom: JoinRoom) {
 		if (globalMsgSubHandle.isActive()) {
 			globalMsgSubHandle.unsubscribe();
@@ -83,7 +85,9 @@
 
 				toRoom({
 					allJoinRoomHandle,
-					roomId: yourJoinRoom.roomId
+					roomId: yourJoinRoom.roomId,
+					initialRoomTitle: joiningRoomTitle,
+					conn
 				});
 			})
 			.onError((ctx) => {
@@ -115,15 +119,13 @@
 		});
 	}
 
-	let joiningRoom = $state(false);
 	function joinRoom(room: Room) {
-		joiningRoom = true;
+		joiningRoomTitle = room.title;
 		conn.reducers.joinToRoom(room.id);
 	}
 
 	$effect(() => {
 		if (yourJoinRoom) {
-			joiningRoom = false;
 			enterRoom(yourJoinRoom);
 		}
 	});
@@ -187,7 +189,11 @@
 				<ol>
 					{#each useRooms.rooms as room (room.id)}
 						<li>
-							<button class="btn btn-sm" onclick={() => joinRoom(room)} disabled={joiningRoom}>
+							<button
+								class="btn btn-sm"
+								onclick={() => joinRoom(room)}
+								disabled={!!joiningRoomTitle}
+							>
 								{room.title}
 							</button>
 						</li>
