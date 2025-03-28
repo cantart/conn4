@@ -2,6 +2,7 @@
 	import type { SubscriptionHandle, You } from '$lib';
 	import { DbConnection, GlobalMessage, JoinRoom } from '../../module_bindings';
 	import { onDestroy } from 'svelte';
+	import { UseRooms } from './UseRooms.svelte';
 
 	let {
 		conn,
@@ -20,7 +21,7 @@
 	let nameEditing = $state(false);
 	let creatingRoom = $state(false);
 
-    // TODO: List all rooms
+	const useRooms = new UseRooms(conn);
 
 	let globalMsgSubHandle = conn
 		.subscriptionBuilder()
@@ -49,12 +50,6 @@
 		nameUpdating = false;
 		nameEditing = false;
 	});
-
-	function removeUpdateListeners() {
-		conn.db.globalMessage.removeOnInsert(() => {});
-		conn.db.joinRoom.removeOnInsert(() => {});
-		conn.reducers.removeOnSetName(() => {});
-	}
 
 	function enterRoom(yourJoinRoom: JoinRoom) {
 		if (globalMsgSubHandle?.isActive()) {
@@ -136,7 +131,10 @@
 	});
 
 	onDestroy(() => {
-		removeUpdateListeners();
+		conn.db.globalMessage.removeOnInsert(() => {});
+		conn.db.joinRoom.removeOnInsert(() => {});
+		conn.reducers.removeOnSetName(() => {});
+		useRooms.stop();
 	});
 </script>
 
