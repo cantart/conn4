@@ -41,13 +41,14 @@ pub struct Message {
 
 #[table(name = join_room, public)]
 pub struct JoinRoom {
-    #[unique]
+    #[index(btree)]
     room_id: u32,
     #[unique]
     joiner_id: u32,
     #[unique]
     joiner_identity: Identity,
     is_owner: bool,
+    joined_at: Timestamp,
 }
 
 #[table(name = delete_global_message_schedule, scheduled(delete_all_global_messages))]
@@ -149,7 +150,8 @@ pub fn join_to_room(ctx: &ReducerContext, room_id: u32) -> Result<(), String> {
             joiner_id: player.id,
             room_id,
             joiner_identity: ctx.sender,
-            is_owner: ctx.db.join_room().room_id().find(room_id).is_none(),
+            is_owner: ctx.db.join_room().room_id().filter(room_id).count() == 0,
+            joined_at: ctx.timestamp,
         })?;
         Ok(())
     }
@@ -159,8 +161,13 @@ pub fn join_to_room(ctx: &ReducerContext, room_id: u32) -> Result<(), String> {
 pub fn leave_room(ctx: &ReducerContext) {
     if let Some(jr) = ctx.db.join_room().joiner_identity().find(&ctx.sender) {
         ctx.db.join_room().joiner_identity().delete(&ctx.sender);
-        // remove room if no one is in it
-        if ctx.db.join_room().room_id().find(jr.room_id).is_none() {
+        if let Some(j) = ctx.db.join_room().room_id().filter(jr.room_id).next() {
+            // TODO: Can we assign a new owner to the true next player that joined after the owner? That is, order by joined_at.
+            ctx.db.join_room().joiner_id().update(JoinRoom {
+                is_owner: true, // Transfer ownership to the first player that happens to be returned by the filter
+                ..j
+            });
+        } else {
             ctx.db.room().id().delete(jr.room_id);
         }
     }
