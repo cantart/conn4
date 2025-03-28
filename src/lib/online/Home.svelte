@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SubscriptionHandle, You } from '$lib';
-	import { DbConnection, GlobalMessage, JoinRoom } from '../../module_bindings';
+	import { DbConnection, GlobalMessage, JoinRoom, Room } from '../../module_bindings';
 	import { onDestroy } from 'svelte';
 	import { UseRooms } from './UseRooms.svelte';
 
@@ -114,6 +114,10 @@
 		});
 	}
 
+	function joinRoom(room: Room) {
+		conn.reducers.joinToRoom(room.id);
+	}
+
 	$effect(() => {
 		if (yourJoinRoom) {
 			enterRoom(yourJoinRoom);
@@ -166,28 +170,42 @@
 		{@render nameInputForm()}
 	{/if}
 	{#if you.name}
-		<div>
-			<button onclick={createRoom} class="btn btn-primary" disabled={creatingRoom}
-				>Create Room{#if creatingRoom}
-					<span class="loading loading-spinner loading-md"></span>
-				{/if}</button
-			>
-		</div>
-		<div class="space-y-2">
-			<h2>Global Messages</h2>
-			<form
-				class="flex items-center gap-2"
-				onsubmit={(e) => {
-					e.preventDefault();
-					const text = new FormData(e.currentTarget).get('text') as string;
-					if (!text) return;
-					conn.reducers.sendGlobalMessage(text);
-					e.currentTarget.reset();
-				}}
-			>
-				<input name="text" class="input input-ghost" type="text" placeholder="Enter a message" />
-				<button type="submit" class="btn btn-primary">Send</button>
-			</form>
+		<div class="space-y-8">
+			<div>
+				<button onclick={createRoom} class="btn btn-primary" disabled={creatingRoom}
+					>Create Room{#if creatingRoom}
+						<span class="loading loading-spinner loading-md"></span>
+					{/if}</button
+				>
+			</div>
+			<div class={useRooms.rooms ? 'space-y-2' : 'hidden'}>
+				<h2>Rooms ({useRooms.rooms.length})</h2>
+				<ol>
+					{#each useRooms.rooms as room (room.id)}
+						<li>
+							<button class="btn btn-sm" onclick={() => joinRoom(room)}>
+								{room.title}
+							</button>
+						</li>
+					{/each}
+				</ol>
+			</div>
+			<div class="space-y-2">
+				<h2>Global Messages</h2>
+				<form
+					class="flex items-center gap-2"
+					onsubmit={(e) => {
+						e.preventDefault();
+						const text = new FormData(e.currentTarget).get('text') as string;
+						if (!text) return;
+						conn.reducers.sendGlobalMessage(text);
+						e.currentTarget.reset();
+					}}
+				>
+					<input name="text" class="input input-ghost" type="text" placeholder="Enter a message" />
+					<button type="submit" class="btn btn-primary">Send</button>
+				</form>
+			</div>
 		</div>
 	{/if}
 </div>
