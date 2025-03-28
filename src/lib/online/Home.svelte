@@ -35,7 +35,21 @@
 		})
 		.subscribe('SELECT * FROM global_message');
 
-	let yourJoinRoomHandle: SubscriptionHandle | null = null;
+	let yourJoinRoomHandle = conn
+		.subscriptionBuilder()
+		.onApplied(() => {
+			for (const room of conn.db.joinRoom.iter()) {
+				if (yourJoinRoom) {
+					console.error('Your join room already exists:', yourJoinRoom);
+					break;
+				}
+				yourJoinRoom = room;
+			}
+		})
+		.onError((ctx) => {
+			console.error('Error fetching your join room:', ctx.event);
+		})
+		.subscribe(`SELECT * FROM join_room WHERE joiner_id = '${you.id}'`);
 
 	conn.db.globalMessage.onInsert((ctx, msg) => {
 		globalMessages.push(msg);
@@ -59,17 +73,12 @@
 		const allJoinRoomHandle = conn
 			.subscriptionBuilder()
 			.onApplied(() => {
-				if (!yourJoinRoom) {
-					console.error('Your join room is null:', yourJoinRoom);
-					return;
-				}
 				if (creatingRoom) {
 					creatingRoom = false;
 				}
 
-				if (yourJoinRoomHandle?.isActive()) {
+				if (yourJoinRoomHandle.isActive()) {
 					yourJoinRoomHandle.unsubscribe();
-					yourJoinRoomHandle = null;
 				}
 
 				toRoom({
@@ -104,25 +113,6 @@
 			}
 		});
 	}
-
-	$effect(() => {
-		// set up your join room listener
-		yourJoinRoomHandle = conn
-			.subscriptionBuilder()
-			.onApplied(() => {
-				for (const room of conn.db.joinRoom.iter()) {
-					if (yourJoinRoom) {
-						console.error('Your join room already exists:', yourJoinRoom);
-						break;
-					}
-					yourJoinRoom = room;
-				}
-			})
-			.onError((ctx) => {
-				console.error('Error fetching your join room:', ctx.event);
-			})
-			.subscribe(`SELECT * FROM join_room WHERE joiner_id = '${you.id}'`);
-	});
 
 	$effect(() => {
 		if (yourJoinRoom) {
