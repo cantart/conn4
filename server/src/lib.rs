@@ -35,8 +35,9 @@ pub struct Room {
 
 #[table(name = message, public)]
 pub struct Message {
+    #[index(btree)]
     room_id: u32,
-    sender: Identity,
+    sender_id: u32,
     #[index(btree)]
     sent_at: Timestamp,
     text: String,
@@ -99,7 +100,7 @@ pub fn send_message(ctx: &ReducerContext, text: String) -> Result<(), String> {
     if let Some(jr) = ctx.db.join_room().joiner_id().find(player.id) {
         ctx.db.message().try_insert(Message {
             room_id: jr.room_id,
-            sender: ctx.sender,
+            sender_id: player.id,
             sent_at: ctx.timestamp,
             text,
         })?;
@@ -161,6 +162,15 @@ pub fn join_to_room(ctx: &ReducerContext, room_id: u32) -> Result<(), String> {
 }
 
 #[reducer]
+fn delete_room(ctx: &ReducerContext, room_id: u32) {
+    ctx.db.room().id().delete(room_id);
+    // Cascade delete messages
+    for m in ctx.db.message().room_id().filter(room_id) {
+        ctx.db.message().room_id().delete(m.room_id);
+    }
+}
+
+#[reducer]
 pub fn leave_room(ctx: &ReducerContext) {
     ctx.db.join_room().joiner_identity().delete(ctx.sender);
     let player = find_sender_player(ctx);
@@ -173,7 +183,7 @@ pub fn leave_room(ctx: &ReducerContext) {
             });
         } else {
             // Case: the owner of the room who is leaving is the last player in the room
-            ctx.db.room().id().delete(room.id);
+            delete_room(ctx, room.id);
         }
     }
 }
