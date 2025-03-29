@@ -30,17 +30,15 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-export type Message = {
+
+export type DeleteRoom = {
   roomId: number,
-  senderId: number,
-  sentAt: Timestamp,
-  text: string,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace Message {
+export namespace DeleteRoom {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
@@ -48,20 +46,16 @@ export namespace Message {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
-      new ProductTypeElement("senderId", AlgebraicType.createU32Type()),
-      new ProductTypeElement("sentAt", AlgebraicType.createTimestampType()),
-      new ProductTypeElement("text", AlgebraicType.createStringType()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: Message): void {
-    Message.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: DeleteRoom): void {
+    DeleteRoom.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): Message {
-    return Message.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): DeleteRoom {
+    return DeleteRoom.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }
-
 

@@ -36,6 +36,8 @@ import { CreateRoom } from "./create_room_reducer.ts";
 export { CreateRoom };
 import { DeleteAllGlobalMessages } from "./delete_all_global_messages_reducer.ts";
 export { DeleteAllGlobalMessages };
+import { DeleteRoom } from "./delete_room_reducer.ts";
+export { DeleteRoom };
 import { Hello } from "./hello_reducer.ts";
 export { Hello };
 import { HelloWithText } from "./hello_with_text_reducer.ts";
@@ -132,6 +134,10 @@ const REMOTE_MODULE = {
       reducerName: "delete_all_global_messages",
       argsType: DeleteAllGlobalMessages.getTypeScriptAlgebraicType(),
     },
+    delete_room: {
+      reducerName: "delete_room",
+      argsType: DeleteRoom.getTypeScriptAlgebraicType(),
+    },
     hello: {
       reducerName: "hello",
       argsType: Hello.getTypeScriptAlgebraicType(),
@@ -197,6 +203,7 @@ const REMOTE_MODULE = {
 export type Reducer = never
 | { name: "CreateRoom", args: CreateRoom }
 | { name: "DeleteAllGlobalMessages", args: DeleteAllGlobalMessages }
+| { name: "DeleteRoom", args: DeleteRoom }
 | { name: "Hello", args: Hello }
 | { name: "HelloWithText", args: HelloWithText }
 | { name: "IdentityConnected", args: IdentityConnected }
@@ -237,6 +244,22 @@ export class RemoteReducers {
 
   removeOnDeleteAllGlobalMessages(callback: (ctx: ReducerEventContext, arg: DeleteGlobalMessageSchedule) => void) {
     this.connection.offReducer("delete_all_global_messages", callback);
+  }
+
+  deleteRoom(roomId: number) {
+    const __args = { roomId };
+    let __writer = new BinaryWriter(1024);
+    DeleteRoom.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("delete_room", __argsBuffer, this.setCallReducerFlags.deleteRoomFlags);
+  }
+
+  onDeleteRoom(callback: (ctx: ReducerEventContext, roomId: number) => void) {
+    this.connection.onReducer("delete_room", callback);
+  }
+
+  removeOnDeleteRoom(callback: (ctx: ReducerEventContext, roomId: number) => void) {
+    this.connection.offReducer("delete_room", callback);
   }
 
   hello() {
@@ -370,6 +393,11 @@ export class SetReducerFlags {
   deleteAllGlobalMessagesFlags: CallReducerFlags = 'FullUpdate';
   deleteAllGlobalMessages(flags: CallReducerFlags) {
     this.deleteAllGlobalMessagesFlags = flags;
+  }
+
+  deleteRoomFlags: CallReducerFlags = 'FullUpdate';
+  deleteRoom(flags: CallReducerFlags) {
+    this.deleteRoomFlags = flags;
   }
 
   helloFlags: CallReducerFlags = 'FullUpdate';

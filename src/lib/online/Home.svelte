@@ -22,10 +22,6 @@
 	let nameEditing = $state(false);
 	let creatingRoom = $state(false);
 
-	$effect(() => {
-		console.log($state.snapshot(globalMessages));
-	});
-
 	const useRooms = new UseRooms(conn);
 
 	conn.db.globalMessage.onInsert((ctx, msg) => {
