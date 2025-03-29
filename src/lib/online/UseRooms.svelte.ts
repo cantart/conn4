@@ -2,8 +2,6 @@ import { SubscriptionHandle } from "$lib";
 import { Room, DbConnection } from "../../module_bindings";
 
 export class UseRooms {
-    active = false;
-
     _rooms = $state<Room[]>([]);
 
     conn: DbConnection;
@@ -15,7 +13,6 @@ export class UseRooms {
         this.roomSubHandle = conn
             .subscriptionBuilder()
             .onApplied(() => {
-                this.active = true;
                 this._rooms = Array.from(conn.db.room.iter()).sort((a, b) => {
                     return a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime();
                 });
@@ -46,7 +43,6 @@ export class UseRooms {
         this.conn.db.room.removeOnInsert(() => { });
         this.conn.db.room.removeOnDelete(() => { });
         this.conn.db.room.removeOnUpdate(() => { });
-        this.active = false;
     }
 
     get rooms() {
