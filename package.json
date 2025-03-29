@@ -20,7 +20,8 @@
 		"modpub": "spacetime publish --project-path server fial",
 		"db": "spacetime start",
 		"logs": "spacetime logs fial",
-		"sql": "spacetime sql fial"
+		"sql": "spacetime sql fial",
+		"ngrok": "ngrok http 3000"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
