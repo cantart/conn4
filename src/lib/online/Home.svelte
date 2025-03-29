@@ -22,15 +22,17 @@
 	let nameEditing = $state(false);
 	let creatingRoom = $state(false);
 
+	$effect(() => {
+		console.log($state.snapshot(globalMessages));
+	});
+
 	const useRooms = new UseRooms(conn);
 
+	conn.db.globalMessage.onInsert((ctx, msg) => {
+		globalMessages.push(msg);
+	});
 	let globalMsgSubHandle = conn
 		.subscriptionBuilder()
-		.onApplied(() => {
-			for (const msg of conn.db.globalMessage.iter()) {
-				globalMessages.push(msg);
-			}
-		})
 		.onError((ctx) => {
 			console.error('Error fetching global messages:', ctx.event);
 		})
@@ -52,9 +54,6 @@
 		})
 		.subscribe(`SELECT * FROM join_room WHERE joiner_id = '${you.id}'`);
 
-	conn.db.globalMessage.onInsert((ctx, msg) => {
-		globalMessages.push(msg);
-	});
 	conn.db.joinRoom.onInsert((ctx, room) => {
 		if (room.joinerId === you.id) {
 			yourJoinRoom = room;
