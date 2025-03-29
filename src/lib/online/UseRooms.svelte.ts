@@ -10,20 +10,11 @@ export class UseRooms {
     constructor(conn: DbConnection) {
         this.conn = conn;
 
-        this.roomSubHandle = conn
-            .subscriptionBuilder()
-            .onApplied(() => {
-                this._rooms = Array.from(conn.db.room.iter()).sort((a, b) => {
-                    return a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime();
-                });
-            })
-            .onError((ctx) => {
-                console.error('Error fetching rooms:', ctx.event);
-            })
-            .subscribe('SELECT * FROM room');
-
         conn.db.room.onInsert((ctx, room) => {
             this._rooms.push(room);
+            this._rooms.sort((a, b) => {
+                return a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime();
+            });
         });
         conn.db.room.onDelete((ctx, room) => {
             this._rooms = this._rooms.filter((r) => r.id !== room.id);
@@ -34,11 +25,19 @@ export class UseRooms {
                 this._rooms[index] = room;
             }
         });
+        this.roomSubHandle = conn
+            .subscriptionBuilder()
+            .onError((ctx) => {
+                console.error('Error fetching rooms:', ctx.event);
+            })
+            .subscribe('SELECT * FROM room');
     }
 
     stop() {
         if (this.roomSubHandle.isActive()) {
-            this.roomSubHandle.unsubscribe();
+            this.roomSubHandle.unsubscribeThen(() => {
+                // TODO: maybe a good idea to make this function async
+            });
         }
         this.conn.db.room.removeOnInsert(() => { });
         this.conn.db.room.removeOnDelete(() => { });
