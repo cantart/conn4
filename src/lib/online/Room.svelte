@@ -15,12 +15,22 @@
 		console.log($state.snapshot(messages));
 	});
 
-	conn.db.message.onInsert((ctx, msg) => {
-		messages.push(msg);
-		messages.sort((a, b) => b.sentAt.toDate().getTime() - a.sentAt.toDate().getTime());
-	});
 	let messageSubHandle = conn
 		.subscriptionBuilder()
+		.onApplied(() => {
+			messages = Array.from(conn.db.message.iter()).sort(
+				(a, b) => b.sentAt.toDate().getTime() - a.sentAt.toDate().getTime()
+			);
+			conn.db.message.onInsert((ctx, msg) => {
+				let existingMessage = messages.find((m) => m.sentAt === msg.sentAt);
+				if (existingMessage) {
+					existingMessage = msg;
+					return;
+				}
+				messages.push(msg);
+				messages.sort((a, b) => b.sentAt.toDate().getTime() - a.sentAt.toDate().getTime());
+			});
+		})
 		.onError((ctx) => {
 			console.error('Error fetching messages:', ctx.event);
 		})
