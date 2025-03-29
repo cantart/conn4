@@ -72,24 +72,28 @@
 	{/if}
 
 	<div class="flex gap-4">
-		<ul>
-			{#each joinRooms as jr (jr.joinerId)}
-				{@const player = players.get(jr.joinerId)}
-				<li>
-					{#if player}
-						{player.name}
-						{#if player.id === you.id}
-							(You)
-						{/if}
-					{:else}
-						<span class="loading loading-spinner loading-sm"></span>
-					{/if}
-				</li>
-			{/each}
-		</ul>
+		{@render playerList()}
 		{@render chat()}
 	</div>
 </div>
+
+{#snippet playerList()}
+	<ul>
+		{#each joinRooms as jr (jr.joinerId)}
+			{@const player = players.get(jr.joinerId)}
+			<li>
+				{#if player}
+					{player.name}
+					{#if player.id === you.id}
+						(You)
+					{/if}
+				{:else}
+					<span class="loading loading-spinner loading-sm"></span>
+				{/if}
+			</li>
+		{/each}
+	</ul>
+{/snippet}
 
 {#snippet chat()}
 	<div class="space-y-4 rounded">
