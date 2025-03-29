@@ -68,7 +68,7 @@
 	};
 
 	const conn = DbConnection.builder()
-		.withUri('ws://localhost:3000')
+		.withUri('ws://91d9-126-109-236-51.ngrok-free.app/')
 		.withModuleName('fial')
 		.withToken(localStorage.getItem('auth_token') || '')
 		.onConnect(onConnect)
