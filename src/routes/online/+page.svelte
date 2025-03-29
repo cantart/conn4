@@ -68,7 +68,7 @@
 	};
 
 	const conn = DbConnection.builder()
-		.withUri('wss://91d9-126-109-236-51.ngrok-free.app/')
+		.withUri(import.meta.env.VITE_SPACETIME_DB_URI ?? 'ws://localhost:3000')
 		.withModuleName('fial')
 		.withToken(localStorage.getItem('auth_token') || '')
 		.onConnect(onConnect)
