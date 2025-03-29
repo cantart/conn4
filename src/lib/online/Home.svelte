@@ -38,28 +38,22 @@
 		})
 		.subscribe('SELECT * FROM global_message');
 
+	conn.db.joinRoom.onInsert((ctx, jr) => {
+		if (jr.joinerId === you.id) {
+			yourJoinRoom = jr;
+			conn.db.joinRoom.removeOnInsert(() => {});
+		} else {
+			// This shouldn't happen because of the WHERE clause in the subscription
+			console.error('Room of another user', jr);
+		}
+	});
 	let yourJoinRoomHandle = conn
 		.subscriptionBuilder()
-		.onApplied(() => {
-			for (const room of conn.db.joinRoom.iter()) {
-				if (yourJoinRoom) {
-					console.error('Your join room already exists:', yourJoinRoom);
-					break;
-				}
-				yourJoinRoom = room;
-			}
-		})
 		.onError((ctx) => {
 			console.error('Error fetching your join room:', ctx.event);
 		})
 		.subscribe(`SELECT * FROM join_room WHERE joiner_id = '${you.id}'`);
 
-	conn.db.joinRoom.onInsert((ctx, room) => {
-		if (room.joinerId === you.id) {
-			yourJoinRoom = room;
-			conn.db.joinRoom.removeOnInsert(() => {});
-		}
-	});
 	conn.reducers.onSetName(() => {
 		nameUpdating = false;
 		nameEditing = false;
@@ -78,10 +72,6 @@
 					creatingRoom = false;
 				}
 
-				if (yourJoinRoomHandle.isActive()) {
-					yourJoinRoomHandle.unsubscribe();
-				}
-
 				toRoom({
 					allJoinRoomHandle,
 					roomId: yourJoinRoom.roomId,
@@ -93,6 +83,10 @@
 				console.error('Error fetching all join rooms:', ctx.event);
 			})
 			.subscribe(`SELECT * FROM join_room WHERE room_id = '${yourJoinRoom.roomId}'`);
+
+		if (yourJoinRoomHandle.isActive()) {
+			yourJoinRoomHandle.unsubscribe();
+		}
 	}
 
 	function onNameSubmit(
