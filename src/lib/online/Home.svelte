@@ -44,15 +44,11 @@
 		nameEditing = false;
 	});
 
-	let joiningRoomTitle = $state<string | null>(null);
+	let joiningRoomTitle = $state('');
 	function enterRoom(yourJoinRoom: JoinRoom) {
 		const allJoinRoomHandle = conn
 			.subscriptionBuilder()
 			.onApplied(() => {
-				if (creatingRoom) {
-					creatingRoom = false;
-				}
-
 				toRoom({
 					allJoinRoomHandle,
 					roomId: yourJoinRoom.roomId,
@@ -84,12 +80,13 @@
 	}
 
 	function createRoom() {
-		conn.reducers.createRoom();
 		creatingRoom = true;
+		conn.reducers.createRoom(joiningRoomTitle);
 		conn.reducers.onCreateRoom((ctx) => {
 			if (ctx.event.status.tag === 'Failed') {
 				console.error('Failed to create room:', ctx.event.status.value);
 			}
+			creatingRoom = false;
 		});
 	}
 
@@ -151,11 +148,33 @@
 	{#if you.name}
 		<div class="space-y-8">
 			<div>
-				<button onclick={createRoom} class="btn btn-primary" disabled={creatingRoom}
-					>Create Room{#if creatingRoom}
-						<span class="loading loading-spinner loading-md"></span>
-					{/if}</button
+				<form
+					onsubmit={(e) => {
+						e.preventDefault();
+						createRoom();
+					}}
+					class="dropdown dropdown-hover dropdown-center"
 				>
+					<button type="submit" class="btn btn-primary" disabled={creatingRoom}
+						>Create Room{#if creatingRoom}
+							<span class="loading loading-spinner loading-md"></span>
+						{/if}</button
+					>
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<div
+						tabindex="0"
+						class="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
+					>
+						<input
+							type="text"
+							name="title"
+							placeholder="Enter room title"
+							class="input input-bordered w-full max-w-xs"
+							bind:value={joiningRoomTitle}
+							required
+						/>
+					</div>
+				</form>
 			</div>
 			<div class={useRooms.rooms ? 'space-y-2' : 'hidden'}>
 				<h2>Rooms ({useRooms.rooms.length})</h2>

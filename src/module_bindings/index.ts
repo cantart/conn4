@@ -186,15 +186,19 @@ export type Reducer = never
 export class RemoteReducers {
   constructor(private connection: DbConnectionImpl, private setCallReducerFlags: SetReducerFlags) {}
 
-  createRoom() {
-    this.connection.callReducer("create_room", new Uint8Array(0), this.setCallReducerFlags.createRoomFlags);
+  createRoom(title: string) {
+    const __args = { title };
+    let __writer = new BinaryWriter(1024);
+    CreateRoom.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("create_room", __argsBuffer, this.setCallReducerFlags.createRoomFlags);
   }
 
-  onCreateRoom(callback: (ctx: ReducerEventContext) => void) {
+  onCreateRoom(callback: (ctx: ReducerEventContext, title: string) => void) {
     this.connection.onReducer("create_room", callback);
   }
 
-  removeOnCreateRoom(callback: (ctx: ReducerEventContext) => void) {
+  removeOnCreateRoom(callback: (ctx: ReducerEventContext, title: string) => void) {
     this.connection.offReducer("create_room", callback);
   }
 

@@ -31,7 +31,9 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 
-export type CreateRoom = {};
+export type CreateRoom = {
+  title: string,
+};
 
 /**
  * A namespace for generated helper functions.
@@ -43,6 +45,7 @@ export namespace CreateRoom {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
+      new ProductTypeElement("title", AlgebraicType.createStringType()),
     ]);
   }
 

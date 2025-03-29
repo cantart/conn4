@@ -1,8 +1,4 @@
-use std::time::Duration;
-
-use spacetimedb::{
-    reducer, table, Identity, ReducerContext, ScheduleAt, Table, TimeDuration, Timestamp,
-};
+use spacetimedb::{reducer, table, Identity, ReducerContext, Table, Timestamp};
 
 #[table(name = player, public)]
 pub struct Player {
@@ -83,15 +79,24 @@ fn validate_message_text(text: &str) -> Result<(), String> {
     }
 }
 
+fn validate_room_title(title: &str) -> Result<(), String> {
+    if title.is_empty() {
+        Err("Room title must not be empty".to_string())
+    } else {
+        Ok(())
+    }
+}
+
 #[reducer]
-pub fn create_room(ctx: &ReducerContext) -> Result<(), String> {
+pub fn create_room(ctx: &ReducerContext, title: String) -> Result<(), String> {
+    validate_room_title(&title)?;
     let player = find_sender_player(ctx);
     if player.name.is_none() {
         return Err("Cannot create a room without a name".to_string());
     }
     let room = ctx.db.room().try_insert(Room {
         id: 0,
-        title: player.name.unwrap(),
+        title,
         created_at: ctx.timestamp,
         owner_id: player.id,
     })?;
