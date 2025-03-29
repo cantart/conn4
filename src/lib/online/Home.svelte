@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { You } from '$lib';
-	import { DbConnection, GlobalMessage, JoinRoom, Room } from '../../module_bindings';
+	import { DbConnection, JoinRoom, Room } from '../../module_bindings';
 	import { onDestroy } from 'svelte';
 	import { UseRooms } from './UseRooms.svelte';
 	import type { RoomData } from './types';
@@ -16,23 +16,12 @@
 	} = $props();
 
 	let name = $state(you.name);
-	let globalMessages = $state<GlobalMessage[]>([]);
 	let yourJoinRoom = $state<JoinRoom | null>(null);
 	let nameUpdating = $state(false);
 	let nameEditing = $state(false);
 	let creatingRoom = $state(false);
 
 	const useRooms = new UseRooms(conn);
-
-	conn.db.globalMessage.onInsert((ctx, msg) => {
-		globalMessages.push(msg);
-	});
-	let globalMsgSubHandle = conn
-		.subscriptionBuilder()
-		.onError((ctx) => {
-			console.error('Error fetching global messages:', ctx.event);
-		})
-		.subscribe('SELECT * FROM global_message');
 
 	conn.db.joinRoom.onInsert((ctx, jr) => {
 		if (jr.joinerId === you.id) {
@@ -57,10 +46,6 @@
 
 	let joiningRoomTitle = $state<string | null>(null);
 	function enterRoom(yourJoinRoom: JoinRoom) {
-		if (globalMsgSubHandle.isActive()) {
-			globalMsgSubHandle.unsubscribe();
-		}
-
 		const allJoinRoomHandle = conn
 			.subscriptionBuilder()
 			.onApplied(() => {
@@ -120,7 +105,6 @@
 	});
 
 	onDestroy(() => {
-		conn.db.globalMessage.removeOnInsert(() => {});
 		conn.db.joinRoom.removeOnInsert(() => {});
 		conn.reducers.removeOnSetName(() => {});
 		useRooms.stop();
@@ -188,22 +172,6 @@
 						</li>
 					{/each}
 				</ol>
-			</div>
-			<div class="space-y-2">
-				<h2>Global Messages</h2>
-				<form
-					class="flex items-center gap-2"
-					onsubmit={(e) => {
-						e.preventDefault();
-						const text = new FormData(e.currentTarget).get('text') as string;
-						if (!text) return;
-						conn.reducers.sendGlobalMessage(text);
-						e.currentTarget.reset();
-					}}
-				>
-					<input name="text" class="input input-ghost" type="text" placeholder="Enter a message" />
-					<button type="submit" class="btn btn-primary">Send</button>
-				</form>
 			</div>
 		</div>
 	{/if}

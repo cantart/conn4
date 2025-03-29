@@ -68,7 +68,7 @@
 	};
 
 	const conn = DbConnection.builder()
-		.withUri('https://maincloud.spacetimedb.com')
+		.withUri('ws://maincloud.spacetimedb.com')
 		.withModuleName('fial')
 		.withToken(localStorage.getItem('auth_token') || '')
 		.onConnect(onConnect)

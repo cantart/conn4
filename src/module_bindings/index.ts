@@ -34,8 +34,6 @@ import {
 // Import and reexport all reducer arg types
 import { CreateRoom } from "./create_room_reducer.ts";
 export { CreateRoom };
-import { DeleteAllGlobalMessages } from "./delete_all_global_messages_reducer.ts";
-export { DeleteAllGlobalMessages };
 import { DeleteRoom } from "./delete_room_reducer.ts";
 export { DeleteRoom };
 import { Hello } from "./hello_reducer.ts";
@@ -50,20 +48,14 @@ import { JoinToRoom } from "./join_to_room_reducer.ts";
 export { JoinToRoom };
 import { LeaveRoom } from "./leave_room_reducer.ts";
 export { LeaveRoom };
-import { SendGlobalMessage } from "./send_global_message_reducer.ts";
-export { SendGlobalMessage };
 import { SendMessage } from "./send_message_reducer.ts";
 export { SendMessage };
 import { SetName } from "./set_name_reducer.ts";
 export { SetName };
 
 // Import and reexport all table handle types
-import { DeleteGlobalMessageScheduleTableHandle } from "./delete_global_message_schedule_table.ts";
-export { DeleteGlobalMessageScheduleTableHandle };
 import { GameTableHandle } from "./game_table.ts";
 export { GameTableHandle };
-import { GlobalMessageTableHandle } from "./global_message_table.ts";
-export { GlobalMessageTableHandle };
 import { JoinRoomTableHandle } from "./join_room_table.ts";
 export { JoinRoomTableHandle };
 import { MessageTableHandle } from "./message_table.ts";
@@ -74,12 +66,8 @@ import { RoomTableHandle } from "./room_table.ts";
 export { RoomTableHandle };
 
 // Import and reexport all types
-import { DeleteGlobalMessageSchedule } from "./delete_global_message_schedule_type.ts";
-export { DeleteGlobalMessageSchedule };
 import { Game } from "./game_type.ts";
 export { Game };
-import { GlobalMessage } from "./global_message_type.ts";
-export { GlobalMessage };
 import { JoinRoom } from "./join_room_type.ts";
 export { JoinRoom };
 import { Message } from "./message_type.ts";
@@ -91,19 +79,9 @@ export { Room };
 
 const REMOTE_MODULE = {
   tables: {
-    delete_global_message_schedule: {
-      tableName: "delete_global_message_schedule",
-      rowType: DeleteGlobalMessageSchedule.getTypeScriptAlgebraicType(),
-      primaryKey: "scheduledId",
-    },
     game: {
       tableName: "game",
       rowType: Game.getTypeScriptAlgebraicType(),
-    },
-    global_message: {
-      tableName: "global_message",
-      rowType: GlobalMessage.getTypeScriptAlgebraicType(),
-      primaryKey: "id",
     },
     join_room: {
       tableName: "join_room",
@@ -129,10 +107,6 @@ const REMOTE_MODULE = {
     create_room: {
       reducerName: "create_room",
       argsType: CreateRoom.getTypeScriptAlgebraicType(),
-    },
-    delete_all_global_messages: {
-      reducerName: "delete_all_global_messages",
-      argsType: DeleteAllGlobalMessages.getTypeScriptAlgebraicType(),
     },
     delete_room: {
       reducerName: "delete_room",
@@ -161,10 +135,6 @@ const REMOTE_MODULE = {
     leave_room: {
       reducerName: "leave_room",
       argsType: LeaveRoom.getTypeScriptAlgebraicType(),
-    },
-    send_global_message: {
-      reducerName: "send_global_message",
-      argsType: SendGlobalMessage.getTypeScriptAlgebraicType(),
     },
     send_message: {
       reducerName: "send_message",
@@ -202,7 +172,6 @@ const REMOTE_MODULE = {
 // A type representing all the possible variants of a reducer.
 export type Reducer = never
 | { name: "CreateRoom", args: CreateRoom }
-| { name: "DeleteAllGlobalMessages", args: DeleteAllGlobalMessages }
 | { name: "DeleteRoom", args: DeleteRoom }
 | { name: "Hello", args: Hello }
 | { name: "HelloWithText", args: HelloWithText }
@@ -210,7 +179,6 @@ export type Reducer = never
 | { name: "IdentityDisconnected", args: IdentityDisconnected }
 | { name: "JoinToRoom", args: JoinToRoom }
 | { name: "LeaveRoom", args: LeaveRoom }
-| { name: "SendGlobalMessage", args: SendGlobalMessage }
 | { name: "SendMessage", args: SendMessage }
 | { name: "SetName", args: SetName }
 ;
@@ -228,22 +196,6 @@ export class RemoteReducers {
 
   removeOnCreateRoom(callback: (ctx: ReducerEventContext) => void) {
     this.connection.offReducer("create_room", callback);
-  }
-
-  deleteAllGlobalMessages(arg: DeleteGlobalMessageSchedule) {
-    const __args = { arg };
-    let __writer = new BinaryWriter(1024);
-    DeleteAllGlobalMessages.getTypeScriptAlgebraicType().serialize(__writer, __args);
-    let __argsBuffer = __writer.getBuffer();
-    this.connection.callReducer("delete_all_global_messages", __argsBuffer, this.setCallReducerFlags.deleteAllGlobalMessagesFlags);
-  }
-
-  onDeleteAllGlobalMessages(callback: (ctx: ReducerEventContext, arg: DeleteGlobalMessageSchedule) => void) {
-    this.connection.onReducer("delete_all_global_messages", callback);
-  }
-
-  removeOnDeleteAllGlobalMessages(callback: (ctx: ReducerEventContext, arg: DeleteGlobalMessageSchedule) => void) {
-    this.connection.offReducer("delete_all_global_messages", callback);
   }
 
   deleteRoom(roomId: number) {
@@ -334,22 +286,6 @@ export class RemoteReducers {
     this.connection.offReducer("leave_room", callback);
   }
 
-  sendGlobalMessage(text: string) {
-    const __args = { text };
-    let __writer = new BinaryWriter(1024);
-    SendGlobalMessage.getTypeScriptAlgebraicType().serialize(__writer, __args);
-    let __argsBuffer = __writer.getBuffer();
-    this.connection.callReducer("send_global_message", __argsBuffer, this.setCallReducerFlags.sendGlobalMessageFlags);
-  }
-
-  onSendGlobalMessage(callback: (ctx: ReducerEventContext, text: string) => void) {
-    this.connection.onReducer("send_global_message", callback);
-  }
-
-  removeOnSendGlobalMessage(callback: (ctx: ReducerEventContext, text: string) => void) {
-    this.connection.offReducer("send_global_message", callback);
-  }
-
   sendMessage(text: string) {
     const __args = { text };
     let __writer = new BinaryWriter(1024);
@@ -390,11 +326,6 @@ export class SetReducerFlags {
     this.createRoomFlags = flags;
   }
 
-  deleteAllGlobalMessagesFlags: CallReducerFlags = 'FullUpdate';
-  deleteAllGlobalMessages(flags: CallReducerFlags) {
-    this.deleteAllGlobalMessagesFlags = flags;
-  }
-
   deleteRoomFlags: CallReducerFlags = 'FullUpdate';
   deleteRoom(flags: CallReducerFlags) {
     this.deleteRoomFlags = flags;
@@ -420,11 +351,6 @@ export class SetReducerFlags {
     this.leaveRoomFlags = flags;
   }
 
-  sendGlobalMessageFlags: CallReducerFlags = 'FullUpdate';
-  sendGlobalMessage(flags: CallReducerFlags) {
-    this.sendGlobalMessageFlags = flags;
-  }
-
   sendMessageFlags: CallReducerFlags = 'FullUpdate';
   sendMessage(flags: CallReducerFlags) {
     this.sendMessageFlags = flags;
@@ -440,16 +366,8 @@ export class SetReducerFlags {
 export class RemoteTables {
   constructor(private connection: DbConnectionImpl) {}
 
-  get deleteGlobalMessageSchedule(): DeleteGlobalMessageScheduleTableHandle {
-    return new DeleteGlobalMessageScheduleTableHandle(this.connection.clientCache.getOrCreateTable<DeleteGlobalMessageSchedule>(REMOTE_MODULE.tables.delete_global_message_schedule));
-  }
-
   get game(): GameTableHandle {
     return new GameTableHandle(this.connection.clientCache.getOrCreateTable<Game>(REMOTE_MODULE.tables.game));
-  }
-
-  get globalMessage(): GlobalMessageTableHandle {
-    return new GlobalMessageTableHandle(this.connection.clientCache.getOrCreateTable<GlobalMessage>(REMOTE_MODULE.tables.global_message));
   }
 
   get joinRoom(): JoinRoomTableHandle {
