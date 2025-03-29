@@ -11,6 +11,13 @@ export class UseRooms {
         this.conn = conn;
 
         conn.db.room.onInsert((ctx, room) => {
+            // check if room already exists in the list
+            let existingRoom = this._rooms.find((r) => r.id === room.id);
+            if (existingRoom) {
+                // update the existing room
+                existingRoom = room;
+                return;
+            }
             this._rooms.push(room);
             this._rooms.sort((a, b) => {
                 return a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime();
@@ -27,6 +34,11 @@ export class UseRooms {
         });
         this.roomSubHandle = conn
             .subscriptionBuilder()
+            .onApplied((ctx) => {
+                this._rooms = [...ctx.db.room.iter(), ...this._rooms].sort((a, b) => {
+                    return a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime();
+                })
+            })
             .onError((ctx) => {
                 console.error('Error fetching rooms:', ctx.event);
             })

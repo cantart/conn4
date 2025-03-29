@@ -2,19 +2,20 @@
 	import type { Identity } from '@clockworklabs/spacetimedb-sdk';
 	import { DbConnection, Player, type ErrorContext } from '../../module_bindings';
 	import { beforeNavigate } from '$app/navigation';
-	import type { You } from '$lib';
+	import type { SubscriptionHandle, You } from '$lib';
 	import Home from '$lib/online/Home.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import Room from '$lib/online/Room.svelte';
 	import type { RoomData } from '$lib/online/types';
 
+	let allJoinRoomHandle = $state<SubscriptionHandle | null>(null);
 	let s = $state<
 		| {
 				page: 'home';
 		  }
 		| ({
 				page: 'room';
-		  } & Omit<RoomData, 'players' | 'you' | 'leaveRoom'>)
+		  } & Omit<RoomData, 'players' | 'you' | 'leaveRoom' | 'allJoinRoomHandle' | 'conn'>)
 		| {
 				page: 'init';
 		  }
@@ -84,6 +85,9 @@
 	<h1>Connecting...</h1>
 {:else if s.page === 'home' && you}
 	<Home
+		setAllJRHandle={(h) => {
+			allJoinRoomHandle = h;
+		}}
 		{conn}
 		{you}
 		toRoom={(data) => {
@@ -93,9 +97,12 @@
 			};
 		}}
 	/>
-{:else if s.page === 'room' && you}
+{:else if s.page === 'room' && you && allJoinRoomHandle}
 	<Room
-		{...s}
+		{conn}
+		{allJoinRoomHandle}
+		initialRoomTitle={s.initialRoomTitle}
+		roomId={s.roomId}
 		{players}
 		{you}
 		leaveRoom={() => {

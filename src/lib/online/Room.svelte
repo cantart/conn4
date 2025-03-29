@@ -39,6 +39,25 @@
 		conn.reducers.leaveRoom();
 		conn.reducers.onLeaveRoom((ctx) => {
 			if (ctx.event.status.tag === 'Committed') {
+				if (allJoinRoomHandle.isActive()) {
+					try {
+						allJoinRoomHandle.unsubscribe();
+					} catch (e) {
+						console.error('Error unsubscribing from all join room handle:', e);
+					}
+				}
+				conn.db.message.removeOnInsert(() => {});
+				if (messageSubHandle.isActive()) {
+					try {
+						messageSubHandle.unsubscribe();
+					} catch (e) {
+						console.error('Error unsubscribing from message handle:', e);
+					}
+				}
+				useRoom.stop();
+				conn.db.joinRoom.removeOnInsert(() => {});
+				conn.db.joinRoom.removeOnDelete(() => {});
+				conn.db.joinRoom.removeOnUpdate(() => {});
 				leaveRoom();
 			} else {
 				console.error('Error leaving room:', ctx.event);
@@ -66,19 +85,7 @@
 			throw new Error(`Join room not found for update: ${o.joinerId}`);
 		}
 	});
-	onDestroy(() => {
-		if (allJoinRoomHandle.isActive()) {
-			allJoinRoomHandle.unsubscribe();
-		}
-		conn.db.message.removeOnInsert(() => {});
-		if (messageSubHandle.isActive()) {
-			messageSubHandle.unsubscribe();
-		}
-		useRoom.stop();
-		conn.db.joinRoom.removeOnInsert(() => {});
-		conn.db.joinRoom.removeOnDelete(() => {});
-		conn.db.joinRoom.removeOnUpdate(() => {});
-	});
+	onDestroy(() => {});
 </script>
 
 <div class="space-y-8">

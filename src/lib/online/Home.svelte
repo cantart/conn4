@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { You } from '$lib';
+	import type { SubscriptionHandle, You } from '$lib';
 	import { DbConnection, JoinRoom, Room } from '../../module_bindings';
 	import { onDestroy } from 'svelte';
 	import { UseRooms } from './UseRooms.svelte';
@@ -8,11 +8,13 @@
 	let {
 		conn,
 		you,
-		toRoom
+		toRoom,
+		setAllJRHandle
 	}: {
 		conn: DbConnection;
 		you: You;
-		toRoom: (data: Omit<RoomData, 'players' | 'you' | 'leaveRoom'>) => void;
+		setAllJRHandle: (handle: SubscriptionHandle) => void;
+		toRoom: (data: Omit<RoomData, 'players' | 'you' | 'leaveRoom' | 'allJoinRoomHandle'>) => void;
 	} = $props();
 
 	let name = $state(you.name);
@@ -46,20 +48,22 @@
 
 	let joiningRoomTitle = $state('');
 	function enterRoom(yourJoinRoom: JoinRoom) {
-		const allJoinRoomHandle = conn
-			.subscriptionBuilder()
-			.onApplied(() => {
-				toRoom({
-					allJoinRoomHandle,
-					roomId: yourJoinRoom.roomId,
-					initialRoomTitle: joiningRoomTitle,
-					conn
-				});
-			})
-			.onError((ctx) => {
-				console.error('Error fetching all join rooms:', ctx.event);
-			})
-			.subscribe(`SELECT * FROM join_room WHERE room_id = '${yourJoinRoom.roomId}'`);
+		setAllJRHandle(
+			conn
+				.subscriptionBuilder()
+				.onApplied(() => {
+					toRoom({
+						// allJoinRoomHandle,
+						roomId: yourJoinRoom.roomId,
+						initialRoomTitle: joiningRoomTitle,
+						conn
+					});
+				})
+				.onError((ctx) => {
+					console.error('Error fetching all join rooms:', ctx.event);
+				})
+				.subscribe(`SELECT * FROM join_room WHERE room_id = '${yourJoinRoom.roomId}'`)
+		);
 
 		if (yourJoinRoomHandle.isActive()) {
 			yourJoinRoomHandle.unsubscribe();
