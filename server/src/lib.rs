@@ -195,8 +195,6 @@ pub fn identity_disconnected(ctx: &ReducerContext) {
             ctx.sender
         );
     }
-
-    leave_room(&ctx);
 }
 
 #[reducer]
