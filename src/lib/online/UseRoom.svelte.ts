@@ -3,8 +3,6 @@ import { Room } from "../../module_bindings";
 import { SubscriptionHandle } from '$lib';
 
 export class UseRoom {
-    active = false;
-
     _room = $state<Room | null>(null);
 
     conn: DbConnection;
@@ -12,22 +10,6 @@ export class UseRoom {
 
     constructor(conn: DbConnection, roomId: number) {
         this.conn = conn;
-
-        this.roomSubHandle = conn
-            .subscriptionBuilder()
-            .onApplied(() => {
-                for (const room of conn.db.room.iter()) {
-                    if (this._room) {
-                        throw new Error('Room already exists!');
-                    }
-                    this._room = room;
-                    this.active = true;
-                }
-            })
-            .onError((ctx) => {
-                console.error('Error fetching join rooms:', ctx.event);
-            })
-            .subscribe(`SELECT * FROM room WHERE id = '${roomId}'`);
 
         conn.db.room.onInsert(() => {
             throw new Error('Room insert?? Impossible!');
@@ -42,6 +24,21 @@ export class UseRoom {
                 throw new Error('Room update?? What is this?');
             }
         });
+        this.roomSubHandle = conn
+            .subscriptionBuilder()
+            .onApplied(() => {
+                for (const room of conn.db.room.iter()) {
+                    if (room.id === roomId) {
+                        this._room = room;
+                    } else {
+                        console.error('Room already set?? Impossible!');
+                    }
+                }
+            })
+            .onError((ctx) => {
+                console.error('Error fetching join rooms:', ctx.event);
+            })
+            .subscribe(`SELECT * FROM room WHERE id = '${roomId}'`);
     }
 
     stop() {
@@ -51,8 +48,6 @@ export class UseRoom {
         this.conn.db.room.removeOnInsert(() => { });
         this.conn.db.room.removeOnDelete(() => { });
         this.conn.db.room.removeOnUpdate(() => { });
-
-        this.active = false;
     }
 
     get room() {
