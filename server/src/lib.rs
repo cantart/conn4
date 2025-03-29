@@ -28,6 +28,8 @@ pub struct Room {
     #[auto_inc]
     id: u32,
     title: String,
+    #[unique]
+    owner_id: u32,
     created_at: Timestamp,
 }
 
@@ -48,7 +50,6 @@ pub struct JoinRoom {
     joiner_id: u32,
     #[unique]
     joiner_identity: Identity,
-    is_owner: bool,
     joined_at: Timestamp,
 }
 
@@ -126,6 +127,7 @@ pub fn create_room(ctx: &ReducerContext) -> Result<(), String> {
         id: 0,
         title: player.name.unwrap(),
         created_at: ctx.timestamp,
+        owner_id: player.id,
     })?;
     join_to_room(ctx, room.id)
 }
@@ -152,7 +154,6 @@ pub fn join_to_room(ctx: &ReducerContext, room_id: u32) -> Result<(), String> {
             joiner_id: player.id,
             room_id,
             joiner_identity: ctx.sender,
-            is_owner: ctx.db.join_room().room_id().filter(room_id).count() == 0,
             joined_at: ctx.timestamp,
         })?;
         Ok(())
@@ -161,16 +162,18 @@ pub fn join_to_room(ctx: &ReducerContext, room_id: u32) -> Result<(), String> {
 
 #[reducer]
 pub fn leave_room(ctx: &ReducerContext) {
-    if let Some(jr) = ctx.db.join_room().joiner_identity().find(&ctx.sender) {
-        ctx.db.join_room().joiner_identity().delete(&ctx.sender);
-        if let Some(j) = ctx.db.join_room().room_id().filter(jr.room_id).next() {
-            // TODO: Can we assign a new owner to the true next player that joined after the owner? That is, order by joined_at.
-            ctx.db.join_room().joiner_id().update(JoinRoom {
-                is_owner: true, // Transfer ownership to the first player that happens to be returned by the filter
-                ..j
+    ctx.db.join_room().joiner_identity().delete(ctx.sender);
+    let player = find_sender_player(ctx);
+    if let Some(room) = ctx.db.room().owner_id().find(player.id) {
+        if let Some(other_jr) = ctx.db.join_room().room_id().filter(room.id).next() {
+            // Promote the next player to owner
+            ctx.db.room().id().update(Room {
+                owner_id: other_jr.joiner_id,
+                ..room
             });
         } else {
-            ctx.db.room().id().delete(jr.room_id);
+            // Case: the owner of the room who is leaving is the last player in the room
+            ctx.db.room().id().delete(room.id);
         }
     }
 }
