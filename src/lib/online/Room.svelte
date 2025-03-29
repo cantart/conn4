@@ -121,7 +121,15 @@
 						{#if msg.senderId === you.id}
 							You
 						{:else if players.has(msg.senderId)}
-							{players.get(msg.senderId)?.name}
+							{@const player = players.get(msg.senderId)!}
+							<div class="flex items-center gap-1 overflow-visible">
+								{#if !player.online}
+									<div class="tooltip tooltip-right" data-tip="Offline">
+										<div class="status bg-red-500"></div>
+									</div>
+								{/if}
+								<span>{player.name}</span>
+							</div>
 						{:else}
 							<span class="loading loading-spinner loading-sm"></span>
 						{/if}
