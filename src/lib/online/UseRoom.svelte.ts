@@ -11,12 +11,6 @@ export class UseRoom {
     constructor(conn: DbConnection, roomId: number) {
         this.conn = conn;
 
-        conn.db.room.onInsert(() => {
-            throw new Error('Room insert?? Impossible!');
-        });
-        conn.db.room.onDelete(() => {
-            throw new Error('Room delete?? Impossible!');
-        });
         conn.db.room.onUpdate((ctx, room) => {
             if (this._room && this._room.id === room.id) {
                 this._room = room;
@@ -45,8 +39,6 @@ export class UseRoom {
         if (this.roomSubHandle.isActive()) {
             this.roomSubHandle.unsubscribe();
         }
-        this.conn.db.room.removeOnInsert(() => { });
-        this.conn.db.room.removeOnDelete(() => { });
         this.conn.db.room.removeOnUpdate(() => { });
     }
 

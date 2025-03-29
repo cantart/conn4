@@ -12,7 +12,7 @@
 	}: {
 		conn: DbConnection;
 		you: You;
-		toRoom: (data: Omit<RoomData, 'players' | 'you'>) => void;
+		toRoom: (data: Omit<RoomData, 'players' | 'you' | 'leaveRoom'>) => void;
 	} = $props();
 
 	let name = $state(you.name);

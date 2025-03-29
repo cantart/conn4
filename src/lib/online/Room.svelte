@@ -4,7 +4,8 @@
 	import type { RoomData } from './types';
 	import { UseRoom } from './UseRoom.svelte';
 
-	let { allJoinRoomHandle, conn, players, roomId, initialRoomTitle, you }: RoomData = $props();
+	let { allJoinRoomHandle, conn, players, roomId, initialRoomTitle, you, leaveRoom }: RoomData =
+		$props();
 
 	let roomTitle = $state(initialRoomTitle);
 	let joinRooms = $state<JoinRoom[]>(Array.from(conn.db.joinRoom.iter()));
@@ -32,6 +33,20 @@
 		}
 	});
 
+	let leaving = $state(false);
+	const leave = () => {
+		leaving = true;
+		conn.reducers.leaveRoom();
+		conn.reducers.onLeaveRoom((ctx) => {
+			if (ctx.event.status.tag === 'Committed') {
+				leaveRoom();
+			} else {
+				console.error('Error leaving room:', ctx.event);
+			}
+			leaving = false;
+		});
+	};
+
 	conn.db.joinRoom.onInsert((ctx, jr) => {
 		joinRooms.push(jr);
 	});
@@ -56,7 +71,9 @@
 			allJoinRoomHandle.unsubscribe();
 		}
 		conn.db.message.removeOnInsert(() => {});
-		messageSubHandle.unsubscribe();
+		if (messageSubHandle.isActive()) {
+			messageSubHandle.unsubscribe();
+		}
 		useRoom.stop();
 		conn.db.joinRoom.removeOnInsert(() => {});
 		conn.db.joinRoom.removeOnDelete(() => {});
@@ -65,17 +82,24 @@
 </script>
 
 <div class="space-y-8">
-	{#if roomTitle}
-		<h1 class="text-center">{roomTitle}</h1>
-	{:else}
-		<span class="loading loading-spinner loading-sm"></span>
-	{/if}
+	<div class="flex items-center gap-4 justify-self-center">
+		{@render title()}
 
+		<button onclick={leave} class="btn btn-xs btn-error" disabled={leaving}>Leave</button>
+	</div>
 	<div class="flex gap-4">
 		{@render playerList()}
 		{@render chat()}
 	</div>
 </div>
+
+{#snippet title()}
+	{#if roomTitle}
+		<h1 class="text-center">{roomTitle}</h1>
+	{:else}
+		<span class="loading loading-spinner loading-sm"></span>
+	{/if}
+{/snippet}
 
 {#snippet playerList()}
 	<ul>

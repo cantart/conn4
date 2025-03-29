@@ -14,7 +14,7 @@
 		  }
 		| ({
 				page: 'room';
-		  } & Omit<RoomData, 'players' | 'you'>)
+		  } & Omit<RoomData, 'players' | 'you' | 'leaveRoom'>)
 		| {
 				page: 'init';
 		  }
@@ -94,7 +94,16 @@
 		}}
 	/>
 {:else if s.page === 'room' && you}
-	<Room {...s} {players} {you} />
+	<Room
+		{...s}
+		{players}
+		{you}
+		leaveRoom={() => {
+			s = {
+				page: 'home'
+			};
+		}}
+	/>
 {:else}
 	<h1>Not implemented yet</h1>
 {/if}

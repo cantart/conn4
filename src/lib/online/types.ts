@@ -8,5 +8,6 @@ export type RoomData = {
     conn: DbConnection;
     roomId: number;
     initialRoomTitle: string;
-    you: You
+    you: You;
+    leaveRoom: () => void;
 }
