@@ -1,5 +1,5 @@
 import { SubscriptionHandle } from "$lib";
-import { Room, DbConnection } from "../../module_bindings";
+import { Room, DbConnection, type EventContext } from "../../module_bindings";
 
 export class UseRooms {
     _rooms = $state<Room[]>([]);
@@ -7,10 +7,14 @@ export class UseRooms {
     conn: DbConnection;
     roomSubHandle: SubscriptionHandle;
 
+    roomOnInsert: (ctx: EventContext, room: Room) => void
+    roomOnUpdate: (ctx: EventContext, oldRow: Room, newRow: Room) => void
+    roomOnDelete: (ctx: EventContext, room: Room) => void
+
     constructor(conn: DbConnection) {
         this.conn = conn;
 
-        conn.db.room.onInsert((ctx, room) => {
+        this.roomOnInsert = (ctx, room) => {
             // check if room already exists in the list
             let existingRoom = this._rooms.find((r) => r.id === room.id);
             if (existingRoom) {
@@ -22,16 +26,20 @@ export class UseRooms {
             this._rooms.sort((a, b) => {
                 return a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime();
             });
-        });
-        conn.db.room.onDelete((ctx, room) => {
+        }
+        this.roomOnDelete = (ctx, room) => {
             this._rooms = this._rooms.filter((r) => r.id !== room.id);
-        });
-        conn.db.room.onUpdate((ctx, room) => {
+        }
+        this.roomOnUpdate = (ctx, room) => {
             const index = this._rooms.findIndex((r) => r.id === room.id);
             if (index !== -1) {
                 this._rooms[index] = room;
             }
-        });
+        }
+
+        conn.db.room.onInsert(this.roomOnInsert);
+        conn.db.room.onDelete(this.roomOnDelete);
+        conn.db.room.onUpdate(this.roomOnUpdate);
         this.roomSubHandle = conn
             .subscriptionBuilder()
             .onApplied((ctx) => {
@@ -51,9 +59,9 @@ export class UseRooms {
                 // TODO: maybe a good idea to make this function async
             });
         }
-        this.conn.db.room.removeOnInsert(() => { });
-        this.conn.db.room.removeOnDelete(() => { });
-        this.conn.db.room.removeOnUpdate(() => { });
+        this.conn.db.room.removeOnInsert(this.roomOnInsert);
+        this.conn.db.room.removeOnDelete(this.roomOnDelete);
+        this.conn.db.room.removeOnUpdate(this.roomOnUpdate);
     }
 
     get rooms() {

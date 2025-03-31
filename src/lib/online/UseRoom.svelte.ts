@@ -1,4 +1,4 @@
-import { DbConnection } from './../../module_bindings/index'
+import { DbConnection, type EventContext } from './../../module_bindings/index'
 import { Room } from "../../module_bindings";
 import { SubscriptionHandle } from '$lib';
 
@@ -8,16 +8,20 @@ export class UseRoom {
     conn: DbConnection;
     roomSubHandle: SubscriptionHandle;
 
+    roomOnUpdate: (ctx: EventContext, oldRow: Room, newRow: Room) => void
+
     constructor(conn: DbConnection, roomId: number) {
         this.conn = conn;
 
-        conn.db.room.onUpdate((ctx, room) => {
+        this.roomOnUpdate = (ctx, room) => {
             if (this._room && this._room.id === room.id) {
                 this._room = room;
             } else {
                 throw new Error('Room update?? What is this?');
             }
-        });
+        }
+
+        conn.db.room.onUpdate(this.roomOnUpdate);
         this.roomSubHandle = conn
             .subscriptionBuilder()
             .onApplied(() => {
@@ -39,7 +43,7 @@ export class UseRoom {
         if (this.roomSubHandle.isActive()) {
             this.roomSubHandle.unsubscribe();
         }
-        this.conn.db.room.removeOnUpdate(() => { });
+        this.conn.db.room.removeOnUpdate(this.roomOnUpdate);
     }
 
     get room() {
