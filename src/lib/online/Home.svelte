@@ -42,10 +42,11 @@
 		})
 		.subscribe(`SELECT * FROM join_room WHERE joiner_id = '${you.id}'`);
 
-	conn.reducers.onSetName(() => {
+	const onSetName = () => {
 		nameUpdating = false;
 		nameEditing = false;
-	});
+	};
+	conn.reducers.onSetName(onSetName);
 
 	let joiningRoomTitle = $state('');
 	function enterRoom(yourJoinRoom: JoinRoom) {
@@ -107,7 +108,7 @@
 	});
 
 	onDestroy(() => {
-		conn.reducers.removeOnSetName(() => {});
+		conn.reducers.removeOnSetName(onSetName);
 		useRooms.stop();
 	});
 </script>
