@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SubscriptionHandle, You } from '$lib';
-	import { DbConnection, JoinRoom, Room } from '../../module_bindings';
+	import { DbConnection, type EventContext, JoinRoom, Room } from '../../module_bindings';
 	import { onDestroy } from 'svelte';
 	import { UseRooms } from './UseRooms.svelte';
 	import type { RoomData } from './types';
@@ -25,15 +25,16 @@
 
 	const useRooms = new UseRooms(conn);
 
-	conn.db.joinRoom.onInsert((ctx, jr) => {
+	const youJoinRoomOnInsert = (ctx: EventContext, jr: JoinRoom) => {
 		if (jr.joinerId === you.id) {
 			yourJoinRoom = jr;
-			conn.db.joinRoom.removeOnInsert(() => {});
+			conn.db.joinRoom.removeOnInsert(youJoinRoomOnInsert);
 		} else {
-			// This shouldn't happen because of the WHERE clause in the subscription
 			console.error('Room of another user', jr);
 		}
-	});
+	};
+
+	conn.db.joinRoom.onInsert(youJoinRoomOnInsert);
 	let yourJoinRoomHandle = conn
 		.subscriptionBuilder()
 		.onError((ctx) => {
@@ -106,7 +107,6 @@
 	});
 
 	onDestroy(() => {
-		conn.db.joinRoom.removeOnInsert(() => {});
 		conn.reducers.removeOnSetName(() => {});
 		useRooms.stop();
 	});
