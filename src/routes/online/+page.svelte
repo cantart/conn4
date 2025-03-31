@@ -27,7 +27,7 @@
 	let you = $state<You | null>(null);
 
 	const onConnectError = (_: ErrorContext, error: Error) => {
-		console.log('Error connecting to SpacetimeDB:', error);
+		console.error('Error connecting to SpacetimeDB:', error);
 	};
 
 	const onConnect = (conn: DbConnection, ident: Identity, token: string) => {

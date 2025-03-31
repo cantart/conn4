@@ -10,10 +10,6 @@
 	let joinRooms = $state<JoinRoom[]>(Array.from(conn.db.joinRoom.iter()));
 	let messages = $state<Message[]>([]);
 
-	$effect(() => {
-		console.log($state.snapshot(messages));
-	});
-
 	const messageOnInsert = (ctx: EventContext, msg: Message) => {
 		let existingMessage = messages.find((m) => m.sentAt === msg.sentAt);
 		if (existingMessage) {
