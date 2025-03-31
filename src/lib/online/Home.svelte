@@ -49,7 +49,8 @@
 	let joiningRoomTitle = $state('');
 	async function enterRoom(yourJoinRoom: JoinRoom) {
 		if (yourJoinRoomHandle.isActive()) {
-			yourJoinRoomHandle.unsubscribeThen(() => {
+			yourJoinRoomHandle.unsubscribeThen(async () => {
+				await useRooms.stop();
 				toRoom({
 					roomId: yourJoinRoom.roomId,
 					initialRoomTitle: joiningRoomTitle,
@@ -94,9 +95,8 @@
 		}
 	});
 
-	onDestroy(() => {
+	onDestroy(async () => {
 		conn.reducers.removeOnSetName(onSetName);
-		useRooms.stop();
 	});
 </script>
 

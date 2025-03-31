@@ -73,7 +73,7 @@
 	const leave = () => {
 		leaving = true;
 		conn.reducers.leaveRoom();
-		conn.reducers.onLeaveRoom((ctx) => {
+		conn.reducers.onLeaveRoom(async (ctx) => {
 			if (ctx.event.status.tag === 'Committed') {
 				if (allJoinRoomHandle.isActive()) {
 					try {
@@ -90,7 +90,7 @@
 						console.error('Error unsubscribing from message handle:', e);
 					}
 				}
-				useRoom.stop();
+				await useRoom.stop();
 				conn.db.joinRoom.removeOnInsert(joinRoomOnInsert);
 				conn.db.joinRoom.removeOnDelete(joinRoomOnDelete);
 				conn.db.joinRoom.removeOnUpdate(joinRoomOnUpdate);

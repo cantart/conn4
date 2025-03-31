@@ -53,15 +53,24 @@ export class UseRooms {
             .subscribe('SELECT * FROM room');
     }
 
-    stop() {
-        if (this.roomSubHandle.isActive()) {
-            this.roomSubHandle.unsubscribeThen(() => {
-                // TODO: maybe a good idea to make this function async
-            });
+    async stop() {
+        const removeListeners = () => {
+            this.conn.db.room.removeOnInsert(this.roomOnInsert);
+            this.conn.db.room.removeOnDelete(this.roomOnDelete);
+            this.conn.db.room.removeOnUpdate(this.roomOnUpdate);
         }
-        this.conn.db.room.removeOnInsert(this.roomOnInsert);
-        this.conn.db.room.removeOnDelete(this.roomOnDelete);
-        this.conn.db.room.removeOnUpdate(this.roomOnUpdate);
+
+        new Promise<void>(resolve => {
+            if (this.roomSubHandle.isActive()) {
+                this.roomSubHandle.unsubscribeThen(() => {
+                    removeListeners()
+                    resolve();
+                });
+            } else {
+                removeListeners()
+                resolve();
+            }
+        })
     }
 
     get rooms() {

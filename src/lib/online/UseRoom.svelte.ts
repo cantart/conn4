@@ -39,11 +39,22 @@ export class UseRoom {
             .subscribe(`SELECT * FROM room WHERE id = '${roomId}'`);
     }
 
-    stop() {
-        if (this.roomSubHandle.isActive()) {
-            this.roomSubHandle.unsubscribe();
+    async stop() {
+        const removeListeners = () => {
+            this.conn.db.room.removeOnUpdate(this.roomOnUpdate);
         }
-        this.conn.db.room.removeOnUpdate(this.roomOnUpdate);
+
+        return new Promise<void>(resolve => {
+            if (this.roomSubHandle.isActive()) {
+                this.roomSubHandle.unsubscribeThen(() => {
+                    removeListeners()
+                    resolve();
+                });
+            } else {
+                removeListeners()
+                resolve();
+            }
+        })
     }
 
     get room() {
