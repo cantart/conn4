@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
-	import { JoinRoom, Message } from '../../module_bindings';
+	import { type EventContext, JoinRoom, Message } from '../../module_bindings';
 	import type { RoomData } from './types';
 	import { UseRoom } from './UseRoom.svelte';
 
@@ -15,21 +14,23 @@
 		console.log($state.snapshot(messages));
 	});
 
+	const messageOnInsert = (ctx: EventContext, msg: Message) => {
+		let existingMessage = messages.find((m) => m.sentAt === msg.sentAt);
+		if (existingMessage) {
+			existingMessage = msg;
+			return;
+		}
+		messages.push(msg);
+		messages.sort((a, b) => b.sentAt.toDate().getTime() - a.sentAt.toDate().getTime());
+	};
+
 	let messageSubHandle = conn
 		.subscriptionBuilder()
 		.onApplied(() => {
 			messages = Array.from(conn.db.message.iter()).sort(
 				(a, b) => b.sentAt.toDate().getTime() - a.sentAt.toDate().getTime()
 			);
-			conn.db.message.onInsert((ctx, msg) => {
-				let existingMessage = messages.find((m) => m.sentAt === msg.sentAt);
-				if (existingMessage) {
-					existingMessage = msg;
-					return;
-				}
-				messages.push(msg);
-				messages.sort((a, b) => b.sentAt.toDate().getTime() - a.sentAt.toDate().getTime());
-			});
+			conn.db.message.onInsert(messageOnInsert);
 		})
 		.onError((ctx) => {
 			console.error('Error fetching messages:', ctx.event);
@@ -42,6 +43,30 @@
 			roomTitle = useRoom.room.title;
 		}
 	});
+
+	const joinRoomOnInsert = (_: EventContext, jr: JoinRoom) => {
+		joinRooms.push(jr);
+	};
+	const joinRoomOnDelete = (_: EventContext, jr: JoinRoom) => {
+		const index = joinRooms.findIndex((j) => j.joinerId === jr.joinerId);
+		if (index !== -1) {
+			joinRooms.splice(index, 1);
+		} else {
+			throw new Error(`Join room not found for deletion: ${jr.joinerId}`);
+		}
+	};
+	const joinRoomOnUpdate = (_: EventContext, o: JoinRoom, n: JoinRoom) => {
+		const index = joinRooms.findIndex((j) => j.joinerId === o.joinerId);
+		if (index !== -1) {
+			joinRooms[index] = n;
+		} else {
+			throw new Error(`Join room not found for update: ${o.joinerId}`);
+		}
+	};
+
+	conn.db.joinRoom.onInsert(joinRoomOnInsert);
+	conn.db.joinRoom.onDelete(joinRoomOnDelete);
+	conn.db.joinRoom.onUpdate(joinRoomOnUpdate);
 
 	let leaving = $state(false);
 	const leave = () => {
@@ -56,7 +81,7 @@
 						console.error('Error unsubscribing from all join room handle:', e);
 					}
 				}
-				conn.db.message.removeOnInsert(() => {});
+				conn.db.message.removeOnInsert(messageOnInsert);
 				if (messageSubHandle.isActive()) {
 					try {
 						messageSubHandle.unsubscribe();
@@ -65,9 +90,9 @@
 					}
 				}
 				useRoom.stop();
-				conn.db.joinRoom.removeOnInsert(() => {});
-				conn.db.joinRoom.removeOnDelete(() => {});
-				conn.db.joinRoom.removeOnUpdate(() => {});
+				conn.db.joinRoom.removeOnInsert(joinRoomOnInsert);
+				conn.db.joinRoom.removeOnDelete(joinRoomOnDelete);
+				conn.db.joinRoom.removeOnUpdate(joinRoomOnUpdate);
 				leaveRoom();
 			} else {
 				console.error('Error leaving room:', ctx.event);
@@ -75,27 +100,6 @@
 			leaving = false;
 		});
 	};
-
-	conn.db.joinRoom.onInsert((ctx, jr) => {
-		joinRooms.push(jr);
-	});
-	conn.db.joinRoom.onDelete((ctx, jr) => {
-		const index = joinRooms.findIndex((j) => j.joinerId === jr.joinerId);
-		if (index !== -1) {
-			joinRooms.splice(index, 1);
-		} else {
-			throw new Error(`Join room not found for deletion: ${jr.joinerId}`);
-		}
-	});
-	conn.db.joinRoom.onUpdate((ctx, o, n) => {
-		const index = joinRooms.findIndex((j) => j.joinerId === o.joinerId);
-		if (index !== -1) {
-			joinRooms[index] = n;
-		} else {
-			throw new Error(`Join room not found for update: ${o.joinerId}`);
-		}
-	});
-	onDestroy(() => {});
 </script>
 
 <div class="space-y-8">
