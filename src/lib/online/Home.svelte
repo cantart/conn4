@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { SubscriptionHandle, You } from '$lib';
+	import type { You } from '$lib';
 	import { DbConnection, type EventContext, JoinRoom, Room } from '../../module_bindings';
 	import { onDestroy } from 'svelte';
 	import { UseRooms } from './UseRooms.svelte';
@@ -8,13 +8,11 @@
 	let {
 		conn,
 		you,
-		toRoom,
-		setAllJRHandle
+		toRoom
 	}: {
 		conn: DbConnection;
 		you: You;
-		setAllJRHandle: (handle: SubscriptionHandle) => void;
-		toRoom: (data: Omit<RoomData, 'players' | 'you' | 'leaveRoom' | 'allJoinRoomHandle'>) => void;
+		toRoom: (data: Omit<RoomData, 'players' | 'you' | 'leaveRoom'>) => void;
 	} = $props();
 
 	let name = $state(you.name);
@@ -49,26 +47,15 @@
 	conn.reducers.onSetName(onSetName);
 
 	let joiningRoomTitle = $state('');
-	function enterRoom(yourJoinRoom: JoinRoom) {
-		setAllJRHandle(
-			conn
-				.subscriptionBuilder()
-				.onApplied(() => {
-					toRoom({
-						// allJoinRoomHandle,
-						roomId: yourJoinRoom.roomId,
-						initialRoomTitle: joiningRoomTitle,
-						conn
-					});
-				})
-				.onError((ctx) => {
-					console.error('Error fetching all join rooms:', ctx.event);
-				})
-				.subscribe(`SELECT * FROM join_room WHERE room_id = '${yourJoinRoom.roomId}'`)
-		);
-
+	async function enterRoom(yourJoinRoom: JoinRoom) {
 		if (yourJoinRoomHandle.isActive()) {
-			yourJoinRoomHandle.unsubscribe();
+			yourJoinRoomHandle.unsubscribeThen(() => {
+				toRoom({
+					roomId: yourJoinRoom.roomId,
+					initialRoomTitle: joiningRoomTitle,
+					conn
+				});
+			});
 		}
 	}
 

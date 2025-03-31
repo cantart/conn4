@@ -3,8 +3,7 @@
 	import type { RoomData } from './types';
 	import { UseRoom } from './UseRoom.svelte';
 
-	let { allJoinRoomHandle, conn, players, roomId, initialRoomTitle, you, leaveRoom }: RoomData =
-		$props();
+	let { conn, players, roomId, initialRoomTitle, you, leaveRoom }: RoomData = $props();
 
 	let roomTitle = $state(initialRoomTitle);
 	let joinRooms = $state<JoinRoom[]>(Array.from(conn.db.joinRoom.iter()));
@@ -59,6 +58,12 @@
 			throw new Error(`Join room not found for update: ${o.joinerId}`);
 		}
 	};
+	const allJoinRoomHandle = conn
+		.subscriptionBuilder()
+		.onError((ctx) => {
+			console.error('Error fetching all join rooms:', ctx.event);
+		})
+		.subscribe(`SELECT * FROM join_room WHERE room_id = '${roomId}'`);
 
 	conn.db.joinRoom.onInsert(joinRoomOnInsert);
 	conn.db.joinRoom.onDelete(joinRoomOnDelete);
