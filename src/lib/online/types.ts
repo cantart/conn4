@@ -6,7 +6,7 @@ export type RoomData = {
     players: SvelteMap<number, Player>;
     conn: DbConnection;
     roomId: number;
-    initialRoomTitle: string;
+    initialRoomTitle: string | null;
     you: You;
-    leaveRoom: () => void;
+    leaveRoom: (you: You) => void;
 }

@@ -42,12 +42,33 @@
 	const joinRoomOnInsert = (_: EventContext, jr: JoinRoom) => {
 		joinRooms.push(jr);
 	};
-	const joinRoomOnDelete = (_: EventContext, jr: JoinRoom) => {
+	const joinRoomOnDelete = async (_: EventContext, jr: JoinRoom) => {
 		const index = joinRooms.findIndex((j) => j.joinerId === jr.joinerId);
 		if (index !== -1) {
 			joinRooms.splice(index, 1);
 		} else {
 			throw new Error(`Join room not found for deletion: ${jr.joinerId}`);
+		}
+		if (jr.joinerId === you.id) {
+			if (allJoinRoomHandle.isActive()) {
+				try {
+					allJoinRoomHandle.unsubscribe();
+				} catch (e) {
+					console.error('Error unsubscribing from all join room handle:', e);
+				}
+			}
+			conn.db.message.removeOnInsert(messageOnInsert);
+			if (messageSubHandle.isActive()) {
+				try {
+					messageSubHandle.unsubscribe();
+				} catch (e) {
+					console.error('Error unsubscribing from message handle:', e);
+				}
+			}
+			await useRoom.stop();
+			removeJoinRoomListeners();
+			leaving = false;
+			leaveRoom(you);
 		}
 	};
 	const joinRoomOnUpdate = (_: EventContext, o: JoinRoom, n: JoinRoom) => {
@@ -68,38 +89,16 @@
 	conn.db.joinRoom.onInsert(joinRoomOnInsert);
 	conn.db.joinRoom.onDelete(joinRoomOnDelete);
 	conn.db.joinRoom.onUpdate(joinRoomOnUpdate);
+	const removeJoinRoomListeners = () => {
+		conn.db.joinRoom.removeOnInsert(joinRoomOnInsert);
+		conn.db.joinRoom.removeOnDelete(joinRoomOnDelete);
+		conn.db.joinRoom.removeOnUpdate(joinRoomOnUpdate);
+	};
 
 	let leaving = $state(false);
 	const leave = () => {
 		leaving = true;
 		conn.reducers.leaveRoom();
-		conn.reducers.onLeaveRoom(async (ctx) => {
-			if (ctx.event.status.tag === 'Committed') {
-				if (allJoinRoomHandle.isActive()) {
-					try {
-						allJoinRoomHandle.unsubscribe();
-					} catch (e) {
-						console.error('Error unsubscribing from all join room handle:', e);
-					}
-				}
-				conn.db.message.removeOnInsert(messageOnInsert);
-				if (messageSubHandle.isActive()) {
-					try {
-						messageSubHandle.unsubscribe();
-					} catch (e) {
-						console.error('Error unsubscribing from message handle:', e);
-					}
-				}
-				await useRoom.stop();
-				conn.db.joinRoom.removeOnInsert(joinRoomOnInsert);
-				conn.db.joinRoom.removeOnDelete(joinRoomOnDelete);
-				conn.db.joinRoom.removeOnUpdate(joinRoomOnUpdate);
-				leaveRoom();
-			} else {
-				console.error('Error leaving room:', ctx.event);
-			}
-			leaving = false;
-		});
 	};
 </script>
 

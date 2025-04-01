@@ -1,14 +1,14 @@
 <script lang="ts">
 	import type { You } from '$lib';
-	import { DbConnection, type EventContext, JoinRoom, Room } from '../../module_bindings';
+	import { DbConnection, Room } from '../../module_bindings';
 	import { onDestroy } from 'svelte';
 	import { UseRooms } from './UseRooms.svelte';
 	import type { RoomData } from './types';
 
 	let {
 		conn,
-		you,
-		toRoom
+		you
+		// toRoom
 	}: {
 		conn: DbConnection;
 		you: You;
@@ -16,29 +16,11 @@
 	} = $props();
 
 	let name = $state(you.name);
-	let yourJoinRoom = $state<JoinRoom | null>(null);
 	let nameUpdating = $state(false);
 	let nameEditing = $state(false);
 	let creatingRoom = $state(false);
 
 	const useRooms = new UseRooms(conn);
-
-	const youJoinRoomOnInsert = (ctx: EventContext, jr: JoinRoom) => {
-		if (jr.joinerId === you.id) {
-			yourJoinRoom = jr;
-			conn.db.joinRoom.removeOnInsert(youJoinRoomOnInsert);
-		} else {
-			console.error('Room of another user', jr);
-		}
-	};
-
-	conn.db.joinRoom.onInsert(youJoinRoomOnInsert);
-	let yourJoinRoomHandle = conn
-		.subscriptionBuilder()
-		.onError((ctx) => {
-			console.error('Error fetching your join room:', ctx.event);
-		})
-		.subscribe(`SELECT * FROM join_room WHERE joiner_id = '${you.id}'`);
 
 	const onSetName = () => {
 		nameUpdating = false;
@@ -47,18 +29,6 @@
 	conn.reducers.onSetName(onSetName);
 
 	let joiningRoomTitle = $state('');
-	async function enterRoom(yourJoinRoom: JoinRoom) {
-		if (yourJoinRoomHandle.isActive()) {
-			yourJoinRoomHandle.unsubscribeThen(async () => {
-				await useRooms.stop();
-				toRoom({
-					roomId: yourJoinRoom.roomId,
-					initialRoomTitle: joiningRoomTitle,
-					conn
-				});
-			});
-		}
-	}
 
 	function onNameSubmit(
 		e: SubmitEvent & {
@@ -88,12 +58,6 @@
 		joiningRoomTitle = room.title;
 		conn.reducers.joinToRoom(room.id);
 	}
-
-	$effect(() => {
-		if (yourJoinRoom) {
-			enterRoom(yourJoinRoom);
-		}
-	});
 
 	onDestroy(async () => {
 		conn.reducers.removeOnSetName(onSetName);

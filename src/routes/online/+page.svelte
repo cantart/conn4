@@ -1,8 +1,14 @@
 <script lang="ts">
 	import type { Identity } from '@clockworklabs/spacetimedb-sdk';
-	import { DbConnection, Player, type ErrorContext } from '../../module_bindings';
+	import {
+		DbConnection,
+		type EventContext,
+		type JoinRoom,
+		Player,
+		type ErrorContext
+	} from '../../module_bindings';
 	import { beforeNavigate } from '$app/navigation';
-	import type { You } from '$lib';
+	import type { SubscriptionHandle, You } from '$lib';
 	import Home from '$lib/online/Home.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import Room from '$lib/online/Room.svelte';
@@ -24,9 +30,43 @@
 
 	let players = new SvelteMap<number, Player>();
 	let you = $state<You | null>(null);
+	let yourJoinRoom = $state<JoinRoom | null>(null);
+	let yourJoinRoomHandle: SubscriptionHandle | null = null;
+	let youJoinRoomOnInsert: (ctx: EventContext, jr: JoinRoom) => void = (ctx, jr) => {
+		if (!you) {
+			throw new Error('You are not set yet');
+		}
+		if (jr.joinerId === you.id) {
+			yourJoinRoom = jr;
+			conn.db.joinRoom.removeOnInsert(youJoinRoomOnInsert);
+		} else {
+			console.error('Room of another user', jr);
+		}
+	};
 
 	const onConnectError = (_: ErrorContext, error: Error) => {
 		console.error('Error connecting to SpacetimeDB:', error);
+	};
+
+	const setupYourJoinRoom = async (y: You) => {
+		return new Promise<void>((resolve) => {
+			conn.db.joinRoom.onInsert(youJoinRoomOnInsert);
+			yourJoinRoomHandle = conn
+				.subscriptionBuilder()
+				.onApplied(() => {
+					for (const jr of conn.db.joinRoom.iter()) {
+						if (jr.joinerId === you?.id) {
+							yourJoinRoom = jr;
+							return;
+						}
+					}
+					resolve();
+				})
+				.onError((ctx) => {
+					console.error('Error fetching your join room:', ctx.event);
+				})
+				.subscribe(`SELECT * FROM join_room WHERE joiner_id = '${y.id}'`);
+		});
 	};
 
 	const onConnect = (conn: DbConnection, ident: Identity, token: string) => {
@@ -34,7 +74,7 @@
 
 		conn
 			.subscriptionBuilder()
-			.onApplied(() => {
+			.onApplied(async () => {
 				for (const player of conn.db.player.iter()) {
 					players.set(player.id, player);
 					if (
@@ -45,6 +85,7 @@
 							id: player.id,
 							name: player.name
 						};
+						await setupYourJoinRoom(you);
 						s = {
 							page: 'home'
 						};
@@ -78,6 +119,27 @@
 	beforeNavigate(() => {
 		conn.disconnect();
 	});
+
+	$inspect('s', s);
+	$inspect('you', you);
+
+	$effect(() => {
+		if (yourJoinRoom) {
+			const toRoomData: Extract<typeof s, { page: 'room' }> = {
+				page: 'room',
+				initialRoomTitle: null,
+				roomId: yourJoinRoom.roomId
+			};
+			yourJoinRoom = null;
+			if (yourJoinRoomHandle?.isActive()) {
+				yourJoinRoomHandle.unsubscribeThen(() => {
+					conn.db.joinRoom.removeOnInsert(youJoinRoomOnInsert);
+					yourJoinRoomHandle = null;
+					s = toRoomData;
+				});
+			}
+		}
+	});
 </script>
 
 {#if s.page === 'init'}
@@ -100,10 +162,11 @@
 		roomId={s.roomId}
 		{players}
 		{you}
-		leaveRoom={() => {
+		leaveRoom={(y) => {
 			s = {
 				page: 'home'
 			};
+			setupYourJoinRoom(y);
 		}}
 	/>
 {:else}
