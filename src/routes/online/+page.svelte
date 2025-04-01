@@ -13,6 +13,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import Room from '$lib/online/Room.svelte';
 	import type { RoomData } from '$lib/online/types';
+	import { UseRooms } from '$lib/online/UseRooms.svelte';
 
 	let s = $state<
 		| {
@@ -120,6 +121,8 @@
 		conn.disconnect();
 	});
 
+	// TODO: refactor `homeUseRooms`. This is for making sure that use rooms subscription is completely stopped before use room subscription is created.
+	let homeUseRooms: UseRooms | null = null;
 	$effect(() => {
 		if (yourJoinRoom) {
 			const toRoomData: Extract<typeof s, { page: 'room' }> = {
@@ -132,7 +135,15 @@
 				yourJoinRoomHandle.unsubscribeThen(() => {
 					conn.db.joinRoom.removeOnInsert(youJoinRoomOnInsert);
 					yourJoinRoomHandle = null;
-					s = toRoomData;
+					// TODO: refactor `homeUseRooms`. This is for making sure that use rooms subscription is completely stopped before use room subscription is created.
+					if (homeUseRooms) {
+						homeUseRooms.stop().then(() => {
+							s = toRoomData;
+							homeUseRooms = null;
+						});
+					} else {
+						s = toRoomData;
+					}
 				});
 			}
 		}
@@ -143,6 +154,10 @@
 	<h1>Connecting...</h1>
 {:else if s.page === 'home' && you}
 	<Home
+		setUseRooms={(ur) => {
+			// TODO: refactor `homeUseRooms`. This is for making sure that use rooms subscription is completely stopped before use room subscription is created.
+			homeUseRooms = ur;
+		}}
 		{conn}
 		{you}
 		toRoom={(data) => {

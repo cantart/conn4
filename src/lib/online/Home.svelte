@@ -7,11 +7,13 @@
 
 	let {
 		conn,
-		you
+		you,
+		setUseRooms
 		// toRoom
 	}: {
 		conn: DbConnection;
 		you: You;
+		setUseRooms: (ur: UseRooms) => void;
 		toRoom: (data: Omit<RoomData, 'players' | 'you' | 'leaveRoom'>) => void;
 	} = $props();
 
@@ -21,6 +23,7 @@
 	let creatingRoom = $state(false);
 
 	const useRooms = new UseRooms(conn);
+	setUseRooms(useRooms);
 
 	const onSetName = () => {
 		nameUpdating = false;
@@ -60,7 +63,7 @@
 	}
 
 	onDestroy(async () => {
-		await useRooms.stop();
+		// await useRooms.stop();
 		conn.reducers.removeOnSetName(onSetName);
 	});
 </script>
