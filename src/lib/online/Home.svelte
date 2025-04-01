@@ -3,18 +3,15 @@
 	import { DbConnection, Room } from '../../module_bindings';
 	import { onDestroy } from 'svelte';
 	import { UseRooms } from './UseRooms.svelte';
-	import type { RoomData } from './types';
 
 	let {
 		conn,
 		you,
 		setUseRooms
-		// toRoom
 	}: {
 		conn: DbConnection;
 		you: You;
 		setUseRooms: (ur: UseRooms) => void;
-		toRoom: (data: Omit<RoomData, 'players' | 'you' | 'leaveRoom'>) => void;
 	} = $props();
 
 	let name = $state(you.name);

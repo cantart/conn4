@@ -160,12 +160,6 @@
 		}}
 		{conn}
 		{you}
-		toRoom={(data) => {
-			s = {
-				page: 'room',
-				...data
-			};
-		}}
 	/>
 {:else if s.page === 'room' && you}
 	<Room
