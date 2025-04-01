@@ -120,9 +120,6 @@
 		conn.disconnect();
 	});
 
-	$inspect('s', s);
-	$inspect('you', you);
-
 	$effect(() => {
 		if (yourJoinRoom) {
 			const toRoomData: Extract<typeof s, { page: 'room' }> = {
