@@ -2,38 +2,41 @@ import { SubscriptionHandle } from "$lib";
 import type { JoinGame, DbConnection, EventContext, Game } from "../../module_bindings";
 
 export class UseGame {
-    _joined = $state(false);
+    #joined = $state(false);
     get joined() {
-        return this._joined;
+        return this.#joined;
     }
 
-    gameHandle: SubscriptionHandle;
-    gameOnUpdate: (ctx: EventContext, oldRow: Game, newRow: Game) => void
-    _game = $state<Game | null>(null);
+    #gameHandle: SubscriptionHandle;
+    #gameOnUpdate: (ctx: EventContext, oldRow: Game, newRow: Game) => void
+    #game = $state<Game | null>(null);
     get game() {
-        return this._game;
+        return this.#game;
     }
 
-    joinGameHandle: SubscriptionHandle;
-    joinGameOnInsert: (ctx: EventContext, jg: JoinGame) => void
-    joinGameOnDelete: (ctx: EventContext, jg: JoinGame) => void
-    _joinGames = $state<JoinGame[]>([]);
+    #joinGameHandle: SubscriptionHandle;
+    #joinGameOnInsert: (ctx: EventContext, jg: JoinGame) => void
+    #joinGameOnDelete: (ctx: EventContext, jg: JoinGame) => void
+    #joinGames = $state<JoinGame[]>([]);
+    get joinGames() {
+        return this.#joinGames;
+    }
 
-    conn: DbConnection;
+    #conn: DbConnection;
 
     constructor(conn: DbConnection, roomId: number, yourId: number) {
-        this.conn = conn;
+        this.#conn = conn;
 
-        this.gameOnUpdate = (ctx, game) => {
-            this._game = game;
+        this.#gameOnUpdate = (ctx, game) => {
+            this.#game = game;
         }
-        conn.db.game.onUpdate(this.gameOnUpdate);
-        this.gameHandle = conn
+        conn.db.game.onUpdate(this.#gameOnUpdate);
+        this.#gameHandle = conn
             .subscriptionBuilder()
             .onApplied(() => {
                 for (const game of conn.db.game.iter()) {
                     if (game.roomId === roomId) {
-                        this._game = game;
+                        this.#game = game;
                     } else {
                         throw new Error('Games from other subscriptions leaked in. Make sure to completely unsubscribe from previous subscriptions first.')
                     }
@@ -44,41 +47,41 @@ export class UseGame {
             })
             .subscribe(`SELECT * FROM game WHERE room_id = '${roomId}'`);
 
-        this.joinGameOnInsert = (ctx, jg) => {
+        this.#joinGameOnInsert = (ctx, jg) => {
             if (jg.joinerId === yourId) {
-                if (this._joined) {
+                if (this.#joined) {
                     throw new Error('You are already joined to the game.')
                 }
-                this._joined = true;
+                this.#joined = true;
             }
-            this._joinGames.push(jg);
+            this.#joinGames.push(jg);
         }
-        this.joinGameOnDelete = (ctx, jg) => {
+        this.#joinGameOnDelete = (ctx, jg) => {
             if (jg.joinerId === yourId) {
-                if (!this._joined) {
+                if (!this.#joined) {
                     throw new Error('You are not joined to the game.')
                 }
-                this._joined = false;
+                this.#joined = false;
             }
-            const deleted = this._joinGames.findIndex((j) => j.joinerId === jg.joinerId);
+            const deleted = this.#joinGames.findIndex((j) => j.joinerId === jg.joinerId);
             if (deleted !== -1) {
-                this._joinGames.splice(deleted, 1);
+                this.#joinGames.splice(deleted, 1);
             }
         }
-        conn.db.joinGame.onInsert(this.joinGameOnInsert);
-        conn.db.joinGame.onDelete(this.joinGameOnDelete);
-        this.joinGameHandle = conn
+        conn.db.joinGame.onInsert(this.#joinGameOnInsert);
+        conn.db.joinGame.onDelete(this.#joinGameOnDelete);
+        this.#joinGameHandle = conn
             .subscriptionBuilder()
             .onApplied(() => {
                 for (const jg of conn.db.joinGame.iter()) {
                     if (jg.joinerId === yourId) {
-                        if (this._joined) {
+                        if (this.#joined) {
                             throw new Error('You are already joined to the game.')
                         }
-                        this._joined = true;
+                        this.#joined = true;
                     }
                     if (jg.roomId === roomId) {
-                        this._joinGames.push(jg);
+                        this.#joinGames.push(jg);
                     } else {
                         throw new Error('Join games from other subscriptions leaked in. Make sure to completely unsubscribe from previous subscriptions first.')
                     }
@@ -92,14 +95,14 @@ export class UseGame {
 
     }
 
-    _stopGame() {
+    #stopGame() {
         const removeListeners = () => {
-            this.conn.db.game.removeOnUpdate(this.gameOnUpdate);
+            this.#conn.db.game.removeOnUpdate(this.#gameOnUpdate);
         }
 
         return new Promise<void>(resolve => {
-            if (this.gameHandle.isActive()) {
-                this.gameHandle.unsubscribeThen(() => {
+            if (this.#gameHandle.isActive()) {
+                this.#gameHandle.unsubscribeThen(() => {
                     removeListeners()
                     resolve();
                 });
@@ -110,15 +113,15 @@ export class UseGame {
         })
     }
 
-    _stopJoinGame() {
+    #stopJoinGame() {
         const removeListeners = () => {
-            this.conn.db.joinGame.removeOnInsert(this.joinGameOnInsert);
-            this.conn.db.joinGame.removeOnDelete(this.joinGameOnDelete);
+            this.#conn.db.joinGame.removeOnInsert(this.#joinGameOnInsert);
+            this.#conn.db.joinGame.removeOnDelete(this.#joinGameOnDelete);
         }
 
         return new Promise<void>(resolve => {
-            if (this.joinGameHandle.isActive()) {
-                this.joinGameHandle.unsubscribeThen(() => {
+            if (this.#joinGameHandle.isActive()) {
+                this.#joinGameHandle.unsubscribeThen(() => {
                     removeListeners()
                     resolve();
                 });
@@ -132,8 +135,8 @@ export class UseGame {
 
     async stop() {
         return Promise.all([
-            this._stopGame(),
-            this._stopJoinGame()
+            this.#stopGame(),
+            this.#stopJoinGame()
         ])
     }
 }
