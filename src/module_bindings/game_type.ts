@@ -32,7 +32,7 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 export type Game = {
   roomId: number,
-  cells: Identity[][],
+  cells: number[][],
   rows: number,
 };
 
@@ -47,7 +47,7 @@ export namespace Game {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
-      new ProductTypeElement("cells", AlgebraicType.createArrayType(AlgebraicType.createArrayType(AlgebraicType.createIdentityType()))),
+      new ProductTypeElement("cells", AlgebraicType.createArrayType(AlgebraicType.createArrayType(AlgebraicType.createU32Type()))),
       new ProductTypeElement("rows", AlgebraicType.createU32Type()),
     ]);
   }

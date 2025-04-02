@@ -15,7 +15,7 @@ pub struct Player {
 pub struct Game {
     #[primary_key]
     room_id: u32,
-    cells: Vec<Vec<Identity>>,
+    cells: Vec<Vec<u32>>, // cells that have player IDs in them
     rows: u32,
 }
 
