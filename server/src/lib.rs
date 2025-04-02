@@ -1,4 +1,4 @@
-use spacetimedb::{reducer, table, Identity, ReducerContext, Table, Timestamp};
+use spacetimedb::{reducer, table, Identity, ReducerContext, SpacetimeType, Table, Timestamp};
 
 #[table(name = player, public)]
 pub struct Player {
@@ -14,11 +14,32 @@ pub struct Player {
 const ROWS: usize = 6;
 const COLS: usize = 20;
 
+#[derive(SpacetimeType)]
+struct Coord {
+    x: u32,
+    y: u32,
+}
+
+#[derive(SpacetimeType)]
+struct WonPlayer {
+    player_id: u32,
+    coordinates: Vec<Coord>, // cells that are part of the winning line
+}
+
 #[table(name = game, public)]
 pub struct Game {
     #[primary_key]
     room_id: u32,
-    cells: Vec<Vec<Option<u32>>>, // cells that may have player IDs in them
+
+    /// player that has won the game
+    won_player: Option<WonPlayer>,
+    /// table of the game
+    table: Vec<Vec<Option<u32>>>,
+    /// to switch between players
+    sw: bool,
+    /// last move made by a player
+    latest_move: Option<Coord>,
+
     rows: u32,
 }
 
@@ -48,8 +69,12 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
     if ctx.db.game().room_id().find(jr.room_id).is_none() {
         ctx.db.game().try_insert(Game {
             room_id: jr.room_id,
-            cells: vec![vec![None; COLS]; ROWS],
             rows: ROWS as u32,
+
+            won_player: None,
+            table: vec![vec![None; COLS]; ROWS],
+            sw: true,
+            latest_move: None,
         })?;
     }
 

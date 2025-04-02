@@ -30,9 +30,15 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
+import { WonPlayer as __WonPlayer } from "./won_player_type";
+import { Coord as __Coord } from "./coord_type";
+
 export type Game = {
   roomId: number,
-  cells: number | undefined[][],
+  wonPlayer: __WonPlayer | undefined,
+  table: number | undefined[][],
+  sw: boolean,
+  latestMove: __Coord | undefined,
   rows: number,
 };
 
@@ -47,7 +53,10 @@ export namespace Game {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
-      new ProductTypeElement("cells", AlgebraicType.createArrayType(AlgebraicType.createArrayType(AlgebraicType.createOptionType(AlgebraicType.createU32Type())))),
+      new ProductTypeElement("wonPlayer", AlgebraicType.createOptionType(__WonPlayer.getTypeScriptAlgebraicType())),
+      new ProductTypeElement("table", AlgebraicType.createArrayType(AlgebraicType.createArrayType(AlgebraicType.createOptionType(AlgebraicType.createU32Type())))),
+      new ProductTypeElement("sw", AlgebraicType.createBoolType()),
+      new ProductTypeElement("latestMove", AlgebraicType.createOptionType(__Coord.getTypeScriptAlgebraicType())),
       new ProductTypeElement("rows", AlgebraicType.createU32Type()),
     ]);
   }

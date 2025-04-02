@@ -70,6 +70,8 @@ import { RoomTableHandle } from "./room_table.ts";
 export { RoomTableHandle };
 
 // Import and reexport all types
+import { Coord } from "./coord_type.ts";
+export { Coord };
 import { Game } from "./game_type.ts";
 export { Game };
 import { JoinGame } from "./join_game_type.ts";
@@ -82,6 +84,8 @@ import { Player } from "./player_type.ts";
 export { Player };
 import { Room } from "./room_type.ts";
 export { Room };
+import { WonPlayer } from "./won_player_type.ts";
+export { WonPlayer };
 
 const REMOTE_MODULE = {
   tables: {
