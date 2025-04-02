@@ -1,4 +1,6 @@
-use spacetimedb::{reducer, table, Identity, ReducerContext, SpacetimeType, Table, Timestamp};
+use spacetimedb::{
+    rand::Rng, reducer, table, Identity, ReducerContext, SpacetimeType, Table, Timestamp,
+};
 
 #[table(name = player, public)]
 pub struct Player {
@@ -10,6 +12,8 @@ pub struct Player {
     name: Option<String>,
     online: bool,
 }
+
+const PLAYERS_REQUIRED: u32 = 2;
 
 const ROWS: usize = 6;
 const COLS: usize = 20;
@@ -41,6 +45,7 @@ pub struct Game {
     latest_move: Option<Coord>,
 
     rows: u32,
+    players_required: u32,
 }
 
 #[table(name = join_game, public)]
@@ -49,6 +54,8 @@ pub struct JoinGame {
     room_id: u32,
     #[primary_key]
     joiner_id: u32,
+    #[auto_inc]
+    index: u32,
 }
 
 #[reducer]
@@ -65,6 +72,11 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
         return Err("Cannot join the game when already in one".to_string());
     }
 
+    // check if game is full i.e. 2 players are already in the game
+    if ctx.db.join_game().room_id().filter(jr.room_id).count() >= PLAYERS_REQUIRED as usize {
+        return Err("Cannot join the game when it is full".to_string());
+    }
+
     // if there is no game in the room, create one
     if ctx.db.game().room_id().find(jr.room_id).is_none() {
         ctx.db.game().try_insert(Game {
@@ -73,14 +85,16 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
 
             won_player: None,
             table: vec![vec![None; COLS]; ROWS],
-            sw: true,
             latest_move: None,
+            players_required: PLAYERS_REQUIRED,
+            sw: ctx.rng().gen_bool(0.5),
         })?;
     }
 
     ctx.db.join_game().try_insert(JoinGame {
         room_id: jr.room_id,
         joiner_id: player.id,
+        index: 0,
     })?;
 
     Ok(())
