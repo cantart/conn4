@@ -3,6 +3,7 @@ import { Room } from "../../module_bindings";
 import { SubscriptionHandle } from '$lib';
 
 export class UseRoom {
+    // TODO: make private by prefixing with `#`
     _room = $state<Room | null>(null);
 
     conn: DbConnection;

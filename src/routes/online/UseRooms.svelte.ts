@@ -2,6 +2,7 @@ import { SubscriptionHandle } from "$lib";
 import { Room, DbConnection, type EventContext } from "../../module_bindings";
 
 export class UseRooms {
+    // TODO: make private by prefixing with `#`
     _rooms = $state<Room[]>([]);
 
     conn: DbConnection;
