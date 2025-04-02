@@ -9,11 +9,11 @@
 	} from '../../module_bindings';
 	import { beforeNavigate } from '$app/navigation';
 	import type { SubscriptionHandle, You } from '$lib';
-	import Home from '$lib/online/Home.svelte';
+	import Home from './Home.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
-	import Room from '$lib/online/Room.svelte';
-	import type { RoomData } from '$lib/online/types';
-	import { UseRooms } from '$lib/online/UseRooms.svelte';
+	import type { RoomData } from './types';
+	import { UseRooms } from './UseRooms.svelte';
+	import Room from './Room.svelte';
 
 	let s = $state<
 		| {

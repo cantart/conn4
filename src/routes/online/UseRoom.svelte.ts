@@ -1,4 +1,4 @@
-import { DbConnection, type EventContext } from './../../module_bindings/index'
+import { DbConnection, type EventContext } from '../../module_bindings/index'
 import { Room } from "../../module_bindings";
 import { SubscriptionHandle } from '$lib';
 
