@@ -110,7 +110,10 @@
 		await useGame.joinOrCreate();
 	};
 
-	const mappedGameState = $derived.by((): GameUIDataProps | null => {
+	/**
+	 * Not null if the game is ready to be played.
+	 */
+	const readyGameState = $derived.by((): GameUIDataProps | null => {
 		if (!useGame.game || useGame.joinGames.length !== 2) {
 			return null;
 		}
@@ -136,6 +139,10 @@
 				: undefined
 		};
 	});
+
+	$inspect('useGame.game', useGame.game);
+	$inspect('readyGameState', readyGameState);
+	$inspect('useGame.joined', useGame.joined);
 </script>
 
 <div class="space-y-8">
@@ -157,10 +164,23 @@
 	<div class="text-center">
 		{#if useGame.loading}
 			<span class="loading loading-spinner loading-lg"></span>
-		{:else if useGame.game && !mappedGameState}
-			<h1 class="text-center">Waiting for other player to join...</h1>
-		{:else if mappedGameState}
-			<h1>TODO: Start game</h1>
+		{:else if useGame.game}
+			{#if readyGameState}
+				<!-- Game is being displayed. -->
+				{#if useGame.joined}
+					<!-- You are currently in a match against another player. -->
+					<h1 class="text-center">TODO: Having a match against another player.</h1>
+				{:else}
+					<!-- You are watching a match as a spectator. -->
+					<h1 class="text-center">TODO: Display game but no interaction</h1>
+				{/if}
+			{:else if useGame.joined}
+				<!-- You are the only one in the game and waiting for another player. -->
+				<h1 class="text-center">Waiting for other player to join...</h1>
+			{:else}
+				<!-- There is someone in the game. You are not in it -->
+				<h1 class="text-center">TODO: Join game button</h1>
+			{/if}
 		{:else}
 			<button onclick={onStartGame} disabled={useGame.gameJoining} class="btn btn-primary"
 				>Start Game</button
