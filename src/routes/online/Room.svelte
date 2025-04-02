@@ -127,7 +127,9 @@
 
 {#snippet gameArea()}
 	<div class="text-center">
-		{#if useGame.game}
+		{#if useGame.loading}
+			<span class="loading loading-spinner loading-lg"></span>
+		{:else if useGame.game}
 			<h1 class="text-center">'this is a game'</h1>
 		{:else}
 			<button onclick={onStartGame} disabled={useGame.gameJoining} class="btn btn-primary"

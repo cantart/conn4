@@ -2,6 +2,15 @@ import { SubscriptionHandle } from "$lib";
 import type { JoinGame, DbConnection, EventContext, Game, ReducerEventContext } from "../../module_bindings";
 
 export class UseGame {
+    // TODO: Try to refactor so that we can do some union type i.e. if loading is true, game is undefined, if not game is Game or null. Maybe we need to convert the class to a function that returns an object with the correct types.
+    #loading = $state(true);
+    get loading() {
+        return this.#loading;
+    }
+
+    #subscriptions = 0;
+    #activeSubscriptions = $state(0);
+
     #joined = $state(false);
     get joined() {
         return this.#joined;
@@ -37,6 +46,12 @@ export class UseGame {
             this.#joined = this.#joinGames.some(jg => jg.joinerId === yourId)
         })
 
+        $effect(() => {
+            if (this.#activeSubscriptions === this.#subscriptions) {
+                this.#loading = false
+            }
+        })
+
         this.#gameOnUpdate = (ctx, game) => {
             this.#game = game;
         }
@@ -49,9 +64,11 @@ export class UseGame {
         conn.db.game.onUpdate(this.#gameOnUpdate);
         conn.db.game.onInsert(this.#gameOnInsert);
 
+        this.#subscriptions++;
         this.#gameHandle = conn
             .subscriptionBuilder()
             .onApplied(() => {
+                this.#activeSubscriptions++;
                 for (const game of conn.db.game.iter()) {
                     if (game.roomId === roomId) {
                         this.#game = game;
@@ -86,9 +103,12 @@ export class UseGame {
         }
         conn.db.joinGame.onInsert(this.#joinGameOnInsert);
         conn.db.joinGame.onDelete(this.#joinGameOnDelete);
+
+        this.#subscriptions++;
         this.#joinGameHandle = conn
             .subscriptionBuilder()
             .onApplied(() => {
+                this.#activeSubscriptions++;
                 for (const jg of conn.db.joinGame.iter()) {
                     if (jg.joinerId === yourId) {
                         if (this.#joined) {
