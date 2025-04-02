@@ -44,7 +44,6 @@ pub struct Game {
     /// last move made by a player
     latest_move: Option<Coord>,
 
-    rows: u32,
     players_required: u32,
 }
 
@@ -138,7 +137,6 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
     if ctx.db.game().room_id().find(jr.room_id).is_none() {
         ctx.db.game().try_insert(Game {
             room_id: jr.room_id,
-            rows: ROWS as u32,
 
             won_player: None,
             table: vec![vec![None; COLS]; ROWS],

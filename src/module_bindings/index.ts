@@ -36,6 +36,8 @@ import { CreateRoom } from "./create_room_reducer.ts";
 export { CreateRoom };
 import { DeleteRoom } from "./delete_room_reducer.ts";
 export { DeleteRoom };
+import { DropPiece } from "./drop_piece_reducer.ts";
+export { DropPiece };
 import { Hello } from "./hello_reducer.ts";
 export { Hello };
 import { HelloWithText } from "./hello_with_text_reducer.ts";
@@ -128,6 +130,10 @@ const REMOTE_MODULE = {
       reducerName: "delete_room",
       argsType: DeleteRoom.getTypeScriptAlgebraicType(),
     },
+    drop_piece: {
+      reducerName: "drop_piece",
+      argsType: DropPiece.getTypeScriptAlgebraicType(),
+    },
     hello: {
       reducerName: "hello",
       argsType: Hello.getTypeScriptAlgebraicType(),
@@ -193,6 +199,7 @@ const REMOTE_MODULE = {
 export type Reducer = never
 | { name: "CreateRoom", args: CreateRoom }
 | { name: "DeleteRoom", args: DeleteRoom }
+| { name: "DropPiece", args: DropPiece }
 | { name: "Hello", args: Hello }
 | { name: "HelloWithText", args: HelloWithText }
 | { name: "IdentityConnected", args: IdentityConnected }
@@ -237,6 +244,22 @@ export class RemoteReducers {
 
   removeOnDeleteRoom(callback: (ctx: ReducerEventContext, roomId: number) => void) {
     this.connection.offReducer("delete_room", callback);
+  }
+
+  dropPiece(column: number) {
+    const __args = { column };
+    let __writer = new BinaryWriter(1024);
+    DropPiece.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("drop_piece", __argsBuffer, this.setCallReducerFlags.dropPieceFlags);
+  }
+
+  onDropPiece(callback: (ctx: ReducerEventContext, column: number) => void) {
+    this.connection.onReducer("drop_piece", callback);
+  }
+
+  removeOnDropPiece(callback: (ctx: ReducerEventContext, column: number) => void) {
+    this.connection.offReducer("drop_piece", callback);
   }
 
   hello() {
@@ -366,6 +389,11 @@ export class SetReducerFlags {
   deleteRoomFlags: CallReducerFlags = 'FullUpdate';
   deleteRoom(flags: CallReducerFlags) {
     this.deleteRoomFlags = flags;
+  }
+
+  dropPieceFlags: CallReducerFlags = 'FullUpdate';
+  dropPiece(flags: CallReducerFlags) {
+    this.dropPieceFlags = flags;
   }
 
   helloFlags: CallReducerFlags = 'FullUpdate';
