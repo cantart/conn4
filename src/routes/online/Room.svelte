@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { type EventContext, JoinRoom, Message } from '../../module_bindings';
 	import type { RoomData } from './types';
+	import { UseGame } from './UseGame.svelte';
 	import { UseRoom } from './UseRoom.svelte';
 
 	let { conn, players, roomId, initialRoomTitle, you, leaveRoom }: RoomData = $props();
@@ -8,6 +9,8 @@
 	let roomTitle = $state(initialRoomTitle);
 	let joinRooms = $state<JoinRoom[]>(Array.from(conn.db.joinRoom.iter()));
 	let messages = $state<Message[]>([]);
+
+	const useGame = new UseGame(conn, roomId);
 
 	const messageOnInsert = (ctx: EventContext, msg: Message) => {
 		let existingMessage = messages.find((m) => m.sentAt === msg.sentAt);
@@ -65,7 +68,7 @@
 					console.error('Error unsubscribing from message handle:', e);
 				}
 			}
-			await useRoom.stop();
+			await Promise.all([useRoom.stop(), useGame.stop()]);
 			removeJoinRoomListeners();
 			leaving = false;
 			leaveRoom(you);
@@ -79,6 +82,7 @@
 			throw new Error(`Join room not found for update: ${o.joinerId}`);
 		}
 	};
+	// TODO: Move join rooms inside a room to `UseRoom` just like what happens in `UseGame`.
 	const allJoinRoomHandle = conn
 		.subscriptionBuilder()
 		.onError((ctx) => {
