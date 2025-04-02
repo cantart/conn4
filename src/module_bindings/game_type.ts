@@ -40,6 +40,7 @@ export type Game = {
   sw: boolean,
   latestMove: __Coord | undefined,
   rows: number,
+  playersRequired: number,
 };
 
 /**
@@ -58,6 +59,7 @@ export namespace Game {
       new ProductTypeElement("sw", AlgebraicType.createBoolType()),
       new ProductTypeElement("latestMove", AlgebraicType.createOptionType(__Coord.getTypeScriptAlgebraicType())),
       new ProductTypeElement("rows", AlgebraicType.createU32Type()),
+      new ProductTypeElement("playersRequired", AlgebraicType.createU32Type()),
     ]);
   }
 
