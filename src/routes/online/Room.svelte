@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { GameUIProps } from '$lib/GameUI.svelte';
 	import { type EventContext, JoinRoom, Message } from '../../module_bindings';
 	import type { RoomData } from './types';
 	import { UseGame } from './UseGame.svelte';
@@ -108,6 +109,11 @@
 	const onStartGame = async () => {
 		await useGame.joinOrCreate();
 	};
+
+	const mappedGameState = $derived((): GameUIProps => {
+		// TODO
+		throw new Error('Map useGame.game to an object that can be passed into <GameUI>');
+	});
 </script>
 
 <div class="space-y-8">

@@ -3,7 +3,7 @@
 	import { fly, scale, slide, fade } from 'svelte/transition';
 	import { expoInOut, expoOut } from 'svelte/easing';
 
-	let props: {
+	export type GameUIProps = {
 		players: LocalPlayer[];
 		currentPlayerTurn: LocalPlayer;
 		table: {
@@ -19,7 +19,9 @@
 		isColumnCannotDrop: boolean;
 		onDrop: (column: number) => void;
 		onRestart: () => void;
-	} = $props();
+	};
+
+	let props: GameUIProps = $props();
 
 	const useLatestPieceRing = import.meta.env.VITE_USE_LATEST_PIECE_RING === 'true';
 </script>
