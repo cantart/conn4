@@ -44,6 +44,8 @@ import { IdentityConnected } from "./identity_connected_reducer.ts";
 export { IdentityConnected };
 import { IdentityDisconnected } from "./identity_disconnected_reducer.ts";
 export { IdentityDisconnected };
+import { JoinOrCreateGame } from "./join_or_create_game_reducer.ts";
+export { JoinOrCreateGame };
 import { JoinToRoom } from "./join_to_room_reducer.ts";
 export { JoinToRoom };
 import { LeaveRoom } from "./leave_room_reducer.ts";
@@ -138,6 +140,10 @@ const REMOTE_MODULE = {
       reducerName: "identity_disconnected",
       argsType: IdentityDisconnected.getTypeScriptAlgebraicType(),
     },
+    join_or_create_game: {
+      reducerName: "join_or_create_game",
+      argsType: JoinOrCreateGame.getTypeScriptAlgebraicType(),
+    },
     join_to_room: {
       reducerName: "join_to_room",
       argsType: JoinToRoom.getTypeScriptAlgebraicType(),
@@ -187,6 +193,7 @@ export type Reducer = never
 | { name: "HelloWithText", args: HelloWithText }
 | { name: "IdentityConnected", args: IdentityConnected }
 | { name: "IdentityDisconnected", args: IdentityDisconnected }
+| { name: "JoinOrCreateGame", args: JoinOrCreateGame }
 | { name: "JoinToRoom", args: JoinToRoom }
 | { name: "LeaveRoom", args: LeaveRoom }
 | { name: "SendMessage", args: SendMessage }
@@ -272,6 +279,22 @@ export class RemoteReducers {
     this.connection.offReducer("identity_disconnected", callback);
   }
 
+  joinOrCreateGame(roomId: number) {
+    const __args = { roomId };
+    let __writer = new BinaryWriter(1024);
+    JoinOrCreateGame.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("join_or_create_game", __argsBuffer, this.setCallReducerFlags.joinOrCreateGameFlags);
+  }
+
+  onJoinOrCreateGame(callback: (ctx: ReducerEventContext, roomId: number) => void) {
+    this.connection.onReducer("join_or_create_game", callback);
+  }
+
+  removeOnJoinOrCreateGame(callback: (ctx: ReducerEventContext, roomId: number) => void) {
+    this.connection.offReducer("join_or_create_game", callback);
+  }
+
   joinToRoom(roomId: number) {
     const __args = { roomId };
     let __writer = new BinaryWriter(1024);
@@ -353,6 +376,11 @@ export class SetReducerFlags {
   helloWithTextFlags: CallReducerFlags = 'FullUpdate';
   helloWithText(flags: CallReducerFlags) {
     this.helloWithTextFlags = flags;
+  }
+
+  joinOrCreateGameFlags: CallReducerFlags = 'FullUpdate';
+  joinOrCreateGame(flags: CallReducerFlags) {
+    this.joinOrCreateGameFlags = flags;
   }
 
   joinToRoomFlags: CallReducerFlags = 'FullUpdate';

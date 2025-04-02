@@ -11,11 +11,14 @@ pub struct Player {
     online: bool,
 }
 
+const ROWS: usize = 6;
+const COLS: usize = 20;
+
 #[table(name = game, public)]
 pub struct Game {
     #[primary_key]
     room_id: u32,
-    cells: Vec<Vec<u32>>, // cells that have player IDs in them
+    cells: Vec<Vec<Option<u32>>>, // cells that may have player IDs in them
     rows: u32,
 }
 
@@ -25,6 +28,29 @@ pub struct JoinGame {
     room_id: u32,
     #[primary_key]
     joiner_id: u32,
+}
+
+#[reducer]
+pub fn join_or_create_game(ctx: &ReducerContext, room_id: u32) -> Result<(), String> {
+    let player = find_sender_player(ctx);
+    if ctx.db.join_game().joiner_id().find(player.id).is_some() {
+        return Err("Cannot join the game when already in one".to_string());
+    }
+    // if there is no game in the room, create one
+    if ctx.db.game().room_id().find(room_id).is_none() {
+        ctx.db.game().try_insert(Game {
+            room_id,
+            cells: vec![vec![None; COLS]; ROWS],
+            rows: ROWS as u32,
+        })?;
+    }
+
+    ctx.db.join_game().try_insert(JoinGame {
+        room_id,
+        joiner_id: player.id,
+    })?;
+
+    Ok(())
 }
 
 #[table(name = room, public)]
