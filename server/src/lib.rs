@@ -39,7 +39,7 @@ pub struct Game {
     won_player: Option<WonPlayer>,
     /// table of the game
     table: Vec<Vec<Option<u32>>>,
-    /// to switch between players
+    /// if true, the current turn is for the player with an even index
     sw: bool,
     /// last move made by a player
     latest_move: Option<Coord>,
@@ -56,6 +56,63 @@ pub struct JoinGame {
     joiner_id: u32,
     #[auto_inc]
     index: u32,
+}
+
+fn check_win(game: &Game, player_id: u32) -> Option<Vec<Coord>> {
+    todo!()
+}
+
+#[reducer]
+pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
+    let player = find_sender_player(ctx);
+
+    // check if the player is in a game
+    let Some(jg) = ctx.db.join_game().joiner_id().find(player.id) else {
+        return Err("Cannot drop piece if not in a game".to_string());
+    };
+
+    let Some(mut game) = ctx.db.game().room_id().find(jg.room_id) else {
+        return Err("Cannot drop piece if game does not exist".to_string());
+    };
+
+    let col_usize = column as usize;
+    if col_usize >= game.table[0].len() {
+        return Err("Column index out of bounds".to_string());
+    }
+
+    if game.won_player.is_some() {
+        return Err("Cannot drop piece if game is already won".to_string());
+    }
+
+    if (jg.index % 2 == 0) != game.sw {
+        return Err("Cannot drop piece if it's not your turn".to_string());
+    }
+
+    // check if the column is full
+    if game.table[0][col_usize].is_some() {
+        return Err("Cannot drop piece in a full column".to_string());
+    }
+
+    for i in (0..game.table.len()).rev() {
+        if game.table[i][col_usize].is_none() {
+            game.table[i][col_usize] = Some(player.id);
+            game.latest_move = Some(Coord {
+                x: i as u32,
+                y: column,
+            });
+
+            if let Some(coords) = check_win(&game, player.id) {
+                game.won_player = Some(WonPlayer {
+                    player_id: player.id,
+                    coordinates: coords,
+                });
+            } else {
+                game.sw = !game.sw;
+            }
+        }
+    }
+
+    Ok(())
 }
 
 #[reducer]
