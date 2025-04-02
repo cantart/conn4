@@ -59,6 +59,20 @@ pub struct JoinGame {
     index: u32,
 }
 
+fn leave_game_by_player_id(ctx: &ReducerContext, player_id: u32) {
+    let Some(jg) = ctx.db.join_game().joiner_id().find(player_id) else {
+        // player was not in a game
+        return;
+    };
+
+    ctx.db.join_game().joiner_id().delete(player_id);
+
+    // remove game if the player was the last one in the game
+    if ctx.db.join_game().room_id().filter(jg.room_id).count() == 0 {
+        ctx.db.game().room_id().delete(jg.room_id);
+    }
+}
+
 fn check_win(table: &GameTable, player_id: u32) -> Option<Vec<Coord>> {
     let rows = table.len();
     let cols = table[0].len();
@@ -357,6 +371,7 @@ fn delete_room(ctx: &ReducerContext, room_id: u32) {
 pub fn leave_room(ctx: &ReducerContext) {
     ctx.db.join_room().joiner_identity().delete(ctx.sender);
     let player = find_sender_player(ctx);
+    leave_game_by_player_id(ctx, player.id);
     if let Some(room) = ctx.db.room().owner_id().find(player.id) {
         if let Some(other_jr) = ctx.db.join_room().room_id().filter(room.id).next() {
             // Promote the next player to owner
