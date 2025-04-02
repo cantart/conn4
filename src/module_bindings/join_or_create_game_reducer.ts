@@ -31,9 +31,7 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 
-export type JoinOrCreateGame = {
-  roomId: number,
-};
+export type JoinOrCreateGame = {};
 
 /**
  * A namespace for generated helper functions.
@@ -45,7 +43,6 @@ export namespace JoinOrCreateGame {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
     ]);
   }
 

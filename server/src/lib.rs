@@ -31,22 +31,30 @@ pub struct JoinGame {
 }
 
 #[reducer]
-pub fn join_or_create_game(ctx: &ReducerContext, room_id: u32) -> Result<(), String> {
+pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
     let player = find_sender_player(ctx);
+
+    // check if the player is in a room
+    let Some(jr) = ctx.db.join_room().joiner_id().find(player.id) else {
+        return Err("Cannot join the game when not in a room".to_string());
+    };
+
+    // check if the player is already in a game
     if ctx.db.join_game().joiner_id().find(player.id).is_some() {
         return Err("Cannot join the game when already in one".to_string());
     }
+
     // if there is no game in the room, create one
-    if ctx.db.game().room_id().find(room_id).is_none() {
+    if ctx.db.game().room_id().find(jr.room_id).is_none() {
         ctx.db.game().try_insert(Game {
-            room_id,
+            room_id: jr.room_id,
             cells: vec![vec![None; COLS]; ROWS],
             rows: ROWS as u32,
         })?;
     }
 
     ctx.db.join_game().try_insert(JoinGame {
-        room_id,
+        room_id: jr.room_id,
         joiner_id: player.id,
     })?;
 

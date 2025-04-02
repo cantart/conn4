@@ -279,19 +279,15 @@ export class RemoteReducers {
     this.connection.offReducer("identity_disconnected", callback);
   }
 
-  joinOrCreateGame(roomId: number) {
-    const __args = { roomId };
-    let __writer = new BinaryWriter(1024);
-    JoinOrCreateGame.getTypeScriptAlgebraicType().serialize(__writer, __args);
-    let __argsBuffer = __writer.getBuffer();
-    this.connection.callReducer("join_or_create_game", __argsBuffer, this.setCallReducerFlags.joinOrCreateGameFlags);
+  joinOrCreateGame() {
+    this.connection.callReducer("join_or_create_game", new Uint8Array(0), this.setCallReducerFlags.joinOrCreateGameFlags);
   }
 
-  onJoinOrCreateGame(callback: (ctx: ReducerEventContext, roomId: number) => void) {
+  onJoinOrCreateGame(callback: (ctx: ReducerEventContext) => void) {
     this.connection.onReducer("join_or_create_game", callback);
   }
 
-  removeOnJoinOrCreateGame(callback: (ctx: ReducerEventContext, roomId: number) => void) {
+  removeOnJoinOrCreateGame(callback: (ctx: ReducerEventContext) => void) {
     this.connection.offReducer("join_or_create_game", callback);
   }
 
