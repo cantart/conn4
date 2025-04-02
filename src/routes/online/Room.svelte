@@ -105,10 +105,8 @@
 		conn.reducers.leaveRoom();
 	};
 
-	let gameJoining = $state(false);
-	const onStartGame = () => {
-		gameJoining = true;
-		// TODO: set back to false when game is started
+	const onStartGame = async () => {
+		await useGame.joinOrCreate();
 	};
 </script>
 
@@ -132,7 +130,7 @@
 		{#if useGame.game}
 			<h1 class="text-center">'this is a game'</h1>
 		{:else}
-			<button onclick={onStartGame} disabled={gameJoining} class="btn btn-primary"
+			<button onclick={onStartGame} disabled={useGame.gameJoining} class="btn btn-primary"
 				>Start Game</button
 			>
 		{/if}
