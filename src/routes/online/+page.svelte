@@ -111,7 +111,7 @@
 
 	const conn = DbConnection.builder()
 		.withUri(import.meta.env.VITE_SPACETIME_DB_URI ?? 'ws://localhost:3000')
-		.withModuleName('fial')
+		.withModuleName(import.meta.env.VITE_SPACETIME_DB_MODULE ?? 'fial')
 		.withToken(localStorage.getItem('auth_token') || '')
 		.onConnect(onConnect)
 		.onConnectError(onConnectError)
