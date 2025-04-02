@@ -121,7 +121,6 @@
 		conn.disconnect();
 	});
 
-	// TODO: refactor `homeUseRooms`. This is for making sure that use rooms subscription is completely stopped before use room subscription is created.
 	let homeUseRooms: UseRooms | null = null;
 	$effect(() => {
 		if (yourJoinRoom) {
@@ -139,7 +138,6 @@
 					if (homeUseRooms) {
 						homeUseRooms.stop().then(() => {
 							s = toRoomData;
-							homeUseRooms = null;
 						});
 					} else {
 						s = toRoomData;
@@ -155,7 +153,6 @@
 {:else if s.page === 'home' && you}
 	<Home
 		setUseRooms={(ur) => {
-			// TODO: refactor `homeUseRooms`. This is for making sure that use rooms subscription is completely stopped before use room subscription is created.
 			homeUseRooms = ur;
 		}}
 		{conn}

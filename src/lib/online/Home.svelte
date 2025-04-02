@@ -11,7 +11,7 @@
 	}: {
 		conn: DbConnection;
 		you: You;
-		setUseRooms: (ur: UseRooms) => void;
+		setUseRooms: (ur: UseRooms | null) => void;
 	} = $props();
 
 	let name = $state(you.name);
@@ -60,7 +60,7 @@
 	}
 
 	onDestroy(async () => {
-		// await useRooms.stop();
+		setUseRooms(null);
 		conn.reducers.removeOnSetName(onSetName);
 	});
 </script>
