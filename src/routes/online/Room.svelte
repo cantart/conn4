@@ -104,6 +104,12 @@
 		leaving = true;
 		conn.reducers.leaveRoom();
 	};
+
+	let gameJoining = $state(false);
+	const onStartGame = () => {
+		gameJoining = true;
+		// TODO: set back to false when game is started
+	};
 </script>
 
 <div class="space-y-8">
@@ -126,7 +132,9 @@
 		{#if useGame.game}
 			<h1 class="text-center">'this is a game'</h1>
 		{:else}
-			<button class="btn btn-primary">Start Game</button>
+			<button onclick={onStartGame} disabled={gameJoining} class="btn btn-primary"
+				>Start Game</button
+			>
 		{/if}
 	</div>
 {/snippet}
