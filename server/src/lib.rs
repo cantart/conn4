@@ -30,6 +30,8 @@ struct WonPlayer {
     coordinates: Vec<Coord>, // cells that are part of the winning line
 }
 
+type GameTable = Vec<Vec<Option<u32>>>;
+
 #[table(name = game, public)]
 pub struct Game {
     #[primary_key]
@@ -38,7 +40,7 @@ pub struct Game {
     /// player that has won the game
     won_player: Option<WonPlayer>,
     /// table of the game
-    table: Vec<Vec<Option<u32>>>,
+    table: GameTable,
     /// if true, the current turn is for the player with an even index
     sw: bool,
     /// last move made by a player
@@ -57,8 +59,82 @@ pub struct JoinGame {
     index: u32,
 }
 
-fn check_win(game: &Game, player_id: u32) -> Option<Vec<Coord>> {
-    todo!()
+fn check_win(table: &GameTable, player_id: u32) -> Option<Vec<Coord>> {
+    let rows = table.len();
+    let cols = table[0].len();
+    const STREAK_REQUIRED: usize = 4;
+
+    // Check horizontal
+    for row in 0..rows {
+        for col in 0..=(cols - STREAK_REQUIRED) {
+            let cols_to_check = col..col + STREAK_REQUIRED;
+            let cells_to_check = &table[row][cols_to_check.clone()];
+            if cells_to_check.iter().all(|&cell| cell == Some(player_id)) {
+                return Some(
+                    cols_to_check
+                        .map(|col| Coord {
+                            x: row as u32,
+                            y: col as u32,
+                        })
+                        .collect(),
+                );
+            }
+        }
+    }
+
+    // Check vertical
+    for col in 0..cols {
+        for row in 0..=(rows - STREAK_REQUIRED) {
+            let rows_to_check = row..row + STREAK_REQUIRED;
+            let cells_to_check = &table[rows_to_check.clone()][col];
+            if cells_to_check.iter().all(|&cell| cell == Some(player_id)) {
+                return Some(
+                    rows_to_check
+                        .map(|row| Coord {
+                            x: row as u32,
+                            y: col as u32,
+                        })
+                        .collect(),
+                );
+            }
+        }
+    }
+
+    // Check diagonal (top-left to bottom-right)
+    for row in 0..=(rows - STREAK_REQUIRED) {
+        for col in 0..=(cols - STREAK_REQUIRED) {
+            let mut cells_to_check = (0..STREAK_REQUIRED).map(|i| &table[row + i][col + i]);
+            if cells_to_check.all(|&cell| cell == Some(player_id)) {
+                return Some(
+                    (0..STREAK_REQUIRED)
+                        .map(|i| Coord {
+                            x: (row + i) as u32,
+                            y: (col + i) as u32,
+                        })
+                        .collect(),
+                );
+            }
+        }
+    }
+
+    // Check diagonal (bottom-left to top-right)
+    for row in (STREAK_REQUIRED - 1)..rows {
+        for col in 0..=(cols - STREAK_REQUIRED) {
+            let mut cells_to_check = (0..STREAK_REQUIRED).map(|i| &table[row - i][col + i]);
+            if cells_to_check.all(|&cell| cell == Some(player_id)) {
+                return Some(
+                    (0..STREAK_REQUIRED)
+                        .map(|i| Coord {
+                            x: (row - i) as u32,
+                            y: (col + i) as u32,
+                        })
+                        .collect(),
+                );
+            }
+        }
+    }
+
+    None
 }
 
 #[reducer]
@@ -100,7 +176,7 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
                 y: column,
             });
 
-            if let Some(coords) = check_win(&game, player.id) {
+            if let Some(coords) = check_win(&game.table, player.id) {
                 game.won_player = Some(WonPlayer {
                     player_id: player.id,
                     coordinates: coords,
