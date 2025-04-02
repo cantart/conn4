@@ -19,6 +19,14 @@ pub struct Game {
     rows: u32,
 }
 
+#[table(name = join_game, public)]
+pub struct JoinGame {
+    #[index(btree)]
+    room_id: u32,
+    #[primary_key]
+    joiner_id: u32,
+}
+
 #[table(name = room, public)]
 pub struct Room {
     #[primary_key]

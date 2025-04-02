@@ -56,6 +56,8 @@ export { SetName };
 // Import and reexport all table handle types
 import { GameTableHandle } from "./game_table.ts";
 export { GameTableHandle };
+import { JoinGameTableHandle } from "./join_game_table.ts";
+export { JoinGameTableHandle };
 import { JoinRoomTableHandle } from "./join_room_table.ts";
 export { JoinRoomTableHandle };
 import { MessageTableHandle } from "./message_table.ts";
@@ -68,6 +70,8 @@ export { RoomTableHandle };
 // Import and reexport all types
 import { Game } from "./game_type.ts";
 export { Game };
+import { JoinGame } from "./join_game_type.ts";
+export { JoinGame };
 import { JoinRoom } from "./join_room_type.ts";
 export { JoinRoom };
 import { Message } from "./message_type.ts";
@@ -83,6 +87,11 @@ const REMOTE_MODULE = {
       tableName: "game",
       rowType: Game.getTypeScriptAlgebraicType(),
       primaryKey: "roomId",
+    },
+    join_game: {
+      tableName: "join_game",
+      rowType: JoinGame.getTypeScriptAlgebraicType(),
+      primaryKey: "joinerId",
     },
     join_room: {
       tableName: "join_room",
@@ -373,6 +382,10 @@ export class RemoteTables {
 
   get game(): GameTableHandle {
     return new GameTableHandle(this.connection.clientCache.getOrCreateTable<Game>(REMOTE_MODULE.tables.game));
+  }
+
+  get joinGame(): JoinGameTableHandle {
+    return new JoinGameTableHandle(this.connection.clientCache.getOrCreateTable<JoinGame>(REMOTE_MODULE.tables.join_game));
   }
 
   get joinRoom(): JoinRoomTableHandle {
