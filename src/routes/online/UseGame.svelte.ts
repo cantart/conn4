@@ -19,6 +19,7 @@ export class UseGame {
     #gameHandle: SubscriptionHandle;
     #gameOnUpdate: (ctx: EventContext, oldRow: Game, newRow: Game) => void
     #gameOnInsert: (ctx: EventContext, game: Game) => void
+    #gameOnDelete: (ctx: EventContext, game: Game) => void
     #game = $state<Game | null>(null);
     get game() {
         return this.#game;
@@ -61,6 +62,13 @@ export class UseGame {
             }
             this.#game = game;
         }
+        this.#gameOnDelete = (ctx, game) => {
+            if (game.roomId !== roomId) {
+                throw new Error('Game from other subscriptions leaked in. Make sure to completely unsubscribe from previous subscriptions first.')
+            }
+            this.#game = null;
+        }
+        conn.db.game.onDelete(this.#gameOnDelete);
         conn.db.game.onUpdate(this.#gameOnUpdate);
         conn.db.game.onInsert(this.#gameOnInsert);
 
@@ -154,6 +162,7 @@ export class UseGame {
         const removeListeners = () => {
             this.#conn.db.game.removeOnUpdate(this.#gameOnUpdate);
             this.#conn.db.game.removeOnInsert(this.#gameOnInsert);
+            this.#conn.db.game.removeOnDelete(this.#gameOnDelete);
         }
 
         return new Promise<void>(resolve => {
