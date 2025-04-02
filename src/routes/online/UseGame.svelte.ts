@@ -88,7 +88,12 @@ export class UseGame {
                     throw new Error('You are already joined to the game.')
                 }
             }
-            this.#joinGames.push(jg);
+            let existing = this.#joinGames.find((j) => j.joinerId === jg.joinerId);
+            if (existing) {
+                existing = jg
+            } else {
+                this.#joinGames.push(jg);
+            }
         }
         this.#joinGameOnDelete = (ctx, jg) => {
             if (jg.joinerId === yourId) {
