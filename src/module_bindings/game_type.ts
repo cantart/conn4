@@ -36,7 +36,7 @@ import { Coord as __Coord } from "./coord_type";
 export type Game = {
   roomId: number,
   wonPlayer: __WonPlayer | undefined,
-  table: number | undefined[][],
+  table: (number | undefined)[][],
   sw: boolean,
   latestMove: __Coord | undefined,
   playersRequired: number,

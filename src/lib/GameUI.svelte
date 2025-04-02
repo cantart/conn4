@@ -3,25 +3,28 @@
 	import { fly, scale, slide, fade } from 'svelte/transition';
 	import { expoInOut, expoOut } from 'svelte/easing';
 
-	export type GameUIProps = {
+	export type GameUIDataProps = {
 		players: LocalPlayer[];
-		currentPlayerTurn: LocalPlayer;
-		table: {
-			playerId: number | undefined;
-		}[][];
+		currentPlayerTurnId: number;
+		table: (number | undefined)[][];
 		wonPlayer:
 			| {
-					player: LocalPlayer;
+					playerId: number;
 					coordinates: [number, number][];
 			  }
 			| undefined;
 		latestPiecePosition: [number, number] | undefined;
-		isColumnCannotDrop: boolean;
-		onDrop: (column: number) => void;
-		onRestart: () => void;
 	};
 
-	let props: GameUIProps = $props();
+	let props: GameUIDataProps & {
+		onDrop: (column: number) => void;
+		onRestart: () => void;
+		isColumnCannotDrop: boolean;
+	} = $props();
+
+	if (props.players.length !== 2) {
+		throw new Error('GameUI requires exactly 2 players');
+	}
 
 	const useLatestPieceRing = import.meta.env.VITE_USE_LATEST_PIECE_RING === 'true';
 </script>
@@ -30,7 +33,7 @@
 	<div class="flex flex-wrap justify-center gap-4">
 		{#each props.players as player, i (player.id)}
 			<span
-				class:opacity-25={props.currentPlayerTurn.id !== player.id}
+				class:opacity-25={props.currentPlayerTurnId !== player.id}
 				class="flex items-center gap-2 transition-all"
 			>
 				<div class="aspect-square h-8 rounded-full {i === 0 ? 'bg-primary' : 'bg-secondary'}"></div>
@@ -57,7 +60,7 @@
 								props.onDrop(j);
 							}}
 						>
-							{#if cell.playerId}
+							{#if cell}
 								<div
 									class="h-full w-full {useLatestPieceRing &&
 										props.latestPiecePosition?.[0] === i &&
@@ -71,7 +74,7 @@
 								>
 									{@render piece({
 										halfOpacity,
-										skin: cell.playerId === props.players[0].id ? 'bg-primary' : 'bg-secondary'
+										skin: cell === props.players[0].id ? 'bg-primary' : 'bg-secondary'
 									})}
 								</div>
 							{/if}
@@ -85,7 +88,9 @@
 	{#if props.wonPlayer}
 		<div class="mt-2 flex flex-col items-center justify-center gap-2" transition:slide>
 			<p class="text-base-rs font-bold">
-				{props.wonPlayer.player.name} won!
+				{props.wonPlayer.playerId === props.players[0].id
+					? props.players[0].name
+					: props.players[1].name} wins!
 			</p>
 			<button
 				class="btn btn-accent btn-sm"

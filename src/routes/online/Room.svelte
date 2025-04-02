@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { GameUIProps } from '$lib/GameUI.svelte';
+	import type { GameUIDataProps } from '$lib/GameUI.svelte';
 	import { type EventContext, JoinRoom, Message } from '../../module_bindings';
 	import type { RoomData } from './types';
 	import { UseGame } from './UseGame.svelte';
@@ -110,9 +110,31 @@
 		await useGame.joinOrCreate();
 	};
 
-	const mappedGameState = $derived((): GameUIProps => {
-		// TODO
-		throw new Error('Map useGame.game to an object that can be passed into <GameUI>');
+	const mappedGameState = $derived.by((): GameUIDataProps | null => {
+		if (!useGame.game) {
+			return null;
+		}
+		const currentTurnJoinGame = useGame.game.sw ? useGame.joinGames[0] : useGame.joinGames[1];
+		return {
+			currentPlayerTurnId: currentTurnJoinGame.joinerId,
+			latestPiecePosition: useGame.game.latestMove
+				? [useGame.game.latestMove.x, useGame.game.latestMove.y]
+				: undefined,
+			players: useGame.joinGames.map((j) => {
+				return {
+					id: j.joinerId,
+					name: players.get(j.joinerId)?.name ?? '???',
+					online: players.get(j.joinerId)?.online ?? false
+				};
+			}),
+			table: useGame.game.table,
+			wonPlayer: useGame.game.wonPlayer
+				? {
+						coordinates: useGame.game.wonPlayer.coordinates.map((c) => [c.x, c.y]),
+						playerId: useGame.game.wonPlayer.playerId
+					}
+				: undefined
+		};
 	});
 </script>
 
@@ -135,7 +157,7 @@
 	<div class="text-center">
 		{#if useGame.loading}
 			<span class="loading loading-spinner loading-lg"></span>
-		{:else if useGame.game}
+		{:else if mappedGameState}
 			<h1 class="text-center">'this is a game'</h1>
 		{:else}
 			<button onclick={onStartGame} disabled={useGame.gameJoining} class="btn btn-primary"

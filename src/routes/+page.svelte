@@ -12,7 +12,7 @@
 
 <GameUi
 	players={game.players}
-	currentPlayerTurn={game.currentPlayerTurn()}
+	currentPlayerTurnId={game.currentPlayerTurn()}
 	table={game.table}
 	wonPlayer={game.wonPlayer}
 	latestPiecePosition={game.latestPiecePosition}

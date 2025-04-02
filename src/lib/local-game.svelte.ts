@@ -3,9 +3,7 @@ const createTable = () => {
 	const cols = 20;
 	return Array.from({ length: rows }, () =>
 		Array.from({ length: cols }, () => {
-			return {
-				playerId: undefined,
-			};
+			return undefined;
 		}),
 	);
 };
@@ -16,8 +14,8 @@ export type LocalPlayer = {
 };
 
 export type LocalGameState = {
-	wonPlayer: { player: LocalPlayer; coordinates: [number, number][] } | undefined;
-	table: { playerId: number | undefined }[][];
+	wonPlayer: { playerId: number; coordinates: [number, number][] } | undefined;
+	table: (number | undefined)[][];
 	sw: boolean;
 	latestPiecePosition: [number, number] | undefined;
 };
@@ -37,8 +35,8 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 
 	const players = args.players;
 
-	const currentPlayerTurn = $derived(() => {
-		return sw ? args.players[0] : args.players[1];
+	const currentPlayerTurnId = $derived(() => {
+		return sw ? args.players[0].id : args.players[1].id;
 	});
 
 	const switchTurn = () => {
@@ -57,10 +55,10 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 		for (let row = 0; row < rows; row++) {
 			for (let col = 0; col <= cols - winningStreak; col++) {
 				if (
-					table[row][col].playerId === playerId &&
-					table[row][col + 1].playerId === playerId &&
-					table[row][col + 2].playerId === playerId &&
-					table[row][col + 3].playerId === playerId
+					table[row][col] === playerId &&
+					table[row][col + 1] === playerId &&
+					table[row][col + 2] === playerId &&
+					table[row][col + 3] === playerId
 				) {
 					return [
 						[row, col],
@@ -76,10 +74,10 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 		for (let col = 0; col < cols; col++) {
 			for (let row = 0; row <= rows - winningStreak; row++) {
 				if (
-					table[row][col].playerId === playerId &&
-					table[row + 1][col].playerId === playerId &&
-					table[row + 2][col].playerId === playerId &&
-					table[row + 3][col].playerId === playerId
+					table[row][col] === playerId &&
+					table[row + 1][col] === playerId &&
+					table[row + 2][col] === playerId &&
+					table[row + 3][col] === playerId
 				) {
 					return [
 						[row, col],
@@ -95,10 +93,10 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 		for (let row = 0; row <= rows - winningStreak; row++) {
 			for (let col = 0; col <= cols - winningStreak; col++) {
 				if (
-					table[row][col].playerId === playerId &&
-					table[row + 1][col + 1].playerId === playerId &&
-					table[row + 2][col + 2].playerId === playerId &&
-					table[row + 3][col + 3].playerId === playerId
+					table[row][col] === playerId &&
+					table[row + 1][col + 1] === playerId &&
+					table[row + 2][col + 2] === playerId &&
+					table[row + 3][col + 3] === playerId
 				) {
 					return [
 						[row, col],
@@ -114,10 +112,10 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 		for (let row = winningStreak - 1; row < rows; row++) {
 			for (let col = 0; col <= cols - winningStreak; col++) {
 				if (
-					table[row][col].playerId === playerId &&
-					table[row - 1][col + 1].playerId === playerId &&
-					table[row - 2][col + 2].playerId === playerId &&
-					table[row - 3][col + 3].playerId === playerId
+					table[row][col] === playerId &&
+					table[row - 1][col + 1] === playerId &&
+					table[row - 2][col + 2] === playerId &&
+					table[row - 3][col + 3] === playerId
 				) {
 					return [
 						[row, col],
@@ -138,14 +136,14 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 			return;
 		}
 
-		const player = currentPlayerTurn();
+		const playerId = currentPlayerTurnId();
 		for (let i = table.length - 1; i >= 0; i--) {
-			if (table[i][column].playerId === undefined) {
-				table[i][column].playerId = player.id;
+			if (table[i][column] === undefined) {
+				table[i][column] = playerId;
 				latestPiecePosition = [i, column];
-				const winCoordinates = checkWin(table, player.id);
+				const winCoordinates = checkWin(table, playerId);
 				if (winCoordinates) {
-					wonPlayer = { player: player, coordinates: winCoordinates };
+					wonPlayer = { playerId: playerId, coordinates: winCoordinates };
 				} else {
 					switchTurn();
 				}
@@ -159,7 +157,7 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 			return table;
 		},
 		get currentPlayerTurn() {
-			return currentPlayerTurn;
+			return currentPlayerTurnId;
 		},
 		get wonPlayer() {
 			return wonPlayer;
