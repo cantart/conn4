@@ -82,6 +82,7 @@ const REMOTE_MODULE = {
     game: {
       tableName: "game",
       rowType: Game.getTypeScriptAlgebraicType(),
+      primaryKey: "roomId",
     },
     join_room: {
       tableName: "join_room",

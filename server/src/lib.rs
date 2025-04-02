@@ -13,6 +13,7 @@ pub struct Player {
 
 #[table(name = game, public)]
 pub struct Game {
+    #[primary_key]
     room_id: u32,
     cells: Vec<Vec<Identity>>,
     rows: u32,
