@@ -131,17 +131,11 @@
 			};
 			yourJoinRoom = null;
 			if (yourJoinRoomHandle?.isActive()) {
-				yourJoinRoomHandle.unsubscribeThen(() => {
+				yourJoinRoomHandle.unsubscribeThen(async () => {
 					conn.db.joinRoom.removeOnInsert(youJoinRoomOnInsert);
 					yourJoinRoomHandle = null;
-					// TODO: refactor `homeUseRooms`. This is for making sure that use rooms subscription is completely stopped before use room subscription is created.
-					if (homeUseRooms) {
-						homeUseRooms.stop().then(() => {
-							s = toRoomData;
-						});
-					} else {
-						s = toRoomData;
-					}
+					await homeUseRooms?.stop();
+					s = toRoomData;
 				});
 			}
 		}
