@@ -140,7 +140,7 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 
 		const player = currentPlayerTurn();
 		for (let i = table.length - 1; i >= 0; i--) {
-			if (table[i][column].playerId === null) {
+			if (table[i][column].playerId === undefined) {
 				table[i][column].playerId = player.id;
 				latestPiecePosition = [i, column];
 				const winCoordinates = checkWin(table, player.id);
