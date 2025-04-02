@@ -2,6 +2,11 @@ import { SubscriptionHandle } from "$lib";
 import type { JoinGame, DbConnection, EventContext, Game } from "../../module_bindings";
 
 export class UseGame {
+    _joined = $state(false);
+    get joined() {
+        return this._joined;
+    }
+
     gameHandle: SubscriptionHandle;
     gameOnUpdate: (ctx: EventContext, oldRow: Game, newRow: Game) => void
     _game = $state<Game | null>(null);
@@ -16,7 +21,7 @@ export class UseGame {
 
     conn: DbConnection;
 
-    constructor(conn: DbConnection, roomId: number) {
+    constructor(conn: DbConnection, roomId: number, yourId: number) {
         this.conn = conn;
 
         this.gameOnUpdate = (ctx, game) => {
@@ -40,9 +45,21 @@ export class UseGame {
             .subscribe(`SELECT * FROM game WHERE room_id = '${roomId}'`);
 
         this.joinGameOnInsert = (ctx, jg) => {
+            if (jg.joinerId === yourId) {
+                if (this._joined) {
+                    throw new Error('You are already joined to the game.')
+                }
+                this._joined = true;
+            }
             this._joinGames.push(jg);
         }
         this.joinGameOnDelete = (ctx, jg) => {
+            if (jg.joinerId === yourId) {
+                if (!this._joined) {
+                    throw new Error('You are not joined to the game.')
+                }
+                this._joined = false;
+            }
             const deleted = this._joinGames.findIndex((j) => j.joinerId === jg.joinerId);
             if (deleted !== -1) {
                 this._joinGames.splice(deleted, 1);
@@ -54,6 +71,12 @@ export class UseGame {
             .subscriptionBuilder()
             .onApplied(() => {
                 for (const jg of conn.db.joinGame.iter()) {
+                    if (jg.joinerId === yourId) {
+                        if (this._joined) {
+                            throw new Error('You are already joined to the game.')
+                        }
+                        this._joined = true;
+                    }
                     if (jg.roomId === roomId) {
                         this._joinGames.push(jg);
                     } else {

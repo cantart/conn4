@@ -10,7 +10,7 @@
 	let joinRooms = $state<JoinRoom[]>(Array.from(conn.db.joinRoom.iter()));
 	let messages = $state<Message[]>([]);
 
-	const useGame = new UseGame(conn, roomId);
+	const useGame = new UseGame(conn, roomId, you.id);
 
 	const messageOnInsert = (ctx: EventContext, msg: Message) => {
 		let existingMessage = messages.find((m) => m.sentAt === msg.sentAt);
