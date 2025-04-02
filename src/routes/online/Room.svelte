@@ -111,7 +111,7 @@
 	};
 
 	const mappedGameState = $derived.by((): GameUIDataProps | null => {
-		if (!useGame.game) {
+		if (!useGame.game || useGame.joinGames.length !== 2) {
 			return null;
 		}
 		const currentTurnJoinGame = useGame.game.sw ? useGame.joinGames[0] : useGame.joinGames[1];
@@ -157,8 +157,10 @@
 	<div class="text-center">
 		{#if useGame.loading}
 			<span class="loading loading-spinner loading-lg"></span>
+		{:else if useGame.game && !mappedGameState}
+			<h1 class="text-center">Waiting for other player to join...</h1>
 		{:else if mappedGameState}
-			<h1 class="text-center">'this is a game'</h1>
+			<h1>TODO: Start game</h1>
 		{:else}
 			<button onclick={onStartGame} disabled={useGame.gameJoining} class="btn btn-primary"
 				>Start Game</button
