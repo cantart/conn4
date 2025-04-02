@@ -17,16 +17,16 @@ export type LocalPlayer = {
 
 export type LocalGameState = {
 	wonPlayer: { player: LocalPlayer; coordinates: [number, number][] } | null;
-	table: { playerId: string | null }[][];
+	table: { playerId: number | null }[][];
 	sw: boolean;
 	latestPiecePosition: [number, number] | null;
 };
 
 export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
-	let wonPlayer = $state<{ player: LocalPlayer; coordinates: [number, number][] } | null>(null);
-	let table = $state<{ playerId: number | null }[][]>(createTable());
+	let wonPlayer = $state<LocalGameState['wonPlayer'] | null>(null);
+	let table = $state<LocalGameState['table']>(createTable());
 	let sw = $state(true);
-	let latestPiecePosition: [number, number] | null = $state(null);
+	let latestPiecePosition: LocalGameState['latestPiecePosition'] = $state(null);
 
 	const restart = () => {
 		table = createTable();
