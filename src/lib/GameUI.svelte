@@ -7,13 +7,15 @@
 		players: LocalPlayer[];
 		currentPlayerTurn: LocalPlayer;
 		table: {
-			playerId: number | null;
+			playerId: number | undefined;
 		}[][];
-		wonPlayer: {
-			player: LocalPlayer;
-			coordinates: [number, number][];
-		} | null;
-		latestPiecePosition: [number, number] | null;
+		wonPlayer:
+			| {
+					player: LocalPlayer;
+					coordinates: [number, number][];
+			  }
+			| undefined;
+		latestPiecePosition: [number, number] | undefined;
 		isColumnCannotDrop: boolean;
 		onDrop: (column: number) => void;
 		onRestart: () => void;

@@ -4,7 +4,7 @@ const createTable = () => {
 	return Array.from({ length: rows }, () =>
 		Array.from({ length: cols }, () => {
 			return {
-				playerId: null,
+				playerId: undefined,
 			};
 		}),
 	);
@@ -16,23 +16,23 @@ export type LocalPlayer = {
 };
 
 export type LocalGameState = {
-	wonPlayer: { player: LocalPlayer; coordinates: [number, number][] } | null;
-	table: { playerId: number | null }[][];
+	wonPlayer: { player: LocalPlayer; coordinates: [number, number][] } | undefined;
+	table: { playerId: number | undefined }[][];
 	sw: boolean;
-	latestPiecePosition: [number, number] | null;
+	latestPiecePosition: [number, number] | undefined;
 };
 
 export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
-	let wonPlayer = $state<LocalGameState['wonPlayer'] | null>(null);
+	let wonPlayer = $state<LocalGameState['wonPlayer']>(undefined);
 	let table = $state<LocalGameState['table']>(createTable());
 	let sw = $state(true);
-	let latestPiecePosition: LocalGameState['latestPiecePosition'] = $state(null);
+	let latestPiecePosition: LocalGameState['latestPiecePosition'] = $state(undefined);
 
 	const restart = () => {
 		table = createTable();
 		sw = true;
-		wonPlayer = null;
-		latestPiecePosition = null;
+		wonPlayer = undefined;
+		latestPiecePosition = undefined;
 	};
 
 	const players = args.players;
@@ -46,7 +46,7 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 	};
 
 	function checkWin(
-		table: { playerId: number | null }[][],
+		table: LocalGameState['table'],
 		playerId: number,
 	): null | [number, number][] {
 		const rows = table.length;
