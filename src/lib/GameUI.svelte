@@ -1,10 +1,19 @@
 <script lang="ts">
-	import { type Game } from '$lib/game.svelte';
+	import type { LocalPlayer } from '$lib/local-game.svelte';
 	import { fly, scale, slide, fade } from 'svelte/transition';
 	import { expoInOut, expoOut } from 'svelte/easing';
 
 	let props: {
-		game: Game;
+		players: LocalPlayer[];
+		currentPlayerTurn: LocalPlayer;
+		table: {
+			playerId: number | null;
+		}[][];
+		wonPlayer: {
+			player: LocalPlayer;
+			coordinates: [number, number][];
+		} | null;
+		latestPiecePosition: [number, number] | null;
 		isColumnCannotDrop: boolean;
 		onDrop: (column: number) => void;
 		onRestart: () => void;
@@ -15,9 +24,9 @@
 
 <div class="flex flex-col justify-center gap-2">
 	<div class="flex flex-wrap justify-center gap-4">
-		{#each props.game.players as player, i (player.id)}
+		{#each props.players as player, i (player.id)}
 			<span
-				class:opacity-25={props.game.currentPlayerTurn().id !== player.id}
+				class:opacity-25={props.currentPlayerTurn.id !== player.id}
 				class="flex items-center gap-2 transition-all"
 			>
 				<div class="aspect-square h-8 rounded-full {i === 0 ? 'bg-primary' : 'bg-secondary'}"></div>
@@ -30,12 +39,12 @@
 
 	<div class="scrollbar-thin w-screen overflow-x-auto text-center">
 		<div in:slide class="inline-block">
-			{#each props.game.table as row, i (i)}
+			{#each props.table as row, i (i)}
 				<div class="flex justify-center">
 					{#each row as cell, j (j)}
 						{@const halfOpacity =
-							!!props.game.wonPlayer &&
-							!props.game.wonPlayer.coordinates.some(([row, col]) => row === i && col === j)}
+							!!props.wonPlayer &&
+							!props.wonPlayer.coordinates.some(([row, col]) => row === i && col === j)}
 						<button
 							class:cursor-auto={props.isColumnCannotDrop}
 							class="border-neutral grid aspect-square w-14 place-items-center border md:w-16 lg:w-20"
@@ -47,8 +56,8 @@
 							{#if cell.playerId}
 								<div
 									class="h-full w-full {useLatestPieceRing &&
-										props.game.latestPiecePosition?.[0] === i &&
-										props.game.latestPiecePosition?.[1] === j &&
+										props.latestPiecePosition?.[0] === i &&
+										props.latestPiecePosition?.[1] === j &&
 										'ring-accent z-10 rounded-full ring-4'}"
 									in:fly={{ y: -10, easing: expoOut }}
 									out:scale={{
@@ -58,7 +67,7 @@
 								>
 									{@render piece({
 										halfOpacity,
-										skin: cell.playerId === props.game.players[0].id ? 'bg-primary' : 'bg-secondary'
+										skin: cell.playerId === props.players[0].id ? 'bg-primary' : 'bg-secondary'
 									})}
 								</div>
 							{/if}
@@ -69,10 +78,10 @@
 		</div>
 	</div>
 
-	{#if props.game.wonPlayer}
+	{#if props.wonPlayer}
 		<div class="mt-2 flex flex-col items-center justify-center gap-2" transition:slide>
 			<p class="text-base-rs font-bold">
-				{props.game.wonPlayer.player.name} won!
+				{props.wonPlayer.player.name} won!
 			</p>
 			<button
 				class="btn btn-accent btn-sm"

@@ -1,17 +1,21 @@
 <script lang="ts">
 	import GameUi from '$lib/GameUI.svelte';
-	import { createGame } from '$lib/game.svelte';
+	import { createLocalGame } from '$lib/local-game.svelte';
 
-	const game = createGame({
+	const game = createLocalGame({
 		players: [
-			{ id: '1', name: 'Player 1' },
-			{ id: '2', name: 'Player 2' }
+			{ id: 1, name: 'Player 1' },
+			{ id: 2, name: 'Player 2' }
 		]
 	});
 </script>
 
 <GameUi
-	{game}
+	players={game.players}
+	currentPlayerTurn={game.currentPlayerTurn()}
+	table={game.table}
+	wonPlayer={game.wonPlayer}
+	latestPiecePosition={game.latestPiecePosition}
 	isColumnCannotDrop={!!game.wonPlayer}
 	onDrop={(column) => {
 		game.dropPiece(column);

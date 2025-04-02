@@ -10,21 +10,21 @@ const createTable = () => {
 	);
 };
 
-export type Player = {
-	id: string;
+export type LocalPlayer = {
+	id: number;
 	name: string;
 };
 
-export type GameState = {
-	wonPlayer: { player: Player; coordinates: [number, number][] } | null;
+export type LocalGameState = {
+	wonPlayer: { player: LocalPlayer; coordinates: [number, number][] } | null;
 	table: { playerId: string | null }[][];
 	sw: boolean;
 	latestPiecePosition: [number, number] | null;
 };
 
-export function createGame(args: { players: [Player, Player] }) {
-	let wonPlayer = $state<{ player: Player; coordinates: [number, number][] } | null>(null);
-	let table = $state<{ playerId: string | null }[][]>(createTable());
+export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
+	let wonPlayer = $state<{ player: LocalPlayer; coordinates: [number, number][] } | null>(null);
+	let table = $state<{ playerId: number | null }[][]>(createTable());
 	let sw = $state(true);
 	let latestPiecePosition: [number, number] | null = $state(null);
 
@@ -46,8 +46,8 @@ export function createGame(args: { players: [Player, Player] }) {
 	};
 
 	function checkWin(
-		table: { playerId: string | null }[][],
-		playerId: string,
+		table: { playerId: number | null }[][],
+		playerId: number,
 	): null | [number, number][] {
 		const rows = table.length;
 		const cols = table[0].length;
@@ -174,4 +174,4 @@ export function createGame(args: { players: [Player, Player] }) {
 	};
 }
 
-export type Game = ReturnType<typeof createGame>;
+export type LocalGame = ReturnType<typeof createLocalGame>;
