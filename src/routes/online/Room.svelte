@@ -112,11 +112,24 @@
 
 		<button onclick={leave} class="btn btn-xs btn-error" disabled={leaving}>Leave</button>
 	</div>
+
+	{@render gameArea()}
+
 	<div class="flex gap-4">
 		{@render playerList()}
 		{@render chat()}
 	</div>
 </div>
+
+{#snippet gameArea()}
+	<div class="text-center">
+		{#if useGame.game}
+			<h1 class="text-center">'this is a game'</h1>
+		{:else}
+			<button class="btn btn-primary">Start Game</button>
+		{/if}
+	</div>
+{/snippet}
 
 {#snippet title()}
 	{#if roomTitle}
