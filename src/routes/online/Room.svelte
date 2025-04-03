@@ -190,7 +190,11 @@
 				<h1 class="text-center">Waiting for other player to join...</h1>
 			{:else}
 				<!-- There is someone in the game. You are not in it -->
-				<h1 class="text-center">TODO: Join game button</h1>
+				<button
+					disabled={useGame.gameJoining}
+					onclick={() => useGame.joinOrCreate()}
+					class="btn btn-primary">Join</button
+				>
 			{/if}
 		{:else}
 			<button onclick={onStartGame} disabled={useGame.gameJoining} class="btn btn-primary"

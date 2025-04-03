@@ -95,6 +95,7 @@ export class UseGame {
                 if (this.#joined) {
                     throw new Error('You are already joined to the game.')
                 }
+                this.#gameJoining = false;
             }
             let existing = this.#joinGames.find((j) => j.joinerId === jg.joinerId);
             if (existing) {
