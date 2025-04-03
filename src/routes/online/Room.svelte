@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { GameUIDataProps } from '$lib/GameUI.svelte';
+	import GameUi from '$lib/GameUI.svelte';
 	import { type EventContext, JoinRoom, Message } from '../../module_bindings';
 	import type { RoomData } from './types';
 	import { UseGame } from './UseGame.svelte';
@@ -169,7 +170,17 @@
 				<!-- Game is being displayed. -->
 				{#if useGame.joined}
 					<!-- You are currently in a match against another player. -->
-					<h1 class="text-center">TODO: Having a match against another player.</h1>
+					<GameUi
+						{...readyGameState}
+						onDrop={(col) => {
+							// TODO
+							console.log(col);
+						}}
+						onRestart={() => {
+							// TODO
+							console.log('Restart game');
+						}}
+					/>
 				{:else}
 					<!-- You are watching a match as a spectator. -->
 					<h1 class="text-center">TODO: Display game but no interaction</h1>
