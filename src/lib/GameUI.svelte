@@ -15,6 +15,7 @@
 			| undefined;
 		latestPiecePosition: [number, number] | undefined;
 		dropDisabled: boolean;
+		dropping?: boolean;
 	};
 
 	let props: GameUIDataProps & {
@@ -56,7 +57,7 @@
 							class:cursor-auto={props.dropDisabled}
 							class="border-neutral grid aspect-square w-14 place-items-center border md:w-16 lg:w-20"
 							onclick={() => {
-								if (props.dropDisabled) return;
+								if (props.dropDisabled || props?.dropping) return;
 								props.onDrop(j);
 							}}
 						>

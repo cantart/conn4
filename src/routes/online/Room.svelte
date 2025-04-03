@@ -111,6 +111,7 @@
 		await useGame.joinOrCreate();
 	};
 
+	let dropping = $state(false);
 	/**
 	 * Not null if the game is ready to be played.
 	 */
@@ -118,6 +119,7 @@
 		if (!useGame.game || useGame.joinGames.length !== 2 || !useGame.yourJoinGame) {
 			return null;
 		}
+
 		const currentTurnJoinGame = useGame.game.sw ? useGame.joinGames[0] : useGame.joinGames[1];
 		const yourTurn = currentTurnJoinGame.joinerId === useGame.yourJoinGame.joinerId;
 		return {
@@ -146,6 +148,28 @@
 	$inspect('useGame.game', useGame.game);
 	$inspect('readyGameState', readyGameState);
 	$inspect('useGame.yourJoinGame', useGame.yourJoinGame);
+
+	conn.reducers.onDropPiece((ctx) => {
+		if (ctx.event.status.tag !== 'Committed') {
+			console.error('Error dropping piece:', ctx.event.status);
+			dropping = false;
+		}
+		// For the happy case, `dropping` is reset when the `readyGameState` is changed.
+	});
+	const drop = (col: number) => {
+		dropping = true;
+		conn.reducers.dropPiece(col);
+	};
+	$effect(() => {
+		if (readyGameState) {
+			// Game state starts or is updated.
+			dropping = false;
+		} else {
+			// Game state is not ready.
+			dropping = false;
+		}
+		// Reset `dropping` anyway.
+	});
 </script>
 
 <div class="space-y-8">
@@ -175,13 +199,13 @@
 					<GameUi
 						{...readyGameState}
 						onDrop={(col) => {
-							// TODO
-							console.log(col);
+							drop(col);
 						}}
 						onRestart={() => {
 							// TODO
 							console.log('Restart game');
 						}}
+						{dropping}
 					/>
 				{:else}
 					<!-- You are watching a match as a spectator. -->
