@@ -116,14 +116,13 @@
 	 * Not null if the game is ready to be played.
 	 */
 	const readyGameState = $derived.by((): GameUIDataProps | null => {
-		if (!useGame.game || useGame.joinGames.length !== 2 || !useGame.yourJoinGame) {
+		if (!useGame.game || !useGame.yourJoinGame || !useGame.game.currentTurnPlayerId) {
 			return null;
 		}
 
-		const currentTurnJoinGame = useGame.game.sw ? useGame.joinGames[0] : useGame.joinGames[1];
-		const yourTurn = currentTurnJoinGame.joinerId === useGame.yourJoinGame.joinerId;
+		const yourTurn = useGame.game.currentTurnPlayerId === useGame.yourJoinGame.joinerId;
 		return {
-			currentPlayerTurnId: currentTurnJoinGame.joinerId,
+			currentPlayerTurnId: useGame.game.currentTurnPlayerId,
 			latestPiecePosition: useGame.game.latestMove
 				? [useGame.game.latestMove.x, useGame.game.latestMove.y]
 				: undefined,
@@ -148,6 +147,7 @@
 	$inspect('useGame.game', useGame.game);
 	$inspect('readyGameState', readyGameState);
 	$inspect('useGame.yourJoinGame', useGame.yourJoinGame);
+	$inspect('useGame.game?.currentTurnPlayerId', useGame.game?.currentTurnPlayerId);
 
 	conn.reducers.onDropPiece((ctx) => {
 		if (ctx.event.status.tag !== 'Committed') {

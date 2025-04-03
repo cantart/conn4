@@ -37,7 +37,7 @@ export type Game = {
   roomId: number,
   wonPlayer: __WonPlayer | undefined,
   table: (number | undefined)[][],
-  sw: boolean,
+  currentTurnPlayerId: number | undefined,
   latestMove: __Coord | undefined,
   playersRequired: number,
 };
@@ -55,7 +55,7 @@ export namespace Game {
       new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
       new ProductTypeElement("wonPlayer", AlgebraicType.createOptionType(__WonPlayer.getTypeScriptAlgebraicType())),
       new ProductTypeElement("table", AlgebraicType.createArrayType(AlgebraicType.createArrayType(AlgebraicType.createOptionType(AlgebraicType.createU32Type())))),
-      new ProductTypeElement("sw", AlgebraicType.createBoolType()),
+      new ProductTypeElement("currentTurnPlayerId", AlgebraicType.createOptionType(AlgebraicType.createU32Type())),
       new ProductTypeElement("latestMove", AlgebraicType.createOptionType(__Coord.getTypeScriptAlgebraicType())),
       new ProductTypeElement("playersRequired", AlgebraicType.createU32Type()),
     ]);

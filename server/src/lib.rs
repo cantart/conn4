@@ -1,5 +1,6 @@
 use spacetimedb::{
-    rand::Rng, reducer, table, Identity, ReducerContext, SpacetimeType, Table, Timestamp,
+    rand::seq::IteratorRandom, reducer, table, Identity, ReducerContext, SpacetimeType, Table,
+    Timestamp,
 };
 
 #[table(name = player, public)]
@@ -41,8 +42,9 @@ pub struct Game {
     won_player: Option<WonPlayer>,
     /// table of the game
     table: GameTable,
-    /// if true, the current turn is for the player with an even index
-    sw: bool,
+    /// `None` if the game hasn't started yet
+    /// TODO: What if we allowed a player to exit mid-game and the current turn belongs to them?
+    current_turn_player_id: Option<u32>,
     /// last move made by a player
     latest_move: Option<Coord>,
 
@@ -173,7 +175,11 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
         return Err("Cannot drop piece if game is already won".to_string());
     }
 
-    if (jg.index % 2 == 0) != game.sw {
+    let Some(current_turn_player_id) = game.current_turn_player_id else {
+        return Err("Cannot drop piece if there is no turn for anyone".to_string());
+    };
+
+    if player.id != current_turn_player_id {
         return Err("Cannot drop piece if it's not your turn".to_string());
     }
 
@@ -196,7 +202,15 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
                     coordinates: coords,
                 });
             } else {
-                game.sw = !game.sw;
+                let other_player_jg = ctx
+                    .db
+                    .join_game()
+                    .room_id()
+                    .filter(jg.room_id)
+                    .filter(|jg| jg.joiner_id != player.id)
+                    .next()
+                    .ok_or("Cannot find other player")?;
+                game.current_turn_player_id = Some(other_player_jg.joiner_id);
             }
         }
     }
@@ -219,21 +233,9 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
     }
 
     // check if game is full i.e. 2 players are already in the game
-    if ctx.db.join_game().room_id().filter(jr.room_id).count() >= PLAYERS_REQUIRED as usize {
+    let mut join_count = ctx.db.join_game().room_id().filter(jr.room_id).count();
+    if join_count >= PLAYERS_REQUIRED as usize {
         return Err("Cannot join the game when it is full".to_string());
-    }
-
-    // if there is no game in the room, create one
-    if ctx.db.game().room_id().find(jr.room_id).is_none() {
-        ctx.db.game().try_insert(Game {
-            room_id: jr.room_id,
-
-            won_player: None,
-            table: vec![vec![None; COLS]; ROWS],
-            latest_move: None,
-            players_required: PLAYERS_REQUIRED,
-            sw: ctx.rng().gen_bool(0.5),
-        })?;
     }
 
     ctx.db.join_game().try_insert(JoinGame {
@@ -241,6 +243,66 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
         joiner_id: player.id,
         index: 0,
     })?;
+    join_count += 1;
+
+    if let Some(game) = ctx.db.game().room_id().find(jr.room_id) {
+        log::info!("A");
+        if let Some(current_turn_player_id) = game.current_turn_player_id {
+            let another_player_jg = ctx
+                .db
+                .join_game()
+                .room_id()
+                .filter(jr.room_id)
+                .filter(|jg| jg.joiner_id != player.id)
+                .next()
+                .ok_or("Cannot find another player")?;
+            log::info!("B");
+            if current_turn_player_id != another_player_jg.joiner_id {
+                // The game was already in progress before we joined.
+                // If the current turn doesn't belong to the one already in the game, that means we just joined in place of another player who left while owning the turn.
+                // So we need to take the turn from them.
+                log::info!("C");
+                ctx.db.game().room_id().update(Game {
+                    current_turn_player_id: Some(player.id),
+                    ..game
+                });
+            }
+        } else {
+            log::info!("D");
+            if join_count == game.players_required as usize {
+                // if the game is full, set the current turn to a random player
+                let mut rng = ctx.rng();
+                let random_player_id = ctx
+                    .db
+                    .join_game()
+                    .room_id()
+                    .filter(game.room_id)
+                    .choose(&mut rng)
+                    .ok_or("Cannot find a player to start the game")?
+                    .joiner_id;
+                log::info!("Random player id: {}", random_player_id);
+                ctx.db.game().room_id().update(Game {
+                    current_turn_player_id: Some(random_player_id),
+                    ..game
+                });
+                log::info!("E");
+            }
+        }
+    } else {
+        // if there is no game in the room, create one
+        ctx.db.game().try_insert(Game {
+            room_id: jr.room_id,
+
+            won_player: None,
+            table: vec![vec![None; COLS]; ROWS],
+            latest_move: None,
+            players_required: PLAYERS_REQUIRED,
+            current_turn_player_id: None,
+        })?;
+        log::info!("F");
+    }
+
+    log::info!("DONE");
 
     Ok(())
 }
