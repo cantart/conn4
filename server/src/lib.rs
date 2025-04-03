@@ -101,6 +101,7 @@ fn check_win(table: &GameTable, player_id: u32) -> Option<Vec<Coord>> {
     for col in 0..cols {
         for row in 0..=(rows - STREAK_REQUIRED) {
             let rows_to_check = row..row + STREAK_REQUIRED;
+            // TODO: Fix this index out of bounds error
             let cells_to_check = &table[rows_to_check.clone()][col];
             if cells_to_check.iter().all(|&cell| cell == Some(player_id)) {
                 return Some(
@@ -293,7 +294,6 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
             current_turn_player_id: None,
         })?;
     }
-
 
     Ok(())
 }
