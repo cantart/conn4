@@ -56,10 +56,8 @@ export class UseGame {
             }
         })
 
-        this.#gameOnUpdate = (ctx, game) => {
-            // TODO: Find out why `currentTurnPlayerId` is not updated in the game object when set to Some(...).
-            // TODO: search for log::info!("E"); in the server code to find the place where the game is updated.
-            this.#game = game;
+        this.#gameOnUpdate = (ctx, _, n) => {
+            this.#game = n;
         }
         this.#gameOnInsert = (ctx, game) => {
             if (game.roomId !== roomId) {

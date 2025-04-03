@@ -14,9 +14,9 @@ export class UseRoom {
     constructor(conn: DbConnection, roomId: number) {
         this.conn = conn;
 
-        this.roomOnUpdate = (ctx, room) => {
-            if (this._room && this._room.id === room.id) {
-                this._room = room;
+        this.roomOnUpdate = (ctx, _, n) => {
+            if (this._room && this._room.id === n.id) {
+                this._room = n;
             } else {
                 throw new Error('Room update?? What is this?');
             }

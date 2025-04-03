@@ -43,7 +43,6 @@ pub struct Game {
     /// table of the game
     table: GameTable,
     /// `None` if the game hasn't started yet
-    /// TODO: What if we allowed a player to exit mid-game and the current turn belongs to them?
     current_turn_player_id: Option<u32>,
     /// last move made by a player
     latest_move: Option<Coord>,
@@ -246,7 +245,6 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
     join_count += 1;
 
     if let Some(game) = ctx.db.game().room_id().find(jr.room_id) {
-        log::info!("A");
         if let Some(current_turn_player_id) = game.current_turn_player_id {
             let another_player_jg = ctx
                 .db
@@ -256,19 +254,16 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
                 .filter(|jg| jg.joiner_id != player.id)
                 .next()
                 .ok_or("Cannot find another player")?;
-            log::info!("B");
             if current_turn_player_id != another_player_jg.joiner_id {
                 // The game was already in progress before we joined.
                 // If the current turn doesn't belong to the one already in the game, that means we just joined in place of another player who left while owning the turn.
                 // So we need to take the turn from them.
-                log::info!("C");
                 ctx.db.game().room_id().update(Game {
                     current_turn_player_id: Some(player.id),
                     ..game
                 });
             }
         } else {
-            log::info!("D");
             if join_count == game.players_required as usize {
                 // if the game is full, set the current turn to a random player
                 let mut rng = ctx.rng();
@@ -280,12 +275,10 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
                     .choose(&mut rng)
                     .ok_or("Cannot find a player to start the game")?
                     .joiner_id;
-                log::info!("Random player id: {}", random_player_id);
                 ctx.db.game().room_id().update(Game {
                     current_turn_player_id: Some(random_player_id),
                     ..game
                 });
-                log::info!("E");
             }
         }
     } else {
@@ -299,10 +292,8 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
             players_required: PLAYERS_REQUIRED,
             current_turn_player_id: None,
         })?;
-        log::info!("F");
     }
 
-    log::info!("DONE");
 
     Ok(())
 }

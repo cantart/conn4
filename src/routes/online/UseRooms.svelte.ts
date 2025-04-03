@@ -31,10 +31,10 @@ export class UseRooms {
         this.roomOnDelete = (ctx, room) => {
             this._rooms = this._rooms.filter((r) => r.id !== room.id);
         }
-        this.roomOnUpdate = (ctx, room) => {
-            const index = this._rooms.findIndex((r) => r.id === room.id);
+        this.roomOnUpdate = (ctx, _, n) => {
+            const index = this._rooms.findIndex((r) => r.id === n.id);
             if (index !== -1) {
-                this._rooms[index] = room;
+                this._rooms[index] = n;
             }
         }
 
