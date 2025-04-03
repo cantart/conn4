@@ -16,7 +16,6 @@
 	table={game.table}
 	wonPlayer={game.wonPlayer}
 	latestPiecePosition={game.latestPiecePosition}
-	isColumnCannotDrop={!!game.wonPlayer}
 	onDrop={(column) => {
 		game.dropPiece(column);
 	}}
