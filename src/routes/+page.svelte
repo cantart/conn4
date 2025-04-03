@@ -20,4 +20,5 @@
 		game.dropPiece(column);
 	}}
 	onRestart={game.restart}
+	dropDisabled={!!game.wonPlayer}
 />

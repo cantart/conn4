@@ -115,10 +115,11 @@
 	 * Not null if the game is ready to be played.
 	 */
 	const readyGameState = $derived.by((): GameUIDataProps | null => {
-		if (!useGame.game || useGame.joinGames.length !== 2) {
+		if (!useGame.game || useGame.joinGames.length !== 2 || !useGame.yourJoinGame) {
 			return null;
 		}
 		const currentTurnJoinGame = useGame.game.sw ? useGame.joinGames[0] : useGame.joinGames[1];
+		const yourTurn = currentTurnJoinGame.joinerId === useGame.yourJoinGame.joinerId;
 		return {
 			currentPlayerTurnId: currentTurnJoinGame.joinerId,
 			latestPiecePosition: useGame.game.latestMove
@@ -137,13 +138,14 @@
 						coordinates: useGame.game.wonPlayer.coordinates.map((c) => [c.x, c.y]),
 						playerId: useGame.game.wonPlayer.playerId
 					}
-				: undefined
+				: undefined,
+			dropDisabled: !!useGame.game.wonPlayer || !yourTurn
 		};
 	});
 
 	$inspect('useGame.game', useGame.game);
 	$inspect('readyGameState', readyGameState);
-	$inspect('useGame.joined', useGame.joined);
+	$inspect('useGame.yourJoinGame', useGame.yourJoinGame);
 </script>
 
 <div class="space-y-8">
@@ -168,7 +170,7 @@
 		{:else if useGame.game}
 			{#if readyGameState}
 				<!-- Game is being displayed. -->
-				{#if useGame.joined}
+				{#if useGame.yourJoinGame}
 					<!-- You are currently in a match against another player. -->
 					<GameUi
 						{...readyGameState}
@@ -185,7 +187,7 @@
 					<!-- You are watching a match as a spectator. -->
 					<h1 class="text-center">TODO: Display game but no interaction</h1>
 				{/if}
-			{:else if useGame.joined}
+			{:else if useGame.yourJoinGame}
 				<!-- You are the only one in the game and waiting for another player. -->
 				<h1 class="text-center">Waiting for other player to join...</h1>
 			{:else}

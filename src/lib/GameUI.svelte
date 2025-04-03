@@ -14,6 +14,7 @@
 			  }
 			| undefined;
 		latestPiecePosition: [number, number] | undefined;
+		dropDisabled: boolean;
 	};
 
 	let props: GameUIDataProps & {
@@ -26,8 +27,6 @@
 	}
 
 	const useLatestPieceRing = import.meta.env.VITE_USE_LATEST_PIECE_RING === 'true';
-
-	const columnCannotDrop = $derived(!!props.wonPlayer);
 </script>
 
 <div class="flex flex-col justify-center gap-2">
@@ -54,10 +53,10 @@
 							!!props.wonPlayer &&
 							!props.wonPlayer.coordinates.some(([row, col]) => row === i && col === j)}
 						<button
-							class:cursor-auto={columnCannotDrop}
+							class:cursor-auto={props.dropDisabled}
 							class="border-neutral grid aspect-square w-14 place-items-center border md:w-16 lg:w-20"
 							onclick={() => {
-								if (columnCannotDrop) return;
+								if (props.dropDisabled) return;
 								props.onDrop(j);
 							}}
 						>

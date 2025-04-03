@@ -11,9 +11,12 @@ export class UseGame {
     #subscriptions = 0;
     #activeSubscriptions = $state(0);
 
-    #joined = $state(false);
-    get joined() {
-        return this.#joined;
+    #yourJoinGame = $state<JoinGame | undefined>(undefined);
+    /**
+     * Not `undefined` if you are one of the joiners of the game.
+     */
+    get yourJoinGame() {
+        return this.#yourJoinGame;
     }
 
     #gameHandle: SubscriptionHandle;
@@ -44,7 +47,7 @@ export class UseGame {
         this.#conn = conn;
 
         $effect(() => {
-            this.#joined = this.#joinGames.some(jg => jg.joinerId === yourId)
+            this.#yourJoinGame = this.#joinGames.find((jg) => jg.joinerId === yourId);
         })
 
         $effect(() => {
@@ -92,8 +95,8 @@ export class UseGame {
 
         this.#joinGameOnInsert = (ctx, jg) => {
             if (jg.joinerId === yourId) {
-                if (this.#joined) {
-                    throw new Error('You are already joined to the game.')
+                if (this.#yourJoinGame) {
+                    throw new Error('You already joined to the game.')
                 }
                 this.#gameJoining = false;
             }
@@ -106,8 +109,8 @@ export class UseGame {
         }
         this.#joinGameOnDelete = (ctx, jg) => {
             if (jg.joinerId === yourId) {
-                if (!this.#joined) {
-                    throw new Error('You are not joined to the game.')
+                if (!this.#yourJoinGame) {
+                    throw new Error('You have not joined to the game.')
                 }
             }
             const deleted = this.#joinGames.findIndex((j) => j.joinerId === jg.joinerId);
@@ -125,8 +128,8 @@ export class UseGame {
                 this.#activeSubscriptions++;
                 for (const jg of conn.db.joinGame.iter()) {
                     if (jg.joinerId === yourId) {
-                        if (this.#joined) {
-                            throw new Error('You are already joined to the game.')
+                        if (this.#yourJoinGame) {
+                            throw new Error('You already joined to the game.')
                         }
                     }
                     if (jg.roomId === roomId) {
