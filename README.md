@@ -18,6 +18,8 @@
 ### First
 
 - Attempt to reconnect if connection is lost
+- Room self-delete after some time after the last player went offline
+- Message rate limit on the frontend
 
 ### Next
 
@@ -37,6 +39,7 @@
   - Store moves in the game table (best if replace `table` field with this field, though check win logic will be changed completely)
 - Invite to room via link
 - Invite feature: when in a room, you can invite outside players to join the room
+- Message TTL: messages self-delete after a certain time
 - Keyboard mode:
   - to drop, `d` -> `columnName`
   - to focus chat input, `c`
