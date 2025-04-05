@@ -159,6 +159,7 @@
 	const drop = (col: number) => {
 		dropping = true;
 		conn.reducers.dropPiece(col);
+		// TODO: Optimistic update of the game state.
 	};
 	$effect(() => {
 		if (readyGameState) {
