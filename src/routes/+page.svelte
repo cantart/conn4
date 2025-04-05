@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="ts" module>
 	import GameUi from '$lib/GameUI.svelte';
 	import { createLocalGame } from '$lib/local-game.svelte';
 
