@@ -1,18 +1,8 @@
-<script lang="ts">
-	import type { Identity } from '@clockworklabs/spacetimedb-sdk';
-	import {
-		DbConnection,
-		type EventContext,
-		type JoinRoom,
-		Player,
-		type ErrorContext
-	} from '../../module_bindings';
-	import { beforeNavigate } from '$app/navigation';
-	import type { SubscriptionHandle, You } from '$lib';
-	import Home from './Home.svelte';
-	import { SvelteMap } from 'svelte/reactivity';
-	import type { RoomData } from './types';
-	import Room from './Room.svelte';
+<script lang="ts" module>
+	let players = new SvelteMap<number, Player>();
+	let you = $state<You | null>(null);
+	let yourJoinRoom = $state<JoinRoom | null>(null);
+	let yourJoinRoomHandle: SubscriptionHandle | null = null;
 
 	let s = $state<
 		| {
@@ -28,10 +18,6 @@
 		page: 'init'
 	});
 
-	let players = new SvelteMap<number, Player>();
-	let you = $state<You | null>(null);
-	let yourJoinRoom = $state<JoinRoom | null>(null);
-	let yourJoinRoomHandle: SubscriptionHandle | null = null;
 	let youJoinRoomOnInsert: (ctx: EventContext, jr: JoinRoom) => void = (ctx, jr) => {
 		if (!you) {
 			throw new Error('You are not set yet');
@@ -42,10 +28,6 @@
 		} else {
 			console.error('Room of another user', jr);
 		}
-	};
-
-	const onConnectError = (_: ErrorContext, error: Error) => {
-		console.error('Error connecting to SpacetimeDB:', error);
 	};
 
 	const setupYourJoinRoom = async (y: You) => {
@@ -67,6 +49,10 @@
 				})
 				.subscribe(`SELECT * FROM join_room WHERE joiner_id = '${y.id}'`);
 		});
+	};
+
+	const onConnectError = (_: ErrorContext, error: Error) => {
+		console.error('Error connecting to SpacetimeDB:', error);
 	};
 
 	const onConnect = (conn: DbConnection, ident: Identity, token: string) => {
@@ -115,10 +101,22 @@
 		.onConnect(onConnect)
 		.onConnectError(onConnectError)
 		.build();
+</script>
 
-	beforeNavigate(() => {
-		conn.disconnect();
-	});
+<script lang="ts">
+	import type { Identity } from '@clockworklabs/spacetimedb-sdk';
+	import {
+		DbConnection,
+		type EventContext,
+		type JoinRoom,
+		Player,
+		type ErrorContext
+	} from '../../module_bindings';
+	import type { SubscriptionHandle, You } from '$lib';
+	import Home from './Home.svelte';
+	import { SvelteMap } from 'svelte/reactivity';
+	import type { RoomData } from './types';
+	import Room from './Room.svelte';
 
 	let home: Home | null = $state(null);
 	$effect(() => {
