@@ -1,7 +1,5 @@
 # conn4
 
-## The App
-
 <https://conn4.vercel.app/>
 
 ## Stack
