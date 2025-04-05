@@ -15,18 +15,18 @@
 
 ## TODO
 
-## First
+### First
 
 - Attempt to reconnect if connection is lost
 
-## Next
+### Next
 
 - Authentication: login, register, logout
 - Leaderboard: last month, 6 months, all time
 - Coin skins
 - Money to buy skins
 
-## Later
+### Later
 
 - Add team mechanics to the game: Not just 1v1, any player in the team can drop piece on behalf of the team
   - Maybe add `team` field to `join_game` table
