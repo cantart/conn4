@@ -14,11 +14,11 @@
 	players={game.players}
 	currentPlayerTurnId={game.currentPlayerTurn()}
 	table={game.table}
-	wonPlayer={game.wonPlayer}
+	winner={game.winner}
 	latestPiecePosition={game.latestPiecePosition}
 	onDrop={(column) => {
 		game.dropPiece(column);
 	}}
 	onRestart={game.restart}
-	dropDisabled={!!game.wonPlayer}
+	dropDisabled={!!game.winner}
 />

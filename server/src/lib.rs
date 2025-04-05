@@ -26,7 +26,7 @@ struct Coord {
 }
 
 #[derive(SpacetimeType)]
-struct WonPlayer {
+struct Winner {
     player_id: u32,
     coordinates: Vec<Coord>, // cells that are part of the winning line
 }
@@ -39,7 +39,7 @@ pub struct Game {
     room_id: u32,
 
     /// player that has won the game
-    won_player: Option<WonPlayer>,
+    winner: Option<Winner>,
     /// table of the game
     table: GameTable,
     /// `None` if the game hasn't started yet
@@ -170,7 +170,7 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
         return Err("Column index out of bounds".to_string());
     }
 
-    if game.won_player.is_some() {
+    if game.winner.is_some() {
         return Err("Cannot drop piece if game is already won".to_string());
     }
 
@@ -197,7 +197,7 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
             });
 
             if let Some(coords) = check_win(&game.table, player.id) {
-                game.won_player = Some(WonPlayer {
+                game.winner = Some(Winner {
                     player_id: player.id,
                     coordinates: coords,
                 });
@@ -291,7 +291,7 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
         ctx.db.game().try_insert(Game {
             room_id: jr.room_id,
 
-            won_player: None,
+            winner: None,
             table: vec![vec![None; COLS]; ROWS],
             latest_move: None,
             players_required: PLAYERS_REQUIRED,

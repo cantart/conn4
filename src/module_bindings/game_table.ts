@@ -31,7 +31,7 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 import { Game } from "./game_type";
-import { WonPlayer as __WonPlayer } from "./won_player_type";
+import { Winner as __Winner } from "./winner_type";
 import { Coord as __Coord } from "./coord_type";
 
 import { EventContext, Reducer, RemoteReducers, RemoteTables } from ".";

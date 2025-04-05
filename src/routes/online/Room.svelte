@@ -134,13 +134,13 @@
 				};
 			}),
 			table: useGame.game.table,
-			wonPlayer: useGame.game.wonPlayer
+			winner: useGame.game.winner
 				? {
-						coordinates: useGame.game.wonPlayer.coordinates.map((c) => [c.x, c.y]),
-						playerId: useGame.game.wonPlayer.playerId
+						coordinates: useGame.game.winner.coordinates.map((c) => [c.x, c.y]),
+						playerId: useGame.game.winner.playerId
 					}
 				: undefined,
-			dropDisabled: !!useGame.game.wonPlayer || !yourTurn
+			dropDisabled: !!useGame.game.winner || !yourTurn
 		};
 	});
 

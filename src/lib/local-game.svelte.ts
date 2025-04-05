@@ -14,14 +14,14 @@ export type LocalPlayer = {
 };
 
 export type LocalGameState = {
-	wonPlayer: { playerId: number; coordinates: [number, number][] } | undefined;
+	winner: { playerId: number; coordinates: [number, number][] } | undefined;
 	table: (number | undefined)[][];
 	sw: boolean;
 	latestPiecePosition: [number, number] | undefined;
 };
 
 export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
-	let wonPlayer = $state<LocalGameState['wonPlayer']>(undefined);
+	let winner = $state<LocalGameState['winner']>(undefined);
 	let table = $state<LocalGameState['table']>(createTable());
 	let sw = $state(true);
 	let latestPiecePosition: LocalGameState['latestPiecePosition'] = $state(undefined);
@@ -29,7 +29,7 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 	const restart = () => {
 		table = createTable();
 		sw = true;
-		wonPlayer = undefined;
+		winner = undefined;
 		latestPiecePosition = undefined;
 	};
 
@@ -131,7 +131,7 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 	}
 
 	const dropPiece = (column: number) => {
-		if (wonPlayer) {
+		if (winner) {
 			console.error('Game is over');
 			return;
 		}
@@ -143,7 +143,7 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 				latestPiecePosition = [i, column];
 				const winCoordinates = checkWin(table, playerId);
 				if (winCoordinates) {
-					wonPlayer = { playerId: playerId, coordinates: winCoordinates };
+					winner = { playerId: playerId, coordinates: winCoordinates };
 				} else {
 					switchTurn();
 				}
@@ -159,8 +159,8 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 		get currentPlayerTurn() {
 			return currentPlayerTurnId;
 		},
-		get wonPlayer() {
-			return wonPlayer;
+		get winner() {
+			return winner;
 		},
 		get latestPiecePosition() {
 			return latestPiecePosition;

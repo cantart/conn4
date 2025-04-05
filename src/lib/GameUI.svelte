@@ -7,7 +7,7 @@
 		players: LocalPlayer[];
 		currentPlayerTurnId: number;
 		table: (number | undefined)[][];
-		wonPlayer:
+		winner:
 			| {
 					playerId: number;
 					coordinates: [number, number][];
@@ -47,8 +47,8 @@
 				<div class="flex justify-center">
 					{#each row as cell, j (j)}
 						{@const halfOpacity =
-							!!props.wonPlayer &&
-							!props.wonPlayer.coordinates.some(([row, col]) => row === i && col === j)}
+							!!props.winner &&
+							!props.winner.coordinates.some(([row, col]) => row === i && col === j)}
 						<button
 							class:cursor-auto={props.dropDisabled}
 							class="border-neutral grid aspect-square w-14 place-items-center border md:w-16 lg:w-20"
@@ -82,10 +82,10 @@
 		</div>
 	</div>
 
-	{#if props.wonPlayer}
+	{#if props.winner}
 		<div class="mt-2 flex flex-col items-center justify-center gap-2" transition:slide>
 			<p class="text-base-rs font-bold">
-				{props.wonPlayer.playerId === props.players[0].id
+				{props.winner.playerId === props.players[0].id
 					? props.players[0].name
 					: props.players[1].name} wins!
 			</p>

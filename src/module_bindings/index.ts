@@ -86,8 +86,8 @@ import { Player } from "./player_type.ts";
 export { Player };
 import { Room } from "./room_type.ts";
 export { Room };
-import { WonPlayer } from "./won_player_type.ts";
-export { WonPlayer };
+import { Winner } from "./winner_type.ts";
+export { Winner };
 
 const REMOTE_MODULE = {
   tables: {

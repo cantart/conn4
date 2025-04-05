@@ -32,7 +32,7 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 import { Coord as __Coord } from "./coord_type";
 
-export type WonPlayer = {
+export type Winner = {
   playerId: number,
   coordinates: __Coord[],
 };
@@ -40,7 +40,7 @@ export type WonPlayer = {
 /**
  * A namespace for generated helper functions.
  */
-export namespace WonPlayer {
+export namespace Winner {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
@@ -52,12 +52,12 @@ export namespace WonPlayer {
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: WonPlayer): void {
-    WonPlayer.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: Winner): void {
+    Winner.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): WonPlayer {
-    return WonPlayer.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): Winner {
+    return Winner.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }
