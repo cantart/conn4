@@ -15,11 +15,12 @@
 			| undefined;
 		latestPiecePosition: [number, number] | undefined;
 		dropDisabled: boolean;
-		dropping?: boolean;
 	};
 
 	let props: GameUIDataProps & {
 		onDrop: (column: number) => void;
+		dropping?: boolean;
+		restarting?: boolean;
 		onRestart: () => void;
 	} = $props();
 
@@ -92,6 +93,7 @@
 			<button
 				class="btn btn-accent btn-sm"
 				onclick={props.onRestart}
+				disabled={props.restarting}
 				in:fade={{
 					delay: 500
 				}}>Restart</button

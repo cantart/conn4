@@ -152,6 +152,46 @@ fn check_win(table: &GameTable, player_id: u32) -> Option<Vec<Coord>> {
     None
 }
 
+fn game_random_player_id(ctx: &ReducerContext, room_id: u32) -> Result<u32, String> {
+    let mut rng = ctx.rng();
+    let random_player_id = ctx
+        .db
+        .join_game()
+        .room_id()
+        .filter(room_id)
+        .choose(&mut rng)
+        .ok_or("Cannot find a random player in the game")?
+        .joiner_id;
+    Ok(random_player_id)
+}
+
+#[reducer]
+pub fn restart_game(ctx: &ReducerContext) -> Result<(), String> {
+    let player = find_sender_player(ctx);
+
+    let Some(jg) = ctx.db.join_game().joiner_id().find(player.id) else {
+        return Err("Cannot restart game if not in a game".to_string());
+    };
+
+    let Some(game) = ctx.db.game().room_id().find(jg.room_id) else {
+        return Err("Cannot restart game if game does not exist".to_string());
+    };
+
+    if game.winner.is_none() {
+        return Err("Cannot restart game if there is no winner".to_string());
+    }
+
+    ctx.db.game().room_id().update(Game {
+        winner: None,
+        table: vec![vec![None; COLS]; ROWS],
+        latest_move: None,
+        current_turn_player_id: Some(game_random_player_id(ctx, game.room_id)?),
+        ..game
+    });
+
+    Ok(())
+}
+
 #[reducer]
 pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
     let player = find_sender_player(ctx);
@@ -271,17 +311,8 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
         } else {
             if join_count == game.players_required as usize {
                 // if the game is full, set the current turn to a random player
-                let mut rng = ctx.rng();
-                let random_player_id = ctx
-                    .db
-                    .join_game()
-                    .room_id()
-                    .filter(game.room_id)
-                    .choose(&mut rng)
-                    .ok_or("Cannot find a player to start the game")?
-                    .joiner_id;
                 ctx.db.game().room_id().update(Game {
-                    current_turn_player_id: Some(random_player_id),
+                    current_turn_player_id: Some(game_random_player_id(ctx, game.room_id)?),
                     ..game
                 });
             }

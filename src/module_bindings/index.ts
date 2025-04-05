@@ -52,6 +52,8 @@ import { JoinToRoom } from "./join_to_room_reducer.ts";
 export { JoinToRoom };
 import { LeaveRoom } from "./leave_room_reducer.ts";
 export { LeaveRoom };
+import { RestartGame } from "./restart_game_reducer.ts";
+export { RestartGame };
 import { SendMessage } from "./send_message_reducer.ts";
 export { SendMessage };
 import { SetName } from "./set_name_reducer.ts";
@@ -162,6 +164,10 @@ const REMOTE_MODULE = {
       reducerName: "leave_room",
       argsType: LeaveRoom.getTypeScriptAlgebraicType(),
     },
+    restart_game: {
+      reducerName: "restart_game",
+      argsType: RestartGame.getTypeScriptAlgebraicType(),
+    },
     send_message: {
       reducerName: "send_message",
       argsType: SendMessage.getTypeScriptAlgebraicType(),
@@ -207,6 +213,7 @@ export type Reducer = never
 | { name: "JoinOrCreateGame", args: JoinOrCreateGame }
 | { name: "JoinToRoom", args: JoinToRoom }
 | { name: "LeaveRoom", args: LeaveRoom }
+| { name: "RestartGame", args: RestartGame }
 | { name: "SendMessage", args: SendMessage }
 | { name: "SetName", args: SetName }
 ;
@@ -346,6 +353,18 @@ export class RemoteReducers {
     this.connection.offReducer("leave_room", callback);
   }
 
+  restartGame() {
+    this.connection.callReducer("restart_game", new Uint8Array(0), this.setCallReducerFlags.restartGameFlags);
+  }
+
+  onRestartGame(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.onReducer("restart_game", callback);
+  }
+
+  removeOnRestartGame(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.offReducer("restart_game", callback);
+  }
+
   sendMessage(text: string) {
     const __args = { text };
     let __writer = new BinaryWriter(1024);
@@ -419,6 +438,11 @@ export class SetReducerFlags {
   leaveRoomFlags: CallReducerFlags = 'FullUpdate';
   leaveRoom(flags: CallReducerFlags) {
     this.leaveRoomFlags = flags;
+  }
+
+  restartGameFlags: CallReducerFlags = 'FullUpdate';
+  restartGame(flags: CallReducerFlags) {
+    this.restartGameFlags = flags;
   }
 
   sendMessageFlags: CallReducerFlags = 'FullUpdate';

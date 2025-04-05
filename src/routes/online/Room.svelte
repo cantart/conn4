@@ -171,6 +171,18 @@
 		}
 		// Reset `dropping` anyway.
 	});
+
+	let restarting = $state(false);
+	const restartGame = () => {
+		restarting = true;
+		conn.reducers.restartGame();
+	};
+	conn.reducers.onRestartGame((ctx) => {
+		restarting = false;
+		if (ctx.event.status.tag !== 'Committed') {
+			console.error('Error restarting game:', ctx.event.status);
+		}
+	});
 </script>
 
 <div class="space-y-8">
@@ -206,10 +218,8 @@
 						onDrop={(col) => {
 							drop(col);
 						}}
-						onRestart={() => {
-							// TODO
-							console.log('Restart game');
-						}}
+						onRestart={restartGame}
+						{restarting}
 						{dropping}
 					/>
 				{:else}
