@@ -188,6 +188,7 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
     }
 
     for i in (0..game.table.len()).rev() {
+        // find the first topmost empty cell in the column
         if game.table[i][col_usize].is_none() {
             game.table[i][col_usize] = Some(player.id);
             game.latest_move = Some(Coord {
@@ -211,6 +212,8 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
                     .ok_or("Cannot find other player")?;
                 game.current_turn_player_id = Some(other_player_jg.joiner_id);
             }
+
+            break;
         }
     }
 
