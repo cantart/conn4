@@ -201,7 +201,7 @@
 
 	{@render gameArea()}
 
-	<div class="flex gap-4">
+	<div class="flex justify-center gap-4">
 		{@render playerList()}
 		{@render chat()}
 	</div>
@@ -287,24 +287,22 @@
 
 {#snippet chat()}
 	<div class="space-y-4 rounded">
-		<div>
-			<!-- message input area -->
-			<form
-				class="flex gap-2"
-				onsubmit={(e) => {
-					e.preventDefault();
-					const text = new FormData(e.currentTarget).get('text') as string;
-					if (!text) {
-						return;
-					}
-					conn.reducers.sendMessage(text);
-					e.currentTarget.reset();
-				}}
-			>
-				<input autocomplete="off" type="text" name="text" placeholder="Message" class="input" />
-				<button class="btn-primary btn" type="submit">&gt;</button>
-			</form>
-		</div>
+		<!-- message input area -->
+		<form
+			class="flex gap-2"
+			onsubmit={(e) => {
+				e.preventDefault();
+				const text = new FormData(e.currentTarget).get('text') as string;
+				if (!text) {
+					return;
+				}
+				conn.reducers.sendMessage(text);
+				e.currentTarget.reset();
+			}}
+		>
+			<input autocomplete="off" type="text" name="text" placeholder="Message" class="input grow" />
+			<button class="btn-primary btn" type="submit">&gt;</button>
+		</form>
 
 		<ol class="h-48 overflow-auto">
 			<!-- message display area -->
