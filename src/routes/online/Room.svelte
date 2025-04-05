@@ -215,9 +215,7 @@
 					{/if}
 					<GameUi
 						{...readyGameState}
-						onDrop={(col) => {
-							drop(col);
-						}}
+						onDrop={drop}
 						onRestart={restartGame}
 						{restarting}
 						{dropping}
