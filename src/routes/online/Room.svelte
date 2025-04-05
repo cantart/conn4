@@ -144,11 +144,6 @@
 		};
 	});
 
-	$inspect('useGame.game', useGame.game);
-	$inspect('readyGameState', readyGameState);
-	$inspect('useGame.yourJoinGame', useGame.yourJoinGame);
-	$inspect('useGame.game?.currentTurnPlayerId', useGame.game?.currentTurnPlayerId);
-
 	conn.reducers.onDropPiece((ctx) => {
 		if (ctx.event.status.tag !== 'Committed') {
 			console.error('Error dropping piece:', ctx.event.status);
