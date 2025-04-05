@@ -267,9 +267,15 @@
 			{@const player = players.get(jr.joinerId)}
 			<li>
 				{#if player}
-					{player.name}
+					<div
+						class="status transition-colors {player.online ? 'status-success' : 'status-error'}"
+					></div>
 					{#if player.id === you.id}
-						(You)
+						<span>
+							<span class="font-bold">{player.name} (You)</span>
+						</span>
+					{:else}
+						{player.name}
 					{/if}
 				{:else}
 					<span class="loading loading-spinner loading-sm"></span>
