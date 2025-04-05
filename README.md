@@ -17,6 +17,7 @@
 
 ### First
 
+- SEO
 - Attempt to reconnect if connection is lost
 - Room self-delete after some time after the last player went offline
 - Message rate limit on the frontend
