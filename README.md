@@ -23,15 +23,21 @@
 
 - Authentication: login, register, logout
 - Leaderboard: last month, 6 months, all time
+- Coin skins
+- Money to buy skins
 
 ## Later
 
 - Add team mechanics to the game: Not just 1v1, any player in the team can drop piece on behalf of the team
+  - Maybe add `team` field to `join_game` table
 - Show warning modal when a player is about to leave but still in game
 - Add new chat item: player joined/left the room
 - Add the ability to select how many columns to play with
+- Game history: show the last 10 games played, and the ability to replay them
+  - Store moves in the game table (best if replace `table` field with this field, though check win logic will be changed completely)
 - Keyboard mode:
   - to drop, `d` -> `columnName`
   - to focus chat input, `c`
   - and more
+- Invite feature: when in a room, you can invite outside players to join the room
 - ???
