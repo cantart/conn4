@@ -232,6 +232,14 @@
 				{:else}
 					<!-- You are watching a match as a spectator. -->
 					<GameUi as="spectator" {...readyGameState} />
+					{#if useGame.joinGames.length === 1}
+						<!-- A player left mid-game. You can now join. -->
+						<button
+							disabled={useGame.gameJoining}
+							onclick={() => useGame.joinOrCreate()}
+							class="btn btn-primary">Join</button
+						>
+					{/if}
 				{/if}
 			{:else if useGame.yourJoinGame}
 				<!-- You are the only one in the game and waiting for another player. -->
