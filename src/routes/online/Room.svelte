@@ -1,10 +1,12 @@
 <script lang="ts">
 	import type { GameUIDataProps } from '$lib/GameUI.svelte';
 	import GameUi from '$lib/GameUI.svelte';
+	import { fly } from 'svelte/transition';
 	import { type EventContext, JoinRoom, Message } from '../../module_bindings';
 	import type { RoomData } from './types';
 	import { UseGame } from './UseGame.svelte';
 	import { UseRoom } from './UseRoom.svelte';
+	import { flip } from 'svelte/animate';
 
 	let { conn, players, roomId, initialRoomTitle, you, leaveRoom }: RoomData = $props();
 
@@ -312,11 +314,20 @@
 			<button class="btn-primary btn" type="submit">&gt;</button>
 		</form>
 
-		<ol class="h-48 overflow-auto">
+		<ol class="h-96 overflow-auto">
 			<!-- message display area -->
 			{#each messages as msg (msg.sentAt)}
 				{@const isYours = msg.senderId === you.id}
-				<div class="chat {isYours ? 'chat-end' : 'chat-start'}">
+				<div
+					in:fly={{
+						y: -100,
+						duration: 150
+					}}
+					animate:flip={{
+						duration: 150
+					}}
+					class="chat {isYours ? 'chat-end' : 'chat-start'}"
+				>
 					<div class="chat-header">
 						{#if msg.senderId === you.id}
 							You
