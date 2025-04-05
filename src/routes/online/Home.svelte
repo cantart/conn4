@@ -45,7 +45,7 @@
 
 	function createRoom() {
 		creatingRoom = true;
-		conn.reducers.createRoom(joiningRoomTitle.trim() || `${you.name}'s room`);
+		conn.reducers.createRoom(joiningRoomTitle.trim() || `${you.name}'s Room`);
 		conn.reducers.onCreateRoom((ctx) => {
 			if (ctx.event.status.tag === 'Failed') {
 				console.error('Failed to create room:', ctx.event.status.value);
