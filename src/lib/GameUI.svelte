@@ -34,7 +34,7 @@
 
 	const useLatestPieceRing = import.meta.env.VITE_USE_LATEST_PIECE_RING === 'true';
 
-	let tableFull = $derived(props.table.every((row) => row.every((cell) => cell !== undefined)));
+	let tableFull = $derived(!props.table.some((row) => row.some((cell) => cell === undefined)));
 </script>
 
 <div class="flex flex-col justify-center gap-2">
