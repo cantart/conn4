@@ -12,7 +12,6 @@
 	import Home from './Home.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { RoomData } from './types';
-	import { UseRooms } from './UseRooms.svelte';
 	import Room from './Room.svelte';
 
 	let s = $state<
@@ -121,7 +120,7 @@
 		conn.disconnect();
 	});
 
-	let homeUseRooms: UseRooms | null = null;
+	let home: Home | null = $state(null);
 	$effect(() => {
 		if (yourJoinRoom) {
 			const toRoomData: Extract<typeof s, { page: 'room' }> = {
@@ -134,7 +133,7 @@
 				yourJoinRoomHandle.unsubscribeThen(async () => {
 					conn.db.joinRoom.removeOnInsert(youJoinRoomOnInsert);
 					yourJoinRoomHandle = null;
-					await homeUseRooms?.stop();
+					await home?.stopUseRooms();
 					s = toRoomData;
 				});
 			}
@@ -145,13 +144,7 @@
 {#if s.page === 'init'}
 	<h1>Connecting...</h1>
 {:else if s.page === 'home' && you}
-	<Home
-		setUseRooms={(ur) => {
-			homeUseRooms = ur;
-		}}
-		{conn}
-		{you}
-	/>
+	<Home bind:this={home} {conn} {you} />
 {:else if s.page === 'room' && you}
 	<Room
 		{conn}

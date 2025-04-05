@@ -6,12 +6,10 @@
 
 	let {
 		conn,
-		you,
-		setUseRooms
+		you
 	}: {
 		conn: DbConnection;
 		you: You;
-		setUseRooms: (ur: UseRooms | null) => void;
 	} = $props();
 
 	let name = $state(you.name);
@@ -20,7 +18,9 @@
 	let creatingRoom = $state(false);
 
 	const useRooms = new UseRooms(conn);
-	setUseRooms(useRooms);
+	export function stopUseRooms() {
+		return useRooms.stop();
+	}
 
 	const onSetName = () => {
 		nameUpdating = false;
@@ -60,7 +60,6 @@
 	}
 
 	onDestroy(async () => {
-		setUseRooms(null);
 		conn.reducers.removeOnSetName(onSetName);
 	});
 </script>
