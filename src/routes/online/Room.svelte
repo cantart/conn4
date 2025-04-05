@@ -116,11 +116,11 @@
 	 * Not null if the game is ready to be played.
 	 */
 	const readyGameState = $derived.by((): GameUIDataProps | null => {
-		if (!useGame.game || !useGame.yourJoinGame || !useGame.game.currentTurnPlayerId) {
+		if (!useGame.game || !useGame.game.currentTurnPlayerId) {
 			return null;
 		}
 
-		const yourTurn = useGame.game.currentTurnPlayerId === useGame.yourJoinGame.joinerId;
+		const yourTurn = useGame.game.currentTurnPlayerId === useGame.yourJoinGame?.joinerId;
 		return {
 			currentPlayerTurnId: useGame.game.currentTurnPlayerId,
 			latestPiecePosition: useGame.game.latestMove
@@ -214,6 +214,7 @@
 						<span> Your opponent left.<br />Waiting for another player to join. </span>
 					{/if}
 					<GameUi
+						as="player"
 						{...readyGameState}
 						onDrop={drop}
 						onRestart={restartGame}
@@ -222,7 +223,7 @@
 					/>
 				{:else}
 					<!-- You are watching a match as a spectator. -->
-					<h1 class="text-center">TODO: Display game but no interaction</h1>
+					<GameUi as="spectator" {...readyGameState} />
 				{/if}
 			{:else if useGame.yourJoinGame}
 				<!-- You are the only one in the game and waiting for another player. -->

@@ -17,12 +17,19 @@
 		dropDisabled: boolean;
 	};
 
-	let props: GameUIDataProps & {
-		onDrop: (column: number) => void;
-		dropping?: boolean;
-		restarting?: boolean;
-		onRestart: () => void;
-	} = $props();
+	let props: GameUIDataProps &
+		(
+			| {
+					as: 'player';
+					onDrop: (column: number) => void;
+					dropping?: boolean;
+					restarting?: boolean;
+					onRestart: () => void;
+			  }
+			| {
+					as: 'spectator';
+			  }
+		) = $props();
 
 	const useLatestPieceRing = import.meta.env.VITE_USE_LATEST_PIECE_RING === 'true';
 </script>
@@ -54,7 +61,13 @@
 							class:cursor-auto={props.dropDisabled}
 							class="border-neutral grid aspect-square w-14 place-items-center border md:w-16 lg:w-20"
 							onclick={() => {
-								if (props.dropDisabled || props?.dropping || props.players.length !== 2) return;
+								if (
+									props.as === 'spectator' ||
+									props.dropDisabled ||
+									props?.dropping ||
+									props.players.length !== 2
+								)
+									return;
 								props.onDrop(j);
 							}}
 						>
@@ -90,14 +103,16 @@
 					? props.players[0].name
 					: props.players[1].name} wins!
 			</p>
-			<button
-				class="btn btn-accent btn-sm"
-				onclick={props.onRestart}
-				disabled={props.restarting}
-				in:fade={{
-					delay: 500
-				}}>Restart</button
-			>
+			{#if props.as === 'player'}
+				<button
+					class="btn btn-accent btn-sm"
+					onclick={props.onRestart}
+					disabled={props.restarting}
+					in:fade={{
+						delay: 500
+					}}>Restart</button
+				>
+			{/if}
 		</div>
 	{/if}
 </div>

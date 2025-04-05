@@ -11,6 +11,7 @@
 </script>
 
 <GameUi
+	as="player"
 	players={game.players}
 	currentPlayerTurnId={game.currentPlayerTurn()}
 	table={game.table}
