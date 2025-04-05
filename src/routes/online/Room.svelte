@@ -196,7 +196,11 @@
 			{#if readyGameState}
 				<!-- Game is being displayed. -->
 				{#if useGame.yourJoinGame}
-					<!-- You are currently in a match against another player. -->
+					<!-- The match has started with at least you in it -->
+					{#if useGame.joinGames.length === 1}
+						<!-- can happen if the opponent left mid-game -->
+						<span> Your opponent left.<br />Waiting for another player to join. </span>
+					{/if}
 					<GameUi
 						{...readyGameState}
 						onDrop={(col) => {

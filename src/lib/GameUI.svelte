@@ -23,10 +23,6 @@
 		onRestart: () => void;
 	} = $props();
 
-	if (props.players.length !== 2) {
-		throw new Error('GameUI requires exactly 2 players');
-	}
-
 	const useLatestPieceRing = import.meta.env.VITE_USE_LATEST_PIECE_RING === 'true';
 </script>
 
@@ -57,7 +53,7 @@
 							class:cursor-auto={props.dropDisabled}
 							class="border-neutral grid aspect-square w-14 place-items-center border md:w-16 lg:w-20"
 							onclick={() => {
-								if (props.dropDisabled || props?.dropping) return;
+								if (props.dropDisabled || props?.dropping || props.players.length !== 2) return;
 								props.onDrop(j);
 							}}
 						>
