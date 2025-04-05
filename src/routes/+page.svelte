@@ -20,6 +20,7 @@
 	onDrop={(column) => {
 		game.dropPiece(column);
 	}}
-	onRestart={game.restart}
+	onRestartHasWinner={game.restart}
+	onRestartFullTable={game.restart}
 	dropDisabled={!!game.winner}
 />

@@ -24,7 +24,8 @@
 					onDrop: (column: number) => void;
 					dropping?: boolean;
 					restarting?: boolean;
-					onRestart: () => void;
+					onRestartHasWinner: () => void;
+					onRestartFullTable: () => void;
 			  }
 			| {
 					as: 'spectator';
@@ -32,6 +33,8 @@
 		) = $props();
 
 	const useLatestPieceRing = import.meta.env.VITE_USE_LATEST_PIECE_RING === 'true';
+
+	let tableFull = $derived(props.table.every((row) => row.every((cell) => cell !== undefined)));
 </script>
 
 <div class="flex flex-col justify-center gap-2">
@@ -65,7 +68,8 @@
 									props.as === 'spectator' ||
 									props.dropDisabled ||
 									props?.dropping ||
-									props.players.length !== 2
+									props.players.length !== 2 ||
+									tableFull
 								)
 									return;
 								props.onDrop(j);
@@ -96,26 +100,35 @@
 		</div>
 	</div>
 
-	{#if props.winner}
-		<div class="mt-2 flex flex-col items-center justify-center gap-2" transition:slide>
-			<p class="text-base-rs font-bold">
-				{props.winner.playerId === props.players[0].id
-					? props.players[0].name
-					: props.players[1].name} wins!
-			</p>
-			{#if props.as === 'player'}
-				<button
-					class="btn btn-accent btn-sm"
-					onclick={props.onRestart}
-					disabled={props.restarting}
-					in:fade={{
-						delay: 500
-					}}>Restart</button
-				>
-			{/if}
-		</div>
+	{#if props.as === 'player'}
+		{#if props.winner}
+			<div class="mt-2 flex flex-col items-center justify-center gap-2" transition:slide>
+				<p class="text-base-rs font-bold">
+					{props.winner.playerId === props.players[0].id
+						? props.players[0].name
+						: props.players[1].name} wins!
+				</p>
+				{@render restartButton(props.onRestartHasWinner, props.restarting)}
+			</div>
+		{:else if tableFull}
+			<div class="mt-2 flex flex-col items-center justify-center gap-2" transition:slide>
+				<p class="text-base-rs font-bold">It's a draw!</p>
+				{@render restartButton(props.onRestartFullTable, props.restarting)}
+			</div>
+		{/if}
 	{/if}
 </div>
+
+{#snippet restartButton(onRestart: () => void, restarting?: boolean)}
+	<button
+		class="btn btn-accent btn-sm"
+		onclick={onRestart}
+		disabled={restarting}
+		in:fade={{
+			delay: 500
+		}}>Restart</button
+	>
+{/snippet}
 
 {#snippet piece({ halfOpacity, skin }: { halfOpacity: boolean; skin: string })}
 	<div class:opacity-50={halfOpacity} class="h-full w-full rounded-full {skin} ring-red-300"></div>

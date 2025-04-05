@@ -16,7 +16,10 @@ pub struct Player {
 
 const PLAYERS_REQUIRED: u32 = 2;
 
+const STREAK_REQUIRED: usize = 4;
+
 const ROWS: usize = 6;
+/// Must be >= `STREAK_REQUIRED`` to not cause panic when checking for a win
 const COLS: usize = 20;
 
 #[derive(SpacetimeType)]
@@ -50,6 +53,14 @@ pub struct Game {
     players_required: u32,
 }
 
+impl Game {
+    fn is_table_full(&self) -> bool {
+        self.table
+            .iter()
+            .all(|row| row.iter().all(|cell| cell.is_some()))
+    }
+}
+
 #[table(name = join_game, public)]
 pub struct JoinGame {
     #[index(btree)]
@@ -77,7 +88,6 @@ fn leave_game_by_player_id(ctx: &ReducerContext, player_id: u32) {
 fn check_win(table: &GameTable, player_id: u32) -> Option<Vec<Coord>> {
     let rows = table.len();
     let cols = table[0].len();
-    const STREAK_REQUIRED: usize = 4;
 
     // Check horizontal
     for row in 0..rows {
@@ -165,17 +175,42 @@ fn game_random_player_id(ctx: &ReducerContext, room_id: u32) -> Result<u32, Stri
     Ok(random_player_id)
 }
 
-#[reducer]
-pub fn restart_game(ctx: &ReducerContext) -> Result<(), String> {
-    let player = find_sender_player(ctx);
-
-    let Some(jg) = ctx.db.join_game().joiner_id().find(player.id) else {
-        return Err("Cannot restart game if not in a game".to_string());
+fn game_of_player(ctx: &ReducerContext, player_id: u32) -> Result<Game, String> {
+    let Some(jg) = ctx.db.join_game().joiner_id().find(player_id) else {
+        return Err("Player not in a game".to_string());
     };
 
     let Some(game) = ctx.db.game().room_id().find(jg.room_id) else {
-        return Err("Cannot restart game if game does not exist".to_string());
+        return Err("Game not found".to_string());
     };
+
+    Ok(game)
+}
+
+#[reducer]
+pub fn restart_game_table_full(ctx: &ReducerContext) -> Result<(), String> {
+    let player = find_sender_player(ctx);
+    let game = game_of_player(ctx, player.id)?;
+
+    if !game.is_table_full() {
+        return Err("Cannot restart game if the table is not full".to_string());
+    }
+
+    ctx.db.game().room_id().update(Game {
+        winner: None,
+        table: vec![vec![None; COLS]; ROWS],
+        latest_move: None,
+        current_turn_player_id: Some(game_random_player_id(ctx, game.room_id)?),
+        ..game
+    });
+
+    Ok(())
+}
+
+#[reducer]
+pub fn restart_game_has_winner(ctx: &ReducerContext) -> Result<(), String> {
+    let player = find_sender_player(ctx);
+    let game = game_of_player(ctx, player.id)?;
 
     if game.winner.is_none() {
         return Err("Cannot restart game if there is no winner".to_string());

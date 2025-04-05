@@ -173,11 +173,23 @@
 	});
 
 	let restarting = $state(false);
-	const restartGame = () => {
+
+	const restartGameHasWinner = () => {
 		restarting = true;
-		conn.reducers.restartGame();
+		conn.reducers.restartGameHasWinner();
 	};
-	conn.reducers.onRestartGame((ctx) => {
+	conn.reducers.onRestartGameHasWinner((ctx) => {
+		restarting = false;
+		if (ctx.event.status.tag !== 'Committed') {
+			console.error('Error restarting game:', ctx.event.status);
+		}
+	});
+
+	const restartGameFullTable = () => {
+		restarting = true;
+		conn.reducers.restartGameTableFull();
+	};
+	conn.reducers.onRestartGameTableFull((ctx) => {
 		restarting = false;
 		if (ctx.event.status.tag !== 'Committed') {
 			console.error('Error restarting game:', ctx.event.status);
@@ -217,7 +229,8 @@
 						as="player"
 						{...readyGameState}
 						onDrop={drop}
-						onRestart={restartGame}
+						onRestartHasWinner={restartGameHasWinner}
+						onRestartFullTable={restartGameFullTable}
 						{restarting}
 						{dropping}
 					/>

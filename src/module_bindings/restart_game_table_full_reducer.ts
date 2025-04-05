@@ -31,12 +31,12 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 
-export type RestartGame = {};
+export type RestartGameTableFull = {};
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace RestartGame {
+export namespace RestartGameTableFull {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
@@ -46,12 +46,12 @@ export namespace RestartGame {
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: RestartGame): void {
-    RestartGame.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: RestartGameTableFull): void {
+    RestartGameTableFull.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): RestartGame {
-    return RestartGame.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): RestartGameTableFull {
+    return RestartGameTableFull.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }
