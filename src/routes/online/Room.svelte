@@ -218,7 +218,8 @@
 				{/if}
 			{:else if useGame.yourJoinGame}
 				<!-- You are the only one in the game and waiting for another player. -->
-				<h1 class="text-center">Waiting for other player to join...</h1>
+				<span class="text-center">Waiting for opponent to join</span>
+				<span class="loading loading-spinner loading-xs"></span>
 			{:else}
 				<!-- There is someone in the game. You are not in it -->
 				<button
