@@ -101,9 +101,8 @@ fn check_win(table: &GameTable, player_id: u32) -> Option<Vec<Coord>> {
     for col in 0..cols {
         for row in 0..=(rows - STREAK_REQUIRED) {
             let rows_to_check = row..row + STREAK_REQUIRED;
-            // TODO: Fix this index out of bounds error
-            let cells_to_check = &table[rows_to_check.clone()][col];
-            if cells_to_check.iter().all(|&cell| cell == Some(player_id)) {
+            let mut cells_to_check = rows_to_check.clone().map(|row| &table[row][col]);
+            if cells_to_check.all(|&cell| cell == Some(player_id)) {
                 return Some(
                     rows_to_check
                         .map(|row| Coord {
@@ -214,6 +213,8 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
             }
         }
     }
+
+    ctx.db.game().room_id().update(game);
 
     Ok(())
 }
