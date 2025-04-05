@@ -45,7 +45,7 @@
 
 	function createRoom() {
 		creatingRoom = true;
-		conn.reducers.createRoom(joiningRoomTitle);
+		conn.reducers.createRoom(joiningRoomTitle.trim() || `${you.name}'s room`);
 		conn.reducers.onCreateRoom((ctx) => {
 			if (ctx.event.status.tag === 'Failed') {
 				console.error('Failed to create room:', ctx.event.status.value);
@@ -127,7 +127,6 @@
 							placeholder="Enter room title"
 							class="input input-bordered w-full max-w-xs"
 							bind:value={joiningRoomTitle}
-							required
 						/>
 					</div>
 				</form>
