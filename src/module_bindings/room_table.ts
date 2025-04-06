@@ -80,22 +80,22 @@ export class RoomTableHandle {
     },
   };
   /**
-   * Access to the `owner_id` unique index on the table `room`,
+   * Access to the `owner` unique index on the table `room`,
    * which allows point queries on the field of the same name
-   * via the [`RoomOwnerIdUnique.find`] method.
+   * via the [`RoomOwnerUnique.find`] method.
    *
    * Users are encouraged not to explicitly reference this type,
    * but to directly chain method calls,
-   * like `ctx.db.room.owner_id().find(...)`.
+   * like `ctx.db.room.owner().find(...)`.
    *
-   * Get a handle on the `owner_id` unique index on the table `room`.
+   * Get a handle on the `owner` unique index on the table `room`.
    */
-  owner_id = {
-    // Find the subscribed row whose `owner_id` column value is equal to `col_val`,
+  owner = {
+    // Find the subscribed row whose `owner` column value is equal to `col_val`,
     // if such a row is present in the client cache.
-    find: (col_val: number): Room | undefined => {
+    find: (col_val: Identity): Room | undefined => {
       for (let row of this.tableCache.iter()) {
-        if (deepEqual(row.owner_id, col_val)) {
+        if (deepEqual(row.owner, col_val)) {
           return row;
         }
       }

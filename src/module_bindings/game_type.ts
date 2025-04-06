@@ -36,8 +36,8 @@ import { Coord as __Coord } from "./coord_type";
 export type Game = {
   roomId: number,
   winner: __Winner | undefined,
-  table: (number | undefined)[][],
-  currentTurnPlayerId: number | undefined,
+  table: (Identity | undefined)[][],
+  currentTurnPlayer: Identity | undefined,
   latestMove: __Coord | undefined,
   playersRequired: number,
 };
@@ -54,8 +54,8 @@ export namespace Game {
     return AlgebraicType.createProductType([
       new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
       new ProductTypeElement("winner", AlgebraicType.createOptionType(__Winner.getTypeScriptAlgebraicType())),
-      new ProductTypeElement("table", AlgebraicType.createArrayType(AlgebraicType.createArrayType(AlgebraicType.createOptionType(AlgebraicType.createU32Type())))),
-      new ProductTypeElement("currentTurnPlayerId", AlgebraicType.createOptionType(AlgebraicType.createU32Type())),
+      new ProductTypeElement("table", AlgebraicType.createArrayType(AlgebraicType.createArrayType(AlgebraicType.createOptionType(AlgebraicType.createIdentityType())))),
+      new ProductTypeElement("currentTurnPlayer", AlgebraicType.createOptionType(AlgebraicType.createIdentityType())),
       new ProductTypeElement("latestMove", AlgebraicType.createOptionType(__Coord.getTypeScriptAlgebraicType())),
       new ProductTypeElement("playersRequired", AlgebraicType.createU32Type()),
     ]);

@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	let players = new SvelteMap<number, Player>();
+	let players = new SvelteMap<bigint, Player>();
 	let you = $state<You | null>(null);
 	let yourJoinRoom = $state<JoinRoom | null>(null);
 	let yourJoinRoomHandle: SubscriptionHandle | null = null;
@@ -22,7 +22,7 @@
 		if (!you) {
 			throw new Error('You are not set yet');
 		}
-		if (jr.joinerId === you.id) {
+		if (jr.joiner.data === you.identity.data) {
 			yourJoinRoom = jr;
 			conn.db.joinRoom.removeOnInsert(youJoinRoomOnInsert);
 		} else {
@@ -32,22 +32,22 @@
 
 	const setupYourJoinRoom = async (y: You) => {
 		return new Promise<void>((resolve) => {
-			conn.db.joinRoom.onInsert(youJoinRoomOnInsert);
 			yourJoinRoomHandle = conn
 				.subscriptionBuilder()
 				.onApplied(() => {
 					for (const jr of conn.db.joinRoom.iter()) {
-						if (jr.joinerId === you?.id) {
+						if (jr.joiner.data === you?.identity.data) {
 							yourJoinRoom = jr;
 							return;
 						}
 					}
+					conn.db.joinRoom.onInsert(youJoinRoomOnInsert);
 					resolve();
 				})
 				.onError((ctx) => {
 					console.error('Error fetching your join room:', ctx.event);
 				})
-				.subscribe(`SELECT * FROM join_room WHERE joiner_id = '${y.id}'`);
+				.subscribe(`SELECT * FROM join_room WHERE joiner = '${y.identity.toHexString()}'`);
 		});
 	};
 
@@ -55,21 +55,18 @@
 		console.error('Error connecting to SpacetimeDB:', error);
 	};
 
-	const onConnect = (conn: DbConnection, ident: Identity, token: string) => {
+	const onConnect = (conn: DbConnection, identity: Identity, token: string) => {
 		localStorage.setItem('auth_token', token);
 
 		conn
 			.subscriptionBuilder()
 			.onApplied(async () => {
 				for (const player of conn.db.player.iter()) {
-					players.set(player.id, player);
-					if (
-						player.id === you?.id ||
-						player.identity.toHexString() === conn.identity?.toHexString()
-					) {
+					players.set(player.identity.data, player);
+					if (player.identity.data === identity.data) {
 						you = {
-							id: player.id,
-							name: player.name
+							name: player.name,
+							identity
 						};
 						await setupYourJoinRoom(you);
 						s = {
@@ -81,16 +78,16 @@
 			.subscribe(['SELECT * FROM player']);
 
 		conn.db.player.onInsert((ctx, player) => {
-			players.set(player.id, player);
+			players.set(player.identity.data, player);
 		});
 		conn.db.player.onUpdate((ctx, o, n) => {
-			players.set(n.id, n);
-			if (n.id === you?.id || n.identity.toHexString() === conn.identity?.toHexString()) {
-				you = { name: n.name, id: n.id };
+			players.set(n.identity.data, n);
+			if (n.identity.data === you?.identity.data) {
+				you = { name: n.name, identity: identity };
 			}
 		});
 		conn.db.player.onDelete((ctx, player) => {
-			players.delete(player.id);
+			players.delete(player.identity.data);
 		});
 	};
 
@@ -117,6 +114,8 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { RoomData } from './types';
 	import Room from './Room.svelte';
+
+	$inspect(yourJoinRoom);
 
 	let home: Home | null = $state(null);
 	$effect(() => {

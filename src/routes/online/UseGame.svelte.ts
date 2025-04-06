@@ -1,4 +1,5 @@
 import { SubscriptionHandle } from "$lib";
+import { Identity } from "@clockworklabs/spacetimedb-sdk";
 import type { JoinGame, DbConnection, EventContext, Game, ReducerEventContext } from "../../module_bindings";
 
 export class UseGame {
@@ -43,11 +44,11 @@ export class UseGame {
         return this.#gameJoining;
     }
 
-    constructor(conn: DbConnection, roomId: number, yourId: number) {
+    constructor(conn: DbConnection, roomId: number, yourIdentity: Identity) {
         this.#conn = conn;
 
         $effect(() => {
-            this.#yourJoinGame = this.#joinGames.find((jg) => jg.joinerId === yourId);
+            this.#yourJoinGame = this.#joinGames.find((jg) => jg.joiner.data === yourIdentity.data);
         })
 
         $effect(() => {
@@ -94,13 +95,13 @@ export class UseGame {
             .subscribe(`SELECT * FROM game WHERE room_id = '${roomId}'`);
 
         this.#joinGameOnInsert = (ctx, jg) => {
-            if (jg.joinerId === yourId) {
+            if (jg.joiner.data === yourIdentity.data) {
                 if (this.#yourJoinGame) {
                     throw new Error('You already joined to the game.')
                 }
                 this.#gameJoining = false;
             }
-            let existing = this.#joinGames.find((j) => j.joinerId === jg.joinerId);
+            let existing = this.#joinGames.find((j) => j.joiner.data === jg.joiner.data);
             if (existing) {
                 existing = jg
             } else {
@@ -108,12 +109,12 @@ export class UseGame {
             }
         }
         this.#joinGameOnDelete = (ctx, jg) => {
-            if (jg.joinerId === yourId) {
+            if (jg.joiner.data === yourIdentity.data) {
                 if (!this.#yourJoinGame) {
                     throw new Error('You have not joined to the game.')
                 }
             }
-            const deleted = this.#joinGames.findIndex((j) => j.joinerId === jg.joinerId);
+            const deleted = this.#joinGames.findIndex((j) => j.joiner.data === jg.joiner.data);
             if (deleted !== -1) {
                 this.#joinGames.splice(deleted, 1);
             }
@@ -127,7 +128,7 @@ export class UseGame {
             .onApplied(() => {
                 this.#activeSubscriptions++;
                 for (const jg of conn.db.joinGame.iter()) {
-                    if (jg.joinerId === yourId) {
+                    if (jg.joiner.data === yourIdentity.data) {
                         if (this.#yourJoinGame) {
                             throw new Error('You already joined to the game.')
                         }

@@ -4,8 +4,8 @@
 
 	const game = createLocalGame({
 		players: [
-			{ id: 1, name: 'Player 1' },
-			{ id: 2, name: 'Player 2' }
+			{ id: '1', name: 'Player 1' },
+			{ id: '2', name: 'Player 2' }
 		]
 	});
 </script>

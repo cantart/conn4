@@ -103,12 +103,12 @@ const REMOTE_MODULE = {
     join_game: {
       tableName: "join_game",
       rowType: JoinGame.getTypeScriptAlgebraicType(),
-      primaryKey: "joinerId",
+      primaryKey: "joiner",
     },
     join_room: {
       tableName: "join_room",
       rowType: JoinRoom.getTypeScriptAlgebraicType(),
-      primaryKey: "joinerId",
+      primaryKey: "joiner",
     },
     message: {
       tableName: "message",
@@ -117,7 +117,7 @@ const REMOTE_MODULE = {
     player: {
       tableName: "player",
       rowType: Player.getTypeScriptAlgebraicType(),
-      primaryKey: "id",
+      primaryKey: "identity",
     },
     room: {
       tableName: "room",

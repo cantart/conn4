@@ -3,7 +3,7 @@ import { SvelteMap } from "svelte/reactivity";
 import { DbConnection, Player } from "../../module_bindings";
 
 export type RoomData = {
-    players: SvelteMap<number, Player>;
+    players: SvelteMap<bigint, Player>;
     conn: DbConnection;
     roomId: number;
     initialRoomTitle: string | null;

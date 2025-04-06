@@ -58,28 +58,6 @@ export class PlayerTableHandle {
     return this.tableCache.iter();
   }
   /**
-   * Access to the `id` unique index on the table `player`,
-   * which allows point queries on the field of the same name
-   * via the [`PlayerIdUnique.find`] method.
-   *
-   * Users are encouraged not to explicitly reference this type,
-   * but to directly chain method calls,
-   * like `ctx.db.player.id().find(...)`.
-   *
-   * Get a handle on the `id` unique index on the table `player`.
-   */
-  id = {
-    // Find the subscribed row whose `id` column value is equal to `col_val`,
-    // if such a row is present in the client cache.
-    find: (col_val: number): Player | undefined => {
-      for (let row of this.tableCache.iter()) {
-        if (deepEqual(row.id, col_val)) {
-          return row;
-        }
-      }
-    },
-  };
-  /**
    * Access to the `identity` unique index on the table `player`,
    * which allows point queries on the field of the same name
    * via the [`PlayerIdentityUnique.find`] method.

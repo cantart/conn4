@@ -9,13 +9,13 @@ const createTable = () => {
 };
 
 export type LocalPlayer = {
-	id: number;
+	id: string;
 	name: string;
 };
 
 export type LocalGameState = {
-	winner: { playerId: number; coordinates: [number, number][] } | undefined;
-	table: (number | undefined)[][];
+	winner: { playerId: string; coordinates: [number, number][] } | undefined;
+	table: (string | undefined)[][];
 	sw: boolean;
 	latestPiecePosition: [number, number] | undefined;
 };
@@ -45,7 +45,7 @@ export function createLocalGame(args: { players: [LocalPlayer, LocalPlayer] }) {
 
 	function checkWin(
 		table: LocalGameState['table'],
-		playerId: number,
+		playerId: string,
 	): null | [number, number][] {
 		const rows = table.length;
 		const cols = table[0].length;

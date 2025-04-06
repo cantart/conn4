@@ -1,3 +1,4 @@
+use log::info;
 use spacetimedb::{
     rand::seq::IteratorRandom, reducer, table, Identity, ReducerContext, SpacetimeType, Table,
     Timestamp,
@@ -6,9 +7,6 @@ use spacetimedb::{
 #[table(name = player, public)]
 pub struct Player {
     #[primary_key]
-    #[auto_inc]
-    id: u32,
-    #[unique]
     identity: Identity,
     name: Option<String>,
     online: bool,
@@ -30,11 +28,11 @@ struct Coord {
 
 #[derive(SpacetimeType)]
 struct Winner {
-    player_id: u32,
+    player: Identity,
     coordinates: Vec<Coord>, // cells that are part of the winning line
 }
 
-type GameTable = Vec<Vec<Option<u32>>>;
+type GameTable = Vec<Vec<Option<Identity>>>;
 
 #[table(name = game, public)]
 pub struct Game {
@@ -46,7 +44,7 @@ pub struct Game {
     /// table of the game
     table: GameTable,
     /// `None` if the game hasn't started yet
-    current_turn_player_id: Option<u32>,
+    current_turn_player: Option<Identity>,
     /// last move made by a player
     latest_move: Option<Coord>,
 
@@ -66,18 +64,18 @@ pub struct JoinGame {
     #[index(btree)]
     room_id: u32,
     #[primary_key]
-    joiner_id: u32,
+    joiner: Identity,
     #[auto_inc]
     index: u32,
 }
 
-fn leave_game_by_player_id(ctx: &ReducerContext, player_id: u32) {
-    let Some(jg) = ctx.db.join_game().joiner_id().find(player_id) else {
+fn leave_game(ctx: &ReducerContext) {
+    let Some(jg) = ctx.db.join_game().joiner().find(ctx.sender) else {
         // player was not in a game
         return;
     };
 
-    ctx.db.join_game().joiner_id().delete(player_id);
+    ctx.db.join_game().joiner().delete(ctx.sender);
 
     // remove game if the player was the last one in the game
     if ctx.db.join_game().room_id().filter(jg.room_id).count() == 0 {
@@ -85,7 +83,7 @@ fn leave_game_by_player_id(ctx: &ReducerContext, player_id: u32) {
     }
 }
 
-fn check_win(table: &GameTable, player_id: u32) -> Option<Vec<Coord>> {
+fn check_win(ctx: &ReducerContext, table: &GameTable) -> Option<Vec<Coord>> {
     let rows = table.len();
     let cols = table[0].len();
 
@@ -94,7 +92,7 @@ fn check_win(table: &GameTable, player_id: u32) -> Option<Vec<Coord>> {
         for col in 0..=(cols - STREAK_REQUIRED) {
             let cols_to_check = col..col + STREAK_REQUIRED;
             let cells_to_check = &table[row][cols_to_check.clone()];
-            if cells_to_check.iter().all(|&cell| cell == Some(player_id)) {
+            if cells_to_check.iter().all(|&cell| cell == Some(ctx.sender)) {
                 return Some(
                     cols_to_check
                         .map(|col| Coord {
@@ -112,7 +110,7 @@ fn check_win(table: &GameTable, player_id: u32) -> Option<Vec<Coord>> {
         for row in 0..=(rows - STREAK_REQUIRED) {
             let rows_to_check = row..row + STREAK_REQUIRED;
             let mut cells_to_check = rows_to_check.clone().map(|row| &table[row][col]);
-            if cells_to_check.all(|&cell| cell == Some(player_id)) {
+            if cells_to_check.all(|&cell| cell == Some(ctx.sender)) {
                 return Some(
                     rows_to_check
                         .map(|row| Coord {
@@ -129,7 +127,7 @@ fn check_win(table: &GameTable, player_id: u32) -> Option<Vec<Coord>> {
     for row in 0..=(rows - STREAK_REQUIRED) {
         for col in 0..=(cols - STREAK_REQUIRED) {
             let mut cells_to_check = (0..STREAK_REQUIRED).map(|i| &table[row + i][col + i]);
-            if cells_to_check.all(|&cell| cell == Some(player_id)) {
+            if cells_to_check.all(|&cell| cell == Some(ctx.sender)) {
                 return Some(
                     (0..STREAK_REQUIRED)
                         .map(|i| Coord {
@@ -146,7 +144,7 @@ fn check_win(table: &GameTable, player_id: u32) -> Option<Vec<Coord>> {
     for row in (STREAK_REQUIRED - 1)..rows {
         for col in 0..=(cols - STREAK_REQUIRED) {
             let mut cells_to_check = (0..STREAK_REQUIRED).map(|i| &table[row - i][col + i]);
-            if cells_to_check.all(|&cell| cell == Some(player_id)) {
+            if cells_to_check.all(|&cell| cell == Some(ctx.sender)) {
                 return Some(
                     (0..STREAK_REQUIRED)
                         .map(|i| Coord {
@@ -162,7 +160,7 @@ fn check_win(table: &GameTable, player_id: u32) -> Option<Vec<Coord>> {
     None
 }
 
-fn game_random_player_id(ctx: &ReducerContext, room_id: u32) -> Result<u32, String> {
+fn game_random_player(ctx: &ReducerContext, room_id: u32) -> Result<Identity, String> {
     let mut rng = ctx.rng();
     let random_player_id = ctx
         .db
@@ -171,12 +169,12 @@ fn game_random_player_id(ctx: &ReducerContext, room_id: u32) -> Result<u32, Stri
         .filter(room_id)
         .choose(&mut rng)
         .ok_or("Cannot find a random player in the game")?
-        .joiner_id;
+        .joiner;
     Ok(random_player_id)
 }
 
-fn game_of_player(ctx: &ReducerContext, player_id: u32) -> Result<Game, String> {
-    let Some(jg) = ctx.db.join_game().joiner_id().find(player_id) else {
+fn game_of_sender(ctx: &ReducerContext) -> Result<Game, String> {
+    let Some(jg) = ctx.db.join_game().joiner().find(ctx.sender) else {
         return Err("Player not in a game".to_string());
     };
 
@@ -189,8 +187,7 @@ fn game_of_player(ctx: &ReducerContext, player_id: u32) -> Result<Game, String> 
 
 #[reducer]
 pub fn restart_game_table_full(ctx: &ReducerContext) -> Result<(), String> {
-    let player = find_sender_player(ctx);
-    let game = game_of_player(ctx, player.id)?;
+    let game = game_of_sender(ctx)?;
 
     if !game.is_table_full() {
         return Err("Cannot restart game if the table is not full".to_string());
@@ -200,7 +197,7 @@ pub fn restart_game_table_full(ctx: &ReducerContext) -> Result<(), String> {
         winner: None,
         table: vec![vec![None; COLS]; ROWS],
         latest_move: None,
-        current_turn_player_id: Some(game_random_player_id(ctx, game.room_id)?),
+        current_turn_player: Some(game_random_player(ctx, game.room_id)?),
         ..game
     });
 
@@ -209,8 +206,7 @@ pub fn restart_game_table_full(ctx: &ReducerContext) -> Result<(), String> {
 
 #[reducer]
 pub fn restart_game_has_winner(ctx: &ReducerContext) -> Result<(), String> {
-    let player = find_sender_player(ctx);
-    let game = game_of_player(ctx, player.id)?;
+    let game = game_of_sender(ctx)?;
 
     if game.winner.is_none() {
         return Err("Cannot restart game if there is no winner".to_string());
@@ -220,7 +216,7 @@ pub fn restart_game_has_winner(ctx: &ReducerContext) -> Result<(), String> {
         winner: None,
         table: vec![vec![None; COLS]; ROWS],
         latest_move: None,
-        current_turn_player_id: Some(game_random_player_id(ctx, game.room_id)?),
+        current_turn_player: Some(game_random_player(ctx, game.room_id)?),
         ..game
     });
 
@@ -229,10 +225,8 @@ pub fn restart_game_has_winner(ctx: &ReducerContext) -> Result<(), String> {
 
 #[reducer]
 pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
-    let player = find_sender_player(ctx);
-
     // check if the player is in a game
-    let Some(jg) = ctx.db.join_game().joiner_id().find(player.id) else {
+    let Some(jg) = ctx.db.join_game().joiner().find(ctx.sender) else {
         return Err("Cannot drop piece if not in a game".to_string());
     };
 
@@ -249,11 +243,11 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
         return Err("Cannot drop piece if game is already won".to_string());
     }
 
-    let Some(current_turn_player_id) = game.current_turn_player_id else {
+    let Some(current_turn_player) = game.current_turn_player else {
         return Err("Cannot drop piece if there is no turn for anyone".to_string());
     };
 
-    if player.id != current_turn_player_id {
+    if ctx.sender != current_turn_player {
         return Err("Cannot drop piece if it's not your turn".to_string());
     }
 
@@ -265,15 +259,15 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
     for i in (0..game.table.len()).rev() {
         // find the first topmost empty cell in the column
         if game.table[i][col_usize].is_none() {
-            game.table[i][col_usize] = Some(player.id);
+            game.table[i][col_usize] = Some(ctx.sender);
             game.latest_move = Some(Coord {
                 x: i as u32,
                 y: column,
             });
 
-            if let Some(coords) = check_win(&game.table, player.id) {
+            if let Some(coords) = check_win(ctx, &game.table) {
                 game.winner = Some(Winner {
-                    player_id: player.id,
+                    player: ctx.sender,
                     coordinates: coords,
                 });
             } else {
@@ -282,10 +276,10 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
                     .join_game()
                     .room_id()
                     .filter(jg.room_id)
-                    .filter(|jg| jg.joiner_id != player.id)
+                    .filter(|jg| jg.joiner != ctx.sender)
                     .next()
                     .ok_or("Cannot find other player")?;
-                game.current_turn_player_id = Some(other_player_jg.joiner_id);
+                game.current_turn_player = Some(other_player_jg.joiner);
             }
 
             break;
@@ -299,15 +293,13 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
 
 #[reducer]
 pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
-    let player = find_sender_player(ctx);
-
     // check if the player is in a room
-    let Some(jr) = ctx.db.join_room().joiner_id().find(player.id) else {
+    let Some(jr) = ctx.db.join_room().joiner().find(ctx.sender) else {
         return Err("Cannot join the game when not in a room".to_string());
     };
 
     // check if the player is already in a game
-    if ctx.db.join_game().joiner_id().find(player.id).is_some() {
+    if ctx.db.join_game().joiner().find(ctx.sender).is_some() {
         return Err("Cannot join the game when already in one".to_string());
     }
 
@@ -319,27 +311,27 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
 
     ctx.db.join_game().try_insert(JoinGame {
         room_id: jr.room_id,
-        joiner_id: player.id,
+        joiner: ctx.sender,
         index: 0,
     })?;
     join_count += 1;
 
     if let Some(game) = ctx.db.game().room_id().find(jr.room_id) {
-        if let Some(current_turn_player_id) = game.current_turn_player_id {
+        if let Some(current_turn_player_id) = game.current_turn_player {
             let another_player_jg = ctx
                 .db
                 .join_game()
                 .room_id()
                 .filter(jr.room_id)
-                .filter(|jg| jg.joiner_id != player.id)
+                .filter(|jg| jg.joiner != ctx.sender)
                 .next()
                 .ok_or("Cannot find another player")?;
-            if current_turn_player_id != another_player_jg.joiner_id {
+            if current_turn_player_id != another_player_jg.joiner {
                 // The game was already in progress before we joined.
                 // If the current turn doesn't belong to the one already in the game, that means we just joined in place of another player who left while owning the turn.
                 // So we need to take the turn from them.
                 ctx.db.game().room_id().update(Game {
-                    current_turn_player_id: Some(player.id),
+                    current_turn_player: Some(ctx.sender),
                     ..game
                 });
             }
@@ -347,7 +339,7 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
             if join_count == game.players_required as usize {
                 // if the game is full, set the current turn to a random player
                 ctx.db.game().room_id().update(Game {
-                    current_turn_player_id: Some(game_random_player_id(ctx, game.room_id)?),
+                    current_turn_player: Some(game_random_player(ctx, game.room_id)?),
                     ..game
                 });
             }
@@ -361,7 +353,7 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
             table: vec![vec![None; COLS]; ROWS],
             latest_move: None,
             players_required: PLAYERS_REQUIRED,
-            current_turn_player_id: None,
+            current_turn_player: None,
         })?;
     }
 
@@ -375,7 +367,7 @@ pub struct Room {
     id: u32,
     title: String,
     #[unique]
-    owner_id: u32,
+    owner: Identity,
     created_at: Timestamp,
 }
 
@@ -383,7 +375,7 @@ pub struct Room {
 pub struct Message {
     #[index(btree)]
     room_id: u32,
-    sender_id: u32,
+    sender: Identity,
     #[index(btree)]
     sent_at: Timestamp,
     text: String,
@@ -394,24 +386,17 @@ pub struct JoinRoom {
     #[index(btree)]
     room_id: u32,
     #[primary_key]
-    joiner_id: u32,
-    #[unique]
-    joiner_identity: Identity,
+    joiner: Identity,
     joined_at: Timestamp,
-}
-
-fn find_sender_player(ctx: &ReducerContext) -> Player {
-    ctx.db.player().identity().find(ctx.sender).unwrap()
 }
 
 #[reducer]
 pub fn send_message(ctx: &ReducerContext, text: String) -> Result<(), String> {
     validate_message_text(&text)?;
-    let player = find_sender_player(ctx);
-    if let Some(jr) = ctx.db.join_room().joiner_id().find(player.id) {
+    if let Some(jr) = ctx.db.join_room().joiner().find(ctx.sender) {
         ctx.db.message().try_insert(Message {
             room_id: jr.room_id,
-            sender_id: player.id,
+            sender: ctx.sender,
             sent_at: ctx.timestamp,
             text,
         })?;
@@ -440,7 +425,12 @@ fn validate_room_title(title: &str) -> Result<(), String> {
 #[reducer]
 pub fn create_room(ctx: &ReducerContext, title: String) -> Result<(), String> {
     validate_room_title(&title)?;
-    let player = find_sender_player(ctx);
+    let player = ctx
+        .db
+        .player()
+        .identity()
+        .find(ctx.sender)
+        .ok_or("Cannot find player")?;
     if player.name.is_none() {
         return Err("Cannot create a room without a name".to_string());
     }
@@ -448,33 +438,31 @@ pub fn create_room(ctx: &ReducerContext, title: String) -> Result<(), String> {
         id: 0,
         title,
         created_at: ctx.timestamp,
-        owner_id: player.id,
+        owner: ctx.sender,
     })?;
     join_to_room(ctx, room.id)
 }
 
 #[reducer]
 pub fn join_to_room(ctx: &ReducerContext, room_id: u32) -> Result<(), String> {
-    if ctx
-        .db
-        .join_room()
-        .joiner_identity()
-        .find(&ctx.sender)
-        .is_some()
-    {
+    if ctx.db.join_room().joiner().find(&ctx.sender).is_some() {
         Err("Cannot join to a room when already in one".to_string())
     } else {
         if ctx.db.room().id().find(room_id).is_none() {
             return Err("Room does not exist".to_string());
         }
-        let player = find_sender_player(ctx);
+        let player = ctx
+            .db
+            .player()
+            .identity()
+            .find(ctx.sender)
+            .ok_or("Cannot find player")?;
         if player.name.is_none() {
             return Err("Cannot join to a room without a name".to_string());
         }
         ctx.db.join_room().try_insert(JoinRoom {
-            joiner_id: player.id,
             room_id,
-            joiner_identity: ctx.sender,
+            joiner: ctx.sender,
             joined_at: ctx.timestamp,
         })?;
         Ok(())
@@ -492,14 +480,13 @@ fn delete_room(ctx: &ReducerContext, room_id: u32) {
 
 #[reducer]
 pub fn leave_room(ctx: &ReducerContext) {
-    ctx.db.join_room().joiner_identity().delete(ctx.sender);
-    let player = find_sender_player(ctx);
-    leave_game_by_player_id(ctx, player.id);
-    if let Some(room) = ctx.db.room().owner_id().find(player.id) {
+    ctx.db.join_room().joiner().delete(ctx.sender);
+    leave_game(ctx);
+    if let Some(room) = ctx.db.room().owner().find(ctx.sender) {
         if let Some(other_jr) = ctx.db.join_room().room_id().filter(room.id).next() {
             // Promote the next player to owner
             ctx.db.room().id().update(Room {
-                owner_id: other_jr.joiner_id,
+                owner: other_jr.joiner,
                 ..room
             });
         } else {
@@ -516,6 +503,7 @@ pub fn init(ctx: &ReducerContext) {
 
 #[reducer(client_connected)]
 pub fn identity_connected(ctx: &ReducerContext) {
+    info!("Client connected: {:?}", ctx.sender);
     // Called every time a new client connects
     if let Some(player) = ctx.db.player().identity().find(ctx.sender) {
         ctx.db.player().identity().update(Player {
@@ -524,7 +512,6 @@ pub fn identity_connected(ctx: &ReducerContext) {
         });
     } else {
         ctx.db.player().insert(Player {
-            id: 0,
             identity: ctx.sender,
             name: None,
             online: true,

@@ -58,22 +58,22 @@ export class JoinGameTableHandle {
     return this.tableCache.iter();
   }
   /**
-   * Access to the `joiner_id` unique index on the table `join_game`,
+   * Access to the `joiner` unique index on the table `join_game`,
    * which allows point queries on the field of the same name
-   * via the [`JoinGameJoinerIdUnique.find`] method.
+   * via the [`JoinGameJoinerUnique.find`] method.
    *
    * Users are encouraged not to explicitly reference this type,
    * but to directly chain method calls,
-   * like `ctx.db.joinGame.joiner_id().find(...)`.
+   * like `ctx.db.joinGame.joiner().find(...)`.
    *
-   * Get a handle on the `joiner_id` unique index on the table `join_game`.
+   * Get a handle on the `joiner` unique index on the table `join_game`.
    */
-  joiner_id = {
-    // Find the subscribed row whose `joiner_id` column value is equal to `col_val`,
+  joiner = {
+    // Find the subscribed row whose `joiner` column value is equal to `col_val`,
     // if such a row is present in the client cache.
-    find: (col_val: number): JoinGame | undefined => {
+    find: (col_val: Identity): JoinGame | undefined => {
       for (let row of this.tableCache.iter()) {
-        if (deepEqual(row.joiner_id, col_val)) {
+        if (deepEqual(row.joiner, col_val)) {
           return row;
         }
       }

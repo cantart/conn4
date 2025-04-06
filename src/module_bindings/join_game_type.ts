@@ -32,7 +32,7 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 export type JoinGame = {
   roomId: number,
-  joinerId: number,
+  joiner: Identity,
   index: number,
 };
 
@@ -47,7 +47,7 @@ export namespace JoinGame {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
-      new ProductTypeElement("joinerId", AlgebraicType.createU32Type()),
+      new ProductTypeElement("joiner", AlgebraicType.createIdentityType()),
       new ProductTypeElement("index", AlgebraicType.createU32Type()),
     ]);
   }

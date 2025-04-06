@@ -32,8 +32,7 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 export type JoinRoom = {
   roomId: number,
-  joinerId: number,
-  joinerIdentity: Identity,
+  joiner: Identity,
   joinedAt: Timestamp,
 };
 
@@ -48,8 +47,7 @@ export namespace JoinRoom {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
-      new ProductTypeElement("joinerId", AlgebraicType.createU32Type()),
-      new ProductTypeElement("joinerIdentity", AlgebraicType.createIdentityType()),
+      new ProductTypeElement("joiner", AlgebraicType.createIdentityType()),
       new ProductTypeElement("joinedAt", AlgebraicType.createTimestampType()),
     ]);
   }

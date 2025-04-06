@@ -5,11 +5,11 @@
 
 	export type GameUIDataProps = {
 		players: LocalPlayer[];
-		currentPlayerTurnId: number;
-		table: (number | undefined)[][];
+		currentPlayerTurnId: string;
+		table: (string | undefined)[][];
 		winner:
 			| {
-					playerId: number;
+					playerId: string;
 					coordinates: [number, number][];
 			  }
 			| undefined;
@@ -89,7 +89,7 @@
 								>
 									{@render piece({
 										halfOpacity,
-										skin: cell === props.players[0].id ? 'bg-primary' : 'bg-secondary'
+										skin: cell.toString() === props.players[0].id ? 'bg-primary' : 'bg-secondary'
 									})}
 								</div>
 							{/if}

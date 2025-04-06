@@ -14,7 +14,7 @@
 	let joinRooms = $state<JoinRoom[]>(Array.from(conn.db.joinRoom.iter()));
 	let messages = $state<Message[]>([]);
 
-	const useGame = new UseGame(conn, roomId, you.id);
+	const useGame = new UseGame(conn, roomId, you.identity);
 
 	const messageOnInsert = (ctx: EventContext, msg: Message) => {
 		let existingMessage = messages.find((m) => m.sentAt === msg.sentAt);
@@ -50,13 +50,13 @@
 		joinRooms.push(jr);
 	};
 	const joinRoomOnDelete = async (_: EventContext, jr: JoinRoom) => {
-		const index = joinRooms.findIndex((j) => j.joinerId === jr.joinerId);
+		const index = joinRooms.findIndex((j) => j.joiner.data === jr.joiner.data);
 		if (index !== -1) {
 			joinRooms.splice(index, 1);
 		} else {
-			throw new Error(`Join room not found for deletion: ${jr.joinerId}`);
+			throw new Error(`Join room not found for deletion: ${jr.joiner}`);
 		}
-		if (jr.joinerId === you.id) {
+		if (jr.joiner.data === you.identity.data) {
 			if (allJoinRoomHandle.isActive()) {
 				try {
 					allJoinRoomHandle.unsubscribe();
@@ -79,11 +79,11 @@
 		}
 	};
 	const joinRoomOnUpdate = (_: EventContext, o: JoinRoom, n: JoinRoom) => {
-		const index = joinRooms.findIndex((j) => j.joinerId === o.joinerId);
+		const index = joinRooms.findIndex((j) => j.joiner.data === o.joiner.data);
 		if (index !== -1) {
 			joinRooms[index] = n;
 		} else {
-			throw new Error(`Join room not found for update: ${o.joinerId}`);
+			throw new Error(`Join room not found for update: ${o.joiner}`);
 		}
 	};
 	// TODO: Move join rooms inside a room to `UseRoom` just like what happens in `UseGame`.
@@ -118,28 +118,28 @@
 	 * Not null if the game is ready to be played.
 	 */
 	const readyGameState = $derived.by((): GameUIDataProps | null => {
-		if (!useGame.game || !useGame.game.currentTurnPlayerId) {
+		if (!useGame.game || !useGame.game.currentTurnPlayer) {
 			return null;
 		}
 
-		const yourTurn = useGame.game.currentTurnPlayerId === useGame.yourJoinGame?.joinerId;
+		const yourTurn = useGame.game.currentTurnPlayer.data === useGame.yourJoinGame?.joiner.data;
 		return {
-			currentPlayerTurnId: useGame.game.currentTurnPlayerId,
+			currentPlayerTurnId: useGame.game.currentTurnPlayer.toHexString(),
 			latestPiecePosition: useGame.game.latestMove
 				? [useGame.game.latestMove.x, useGame.game.latestMove.y]
 				: undefined,
 			players: useGame.joinGames.map((j) => {
 				return {
-					id: j.joinerId,
-					name: players.get(j.joinerId)?.name ?? '???',
-					online: players.get(j.joinerId)?.online ?? false
+					id: j.joiner.toHexString(),
+					name: players.get(j.joiner.data)?.name ?? '???',
+					online: players.get(j.joiner.data)?.online ?? false
 				};
 			}),
-			table: useGame.game.table,
+			table: useGame.game.table.map((row) => row.map((cell) => cell?.toHexString())),
 			winner: useGame.game.winner
 				? {
 						coordinates: useGame.game.winner.coordinates.map((c) => [c.x, c.y]),
-						playerId: useGame.game.winner.playerId
+						playerId: useGame.game.winner.player.toHexString()
 					}
 				: undefined,
 			dropDisabled: !!useGame.game.winner || !yourTurn
@@ -273,14 +273,14 @@
 
 {#snippet playerList()}
 	<ul>
-		{#each joinRooms as jr (jr.joinerId)}
-			{@const player = players.get(jr.joinerId)}
+		{#each joinRooms as jr (jr.joiner)}
+			{@const player = players.get(jr.joiner.data)}
 			<li>
 				{#if player}
 					<div
 						class="status transition-colors {player.online ? 'status-success' : 'status-error'}"
 					></div>
-					{#if player.id === you.id}
+					{#if player.identity.data === you.identity.data}
 						<span>
 							<span class="font-bold">{player.name} (You)</span>
 						</span>
@@ -317,7 +317,7 @@
 		<ol class="h-96 overflow-auto">
 			<!-- message display area -->
 			{#each messages as msg (msg.sentAt)}
-				{@const isYours = msg.senderId === you.id}
+				{@const isYours = msg.sender.data === you.identity.data}
 				<div
 					in:fly={{
 						y: -100,
@@ -329,10 +329,10 @@
 					class="chat {isYours ? 'chat-end' : 'chat-start'}"
 				>
 					<div class="chat-header">
-						{#if msg.senderId === you.id}
+						{#if msg.sender.data === you.identity.data}
 							You
-						{:else if players.has(msg.senderId)}
-							{@const player = players.get(msg.senderId)!}
+						{:else if players.has(msg.sender.data)}
+							{@const player = players.get(msg.sender.data)!}
 							<div class="flex items-center gap-1 overflow-visible">
 								{#if !player.online}
 									<div class="tooltip tooltip-right" data-tip="Offline">

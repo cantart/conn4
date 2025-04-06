@@ -33,7 +33,7 @@ import {
 import { Coord as __Coord } from "./coord_type";
 
 export type Winner = {
-  playerId: number,
+  player: Identity,
   coordinates: __Coord[],
 };
 
@@ -47,7 +47,7 @@ export namespace Winner {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("playerId", AlgebraicType.createU32Type()),
+      new ProductTypeElement("player", AlgebraicType.createIdentityType()),
       new ProductTypeElement("coordinates", AlgebraicType.createArrayType(__Coord.getTypeScriptAlgebraicType())),
     ]);
   }
