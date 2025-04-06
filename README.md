@@ -18,7 +18,6 @@
 ### First
 
 - No need to have `id` field in `player` table if this works https://discord.com/channels/1037340874172014652/1134597033613869207/1350122354201722931
-- SEO
 - Attempt to reconnect if connection is lost
 - Room self-delete after some time after the last player went offline
 - Message rate limit on the frontend
@@ -43,6 +42,7 @@
 - Invite to room via link
 - Invite feature: when in a room, you can invite outside players to join the room
 - Message TTL: messages self-delete after a certain time
+- Advanced SEO: add meta tags for social media sharing
 - Keyboard mode:
   - to drop, `d` -> `columnName`
   - to focus chat input, `c`
