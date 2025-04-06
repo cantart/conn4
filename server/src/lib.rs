@@ -30,6 +30,22 @@ pub struct JoinGame {
     index: u32,
 }
 
+enum DeleteJoinGameBy {
+    Joiner(Identity),
+    RoomId(u32),
+}
+
+fn delete_join_game(ctx: &ReducerContext, by: DeleteJoinGameBy) {
+    match by {
+        DeleteJoinGameBy::Joiner(joiner) => {
+            ctx.db.join_game().joiner().delete(joiner);
+        }
+        DeleteJoinGameBy::RoomId(room_id) => {
+            ctx.db.join_game().room_id().delete(room_id);
+        }
+    }
+}
+
 #[derive(SpacetimeType)]
 struct Coord {
     x: u32,
@@ -61,6 +77,18 @@ pub struct Game {
     players_required: u32,
 }
 
+enum DeleteGameBy {
+    RoomId(u32),
+}
+
+fn delete_game(ctx: &ReducerContext, by: DeleteGameBy) {
+    match by {
+        DeleteGameBy::RoomId(room_id) => {
+            ctx.db.game().room_id().delete(room_id);
+        }
+    }
+}
+
 impl Game {
     fn is_table_full(&self) -> bool {
         self.table
@@ -79,6 +107,22 @@ pub struct Room {
     owner: Identity,
     created_at: Timestamp,
 }
+enum DeleteRoomBy {
+    RoomId(u32),
+}
+
+fn delete_room(ctx: &ReducerContext, by: DeleteRoomBy) {
+    match by {
+        DeleteRoomBy::RoomId(room_id) => {
+            ctx.db.room().id().delete(room_id);
+
+            delete_join_game(ctx, DeleteJoinGameBy::RoomId(room_id));
+            delete_game(ctx, DeleteGameBy::RoomId(room_id));
+            delete_message(ctx, DeleteMessageBy::RoomId(room_id));
+            delete_join_room(ctx, DeleteJoinRoomBy::RoomId(room_id));
+        }
+    }
+}
 
 #[table(name = message, public)]
 pub struct Message {
@@ -90,6 +134,18 @@ pub struct Message {
     text: String,
 }
 
+enum DeleteMessageBy {
+    RoomId(u32),
+}
+
+fn delete_message(ctx: &ReducerContext, by: DeleteMessageBy) {
+    match by {
+        DeleteMessageBy::RoomId(room_id) => {
+            ctx.db.message().room_id().delete(room_id);
+        }
+    }
+}
+
 #[table(name = join_room, public)]
 pub struct JoinRoom {
     #[index(btree)]
@@ -99,17 +155,33 @@ pub struct JoinRoom {
     joined_at: Timestamp,
 }
 
+enum DeleteJoinRoomBy {
+    Joiner(Identity),
+    RoomId(u32),
+}
+
+fn delete_join_room(ctx: &ReducerContext, by: DeleteJoinRoomBy) {
+    match by {
+        DeleteJoinRoomBy::Joiner(joiner) => {
+            ctx.db.join_room().joiner().delete(joiner);
+        }
+        DeleteJoinRoomBy::RoomId(room_id) => {
+            ctx.db.join_room().room_id().delete(room_id);
+        }
+    }
+}
+
 fn leave_game(ctx: &ReducerContext) {
     let Some(jg) = ctx.db.join_game().joiner().find(ctx.sender) else {
         // player was not in a game
         return;
     };
 
-    ctx.db.join_game().joiner().delete(ctx.sender);
+    delete_join_game(ctx, DeleteJoinGameBy::Joiner(ctx.sender));
 
     // remove game if the player was the last one in the game
     if ctx.db.join_game().room_id().filter(jg.room_id).count() == 0 {
-        ctx.db.game().room_id().delete(jg.room_id);
+        delete_game(ctx, DeleteGameBy::RoomId(jg.room_id));
     }
 }
 
@@ -470,17 +542,8 @@ pub fn join_to_room(ctx: &ReducerContext, room_id: u32) -> Result<(), String> {
 }
 
 #[reducer]
-fn delete_room(ctx: &ReducerContext, room_id: u32) {
-    ctx.db.room().id().delete(room_id);
-    // Cascade delete messages
-    for m in ctx.db.message().room_id().filter(room_id) {
-        ctx.db.message().room_id().delete(m.room_id);
-    }
-}
-
-#[reducer]
 pub fn leave_room(ctx: &ReducerContext) {
-    ctx.db.join_room().joiner().delete(ctx.sender);
+    delete_join_room(ctx, DeleteJoinRoomBy::Joiner(ctx.sender));
     leave_game(ctx);
     if let Some(room) = ctx.db.room().owner().find(ctx.sender) {
         if let Some(other_jr) = ctx.db.join_room().room_id().filter(room.id).next() {
@@ -491,7 +554,7 @@ pub fn leave_room(ctx: &ReducerContext) {
             });
         } else {
             // Case: the owner of the room who is leaving is the last player in the room
-            delete_room(ctx, room.id);
+            delete_room(ctx, DeleteRoomBy::RoomId(room.id));
         }
     }
 }
