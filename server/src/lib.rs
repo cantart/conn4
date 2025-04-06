@@ -4,6 +4,14 @@ use spacetimedb::{
     Timestamp,
 };
 
+const PLAYERS_REQUIRED: u32 = 2;
+
+const STREAK_REQUIRED: usize = 4;
+
+const ROWS: usize = 6;
+/// Must be >= `STREAK_REQUIRED`` to not cause panic when checking for a win
+const COLS: usize = 20;
+
 #[table(name = player, public)]
 pub struct Player {
     #[primary_key]
@@ -12,13 +20,15 @@ pub struct Player {
     online: bool,
 }
 
-const PLAYERS_REQUIRED: u32 = 2;
-
-const STREAK_REQUIRED: usize = 4;
-
-const ROWS: usize = 6;
-/// Must be >= `STREAK_REQUIRED`` to not cause panic when checking for a win
-const COLS: usize = 20;
+#[table(name = join_game, public)]
+pub struct JoinGame {
+    #[index(btree)]
+    room_id: u32,
+    #[primary_key]
+    joiner: Identity,
+    #[auto_inc]
+    index: u32,
+}
 
 #[derive(SpacetimeType)]
 struct Coord {
@@ -59,14 +69,34 @@ impl Game {
     }
 }
 
-#[table(name = join_game, public)]
-pub struct JoinGame {
+#[table(name = room, public)]
+pub struct Room {
+    #[primary_key]
+    #[auto_inc]
+    id: u32,
+    title: String,
+    #[unique]
+    owner: Identity,
+    created_at: Timestamp,
+}
+
+#[table(name = message, public)]
+pub struct Message {
+    #[index(btree)]
+    room_id: u32,
+    sender: Identity,
+    #[index(btree)]
+    sent_at: Timestamp,
+    text: String,
+}
+
+#[table(name = join_room, public)]
+pub struct JoinRoom {
     #[index(btree)]
     room_id: u32,
     #[primary_key]
     joiner: Identity,
-    #[auto_inc]
-    index: u32,
+    joined_at: Timestamp,
 }
 
 fn leave_game(ctx: &ReducerContext) {
@@ -358,36 +388,6 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
     }
 
     Ok(())
-}
-
-#[table(name = room, public)]
-pub struct Room {
-    #[primary_key]
-    #[auto_inc]
-    id: u32,
-    title: String,
-    #[unique]
-    owner: Identity,
-    created_at: Timestamp,
-}
-
-#[table(name = message, public)]
-pub struct Message {
-    #[index(btree)]
-    room_id: u32,
-    sender: Identity,
-    #[index(btree)]
-    sent_at: Timestamp,
-    text: String,
-}
-
-#[table(name = join_room, public)]
-pub struct JoinRoom {
-    #[index(btree)]
-    room_id: u32,
-    #[primary_key]
-    joiner: Identity,
-    joined_at: Timestamp,
 }
 
 #[reducer]
