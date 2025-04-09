@@ -3,13 +3,12 @@ import { Room } from "../../module_bindings";
 import { SubscriptionHandle } from '$lib';
 
 export class UseRoom {
-    // TODO: make private by prefixing with `#`
-    _room = $state<Room | null>(null);
+    private _room = $state<Room | null>(null);
 
-    conn: DbConnection;
-    roomSubHandle: SubscriptionHandle;
+    private readonly conn: DbConnection;
+    private readonly roomSubHandle: SubscriptionHandle;
 
-    roomOnUpdate: (ctx: EventContext, oldRow: Room, newRow: Room) => void
+    private readonly roomOnUpdate: (ctx: EventContext, oldRow: Room, newRow: Room) => void
 
     constructor(conn: DbConnection, roomId: number) {
         this.conn = conn;

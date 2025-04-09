@@ -2,15 +2,14 @@ import { SubscriptionHandle } from "$lib";
 import { Room, DbConnection, type EventContext } from "../../module_bindings";
 
 export class UseRooms {
-    // TODO: make private by prefixing with `#`
-    _rooms = $state<Room[]>([]);
+    private _rooms = $state<Room[]>([]);
 
-    conn: DbConnection;
-    roomSubHandle: SubscriptionHandle;
+    private readonly conn: DbConnection;
+    private readonly roomSubHandle: SubscriptionHandle;
 
-    roomOnInsert: (ctx: EventContext, room: Room) => void
-    roomOnUpdate: (ctx: EventContext, oldRow: Room, newRow: Room) => void
-    roomOnDelete: (ctx: EventContext, room: Room) => void
+    private readonly roomOnInsert: (ctx: EventContext, room: Room) => void
+    private readonly roomOnUpdate: (ctx: EventContext, oldRow: Room, newRow: Room) => void
+    private readonly roomOnDelete: (ctx: EventContext, room: Room) => void
 
     constructor(conn: DbConnection) {
         this.conn = conn;
