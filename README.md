@@ -17,8 +17,6 @@
 
 ### First
 
-- Attempt to reconnect if connection is lost
-- Room self-delete after some time after the last player went offline
 - Message rate limit on the frontend
 
 ### Next
@@ -42,6 +40,7 @@
 - Invite feature: when in a room, you can invite outside players to join the room
 - Message TTL: messages self-delete after a certain time
 - Advanced SEO: add meta tags for social media sharing
+- Attempt to reconnect if connection is lost
 - Keyboard mode:
   - to drop, `d` -> `columnName`
   - to focus chat input, `c`
