@@ -160,7 +160,7 @@ export class UseGame {
 
     }
 
-    #stopGame() {
+    private stopGame() {
         const removeListeners = () => {
             this.conn.db.game.removeOnUpdate(this.gameOnUpdate);
             this.conn.db.game.removeOnInsert(this.gameOnInsert);
@@ -180,7 +180,7 @@ export class UseGame {
         })
     }
 
-    #stopJoinGame() {
+    private stopJoinGame() {
         const removeListeners = () => {
             this.conn.db.joinGame.removeOnInsert(this.joinGameOnInsert);
             this.conn.db.joinGame.removeOnDelete(this.joinGameOnDelete);
@@ -202,8 +202,8 @@ export class UseGame {
 
     async stop() {
         return Promise.all([
-            this.#stopGame(),
-            this.#stopJoinGame()
+            this.stopGame(),
+            this.stopJoinGame()
         ])
     }
 }
