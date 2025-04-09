@@ -37,16 +37,13 @@ export class UseGame {
         return this._joinGames;
     }
 
-    private readonly conn: DbConnection;
 
     private _gameJoining = $state(false);
     get gameJoining() {
         return this._gameJoining;
     }
 
-    constructor(conn: DbConnection, roomId: number, yourIdentity: Identity) {
-        this.conn = conn;
-
+    constructor(private readonly conn: DbConnection, roomId: number, yourIdentity: Identity) {
         $effect(() => {
             this._yourJoinGame = this._joinGames.find((jg) => jg.joiner.data === yourIdentity.data);
         })

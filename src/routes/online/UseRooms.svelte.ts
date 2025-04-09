@@ -3,17 +3,17 @@ import { Room, DbConnection, type EventContext } from "../../module_bindings";
 
 export class UseRooms {
     private _rooms = $state<Room[]>([]);
+    get rooms() {
+        return this._rooms;
+    }
 
-    private readonly conn: DbConnection;
     private readonly roomSubHandle: SubscriptionHandle;
 
     private readonly roomOnInsert: (ctx: EventContext, room: Room) => void
     private readonly roomOnUpdate: (ctx: EventContext, oldRow: Room, newRow: Room) => void
     private readonly roomOnDelete: (ctx: EventContext, room: Room) => void
 
-    constructor(conn: DbConnection) {
-        this.conn = conn;
-
+    constructor(private readonly conn: DbConnection) {
         this.roomOnInsert = (ctx, room) => {
             // check if room already exists in the list
             let existingRoom = this._rooms.find((r) => r.id === room.id);
@@ -71,9 +71,5 @@ export class UseRooms {
                 resolve();
             }
         })
-    }
-
-    get rooms() {
-        return this._rooms;
     }
 }

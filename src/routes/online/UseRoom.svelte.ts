@@ -5,14 +5,11 @@ import { SubscriptionHandle } from '$lib';
 export class UseRoom {
     private _room = $state<Room | null>(null);
 
-    private readonly conn: DbConnection;
     private readonly roomSubHandle: SubscriptionHandle;
 
     private readonly roomOnUpdate: (ctx: EventContext, oldRow: Room, newRow: Room) => void
 
-    constructor(conn: DbConnection, roomId: number) {
-        this.conn = conn;
-
+    constructor(private readonly conn: DbConnection, roomId: number) {
         this.roomOnUpdate = (ctx, _, n) => {
             if (this._room && this._room.id === n.id) {
                 this._room = n;
