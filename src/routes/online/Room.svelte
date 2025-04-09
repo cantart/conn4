@@ -11,17 +11,11 @@
 
 	let { conn, players, roomId, initialRoomTitle, you, leaveRoom }: RoomData = $props();
 
-	let roomTitle = $state(initialRoomTitle);
 	let joinRooms = $state<JoinRoom[]>(Array.from(conn.db.joinRoom.iter()));
 
 	const useMessages = new UseRoomMessages(conn, roomId);
 	const useGame = new UseGame(conn, roomId, you.identity);
-	const useRoom = new UseRoom(conn, roomId);
-	$effect(() => {
-		if (useRoom.room?.title) {
-			roomTitle = useRoom.room.title;
-		}
-	});
+	const useRoom = new UseRoom(conn, roomId, initialRoomTitle);
 
 	const joinRoomOnInsert = (_: EventContext, jr: JoinRoom) => {
 		joinRooms.push(jr);
@@ -233,8 +227,8 @@
 {/snippet}
 
 {#snippet title()}
-	{#if roomTitle}
-		<h1 class="text-center">{roomTitle}</h1>
+	{#if useRoom.title}
+		<h1 class="text-center">{useRoom.title}</h1>
 	{:else}
 		<span class="loading loading-spinner loading-sm"></span>
 	{/if}

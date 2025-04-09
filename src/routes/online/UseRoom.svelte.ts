@@ -3,13 +3,25 @@ import { Room } from "../../module_bindings";
 import { SubscriptionHandle } from '$lib';
 
 export class UseRoom {
+    private _title = $state<string | null>();
+    get title() {
+        return this._title;
+    }
+
     private _room = $state<Room | null>(null);
 
     private readonly roomSubHandle: SubscriptionHandle;
 
     private readonly roomOnUpdate: (ctx: EventContext, oldRow: Room, newRow: Room) => void
 
-    constructor(private readonly conn: DbConnection, roomId: number) {
+    constructor(private readonly conn: DbConnection, roomId: number, public readonly initialTitle: string | null) {
+        this._title = initialTitle
+        $effect(() => {
+            if (this._room?.title) {
+                this._title = this._room.title;
+            }
+        });
+
         this.roomOnUpdate = (ctx, _, n) => {
             if (this._room && this._room.id === n.id) {
                 this._room = n;
