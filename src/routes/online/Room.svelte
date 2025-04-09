@@ -2,43 +2,20 @@
 	import type { GameUIDataProps } from '$lib/GameUI.svelte';
 	import GameUi from '$lib/GameUI.svelte';
 	import { fly } from 'svelte/transition';
-	import { type EventContext, JoinRoom, Message } from '../../module_bindings';
+	import { type EventContext, JoinRoom } from '../../module_bindings';
 	import type { RoomData } from './types';
 	import { UseGame } from './UseGame.svelte';
 	import { UseRoom } from './UseRoom.svelte';
 	import { flip } from 'svelte/animate';
+	import { UseRoomMessages } from './UseRoomMessages.svelte';
 
 	let { conn, players, roomId, initialRoomTitle, you, leaveRoom }: RoomData = $props();
 
 	let roomTitle = $state(initialRoomTitle);
 	let joinRooms = $state<JoinRoom[]>(Array.from(conn.db.joinRoom.iter()));
-	let messages = $state<Message[]>([]);
 
+	const useMessages = new UseRoomMessages(conn, roomId);
 	const useGame = new UseGame(conn, roomId, you.identity);
-
-	const messageOnInsert = (ctx: EventContext, msg: Message) => {
-		let existingMessage = messages.find((m) => m.sentAt === msg.sentAt);
-		if (existingMessage) {
-			existingMessage = msg;
-			return;
-		}
-		messages.push(msg);
-		messages.sort((a, b) => b.sentAt.toDate().getTime() - a.sentAt.toDate().getTime());
-	};
-
-	let messageSubHandle = conn
-		.subscriptionBuilder()
-		.onApplied(() => {
-			messages = Array.from(conn.db.message.iter()).sort(
-				(a, b) => b.sentAt.toDate().getTime() - a.sentAt.toDate().getTime()
-			);
-			conn.db.message.onInsert(messageOnInsert);
-		})
-		.onError((ctx) => {
-			console.error('Error fetching messages:', ctx.event);
-		})
-		.subscribe(`SELECT * FROM message WHERE room_id = '${roomId}'`);
-
 	const useRoom = new UseRoom(conn, roomId);
 	$effect(() => {
 		if (useRoom.room?.title) {
@@ -64,15 +41,7 @@
 					console.error('Error unsubscribing from all join room handle:', e);
 				}
 			}
-			conn.db.message.removeOnInsert(messageOnInsert);
-			if (messageSubHandle.isActive()) {
-				try {
-					messageSubHandle.unsubscribe();
-				} catch (e) {
-					console.error('Error unsubscribing from message handle:', e);
-				}
-			}
-			await Promise.all([useRoom.stop(), useGame.stop()]);
+			await Promise.all([useRoom.stop(), useGame.stop(), useMessages.stop()]);
 			removeJoinRoomListeners();
 			leaving = false;
 			leaveRoom(you);
@@ -300,23 +269,25 @@
 		<!-- message input area -->
 		<form
 			class="flex gap-2"
-			onsubmit={(e) => {
+			onsubmit={async (e) => {
 				e.preventDefault();
 				const text = new FormData(e.currentTarget).get('text') as string;
 				if (!text) {
 					return;
 				}
-				conn.reducers.sendMessage(text);
+				await useMessages.sendMessage(text);
 				e.currentTarget.reset();
 			}}
 		>
 			<input autocomplete="off" type="text" name="text" placeholder="Message" class="input grow" />
-			<button class="btn-primary btn" type="submit">&gt;</button>
+			<button disabled={useMessages.sendingMessage} class="btn-primary btn" type="submit"
+				>&gt;</button
+			>
 		</form>
 
 		<ol class="h-96 overflow-auto">
 			<!-- message display area -->
-			{#each messages as msg (msg.sentAt)}
+			{#each useMessages.messages as msg (msg.sentAt)}
 				{@const isYours = msg.sender.data === you.identity.data}
 				<div
 					in:fly={{
