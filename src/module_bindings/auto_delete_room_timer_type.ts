@@ -30,32 +30,34 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-
-export type DeleteRoom = {
-  roomId: number,
+export type AutoDeleteRoomTimer = {
+  scheduledId: bigint,
+  scheduledAt: { tag: "Interval", value: TimeDuration } | { tag: "Time", value: Timestamp },
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace DeleteRoom {
+export namespace AutoDeleteRoomTimer {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
+      new ProductTypeElement("scheduledId", AlgebraicType.createU64Type()),
+      new ProductTypeElement("scheduledAt", AlgebraicType.createScheduleAtType()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: DeleteRoom): void {
-    DeleteRoom.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: AutoDeleteRoomTimer): void {
+    AutoDeleteRoomTimer.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): DeleteRoom {
-    return DeleteRoom.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): AutoDeleteRoomTimer {
+    return AutoDeleteRoomTimer.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }
+
 

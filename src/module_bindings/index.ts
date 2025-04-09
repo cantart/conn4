@@ -32,10 +32,10 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 
 // Import and reexport all reducer arg types
+import { AutoDeleteRoom } from "./auto_delete_room_reducer.ts";
+export { AutoDeleteRoom };
 import { CreateRoom } from "./create_room_reducer.ts";
 export { CreateRoom };
-import { DeleteRoom } from "./delete_room_reducer.ts";
-export { DeleteRoom };
 import { DropPiece } from "./drop_piece_reducer.ts";
 export { DropPiece };
 import { Hello } from "./hello_reducer.ts";
@@ -62,6 +62,8 @@ import { SetName } from "./set_name_reducer.ts";
 export { SetName };
 
 // Import and reexport all table handle types
+import { AutoDeleteRoomTimerTableHandle } from "./auto_delete_room_timer_table.ts";
+export { AutoDeleteRoomTimerTableHandle };
 import { GameTableHandle } from "./game_table.ts";
 export { GameTableHandle };
 import { JoinGameTableHandle } from "./join_game_table.ts";
@@ -76,6 +78,8 @@ import { RoomTableHandle } from "./room_table.ts";
 export { RoomTableHandle };
 
 // Import and reexport all types
+import { AutoDeleteRoomTimer } from "./auto_delete_room_timer_type.ts";
+export { AutoDeleteRoomTimer };
 import { Coord } from "./coord_type.ts";
 export { Coord };
 import { Game } from "./game_type.ts";
@@ -95,6 +99,11 @@ export { Winner };
 
 const REMOTE_MODULE = {
   tables: {
+    auto_delete_room_timer: {
+      tableName: "auto_delete_room_timer",
+      rowType: AutoDeleteRoomTimer.getTypeScriptAlgebraicType(),
+      primaryKey: "scheduledId",
+    },
     game: {
       tableName: "game",
       rowType: Game.getTypeScriptAlgebraicType(),
@@ -126,13 +135,13 @@ const REMOTE_MODULE = {
     },
   },
   reducers: {
+    auto_delete_room: {
+      reducerName: "auto_delete_room",
+      argsType: AutoDeleteRoom.getTypeScriptAlgebraicType(),
+    },
     create_room: {
       reducerName: "create_room",
       argsType: CreateRoom.getTypeScriptAlgebraicType(),
-    },
-    delete_room: {
-      reducerName: "delete_room",
-      argsType: DeleteRoom.getTypeScriptAlgebraicType(),
     },
     drop_piece: {
       reducerName: "drop_piece",
@@ -209,8 +218,8 @@ const REMOTE_MODULE = {
 
 // A type representing all the possible variants of a reducer.
 export type Reducer = never
+| { name: "AutoDeleteRoom", args: AutoDeleteRoom }
 | { name: "CreateRoom", args: CreateRoom }
-| { name: "DeleteRoom", args: DeleteRoom }
 | { name: "DropPiece", args: DropPiece }
 | { name: "Hello", args: Hello }
 | { name: "HelloWithText", args: HelloWithText }
@@ -228,6 +237,22 @@ export type Reducer = never
 export class RemoteReducers {
   constructor(private connection: DbConnectionImpl, private setCallReducerFlags: SetReducerFlags) {}
 
+  autoDeleteRoom(timer: AutoDeleteRoomTimer) {
+    const __args = { timer };
+    let __writer = new BinaryWriter(1024);
+    AutoDeleteRoom.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("auto_delete_room", __argsBuffer, this.setCallReducerFlags.autoDeleteRoomFlags);
+  }
+
+  onAutoDeleteRoom(callback: (ctx: ReducerEventContext, timer: AutoDeleteRoomTimer) => void) {
+    this.connection.onReducer("auto_delete_room", callback);
+  }
+
+  removeOnAutoDeleteRoom(callback: (ctx: ReducerEventContext, timer: AutoDeleteRoomTimer) => void) {
+    this.connection.offReducer("auto_delete_room", callback);
+  }
+
   createRoom(title: string) {
     const __args = { title };
     let __writer = new BinaryWriter(1024);
@@ -242,22 +267,6 @@ export class RemoteReducers {
 
   removeOnCreateRoom(callback: (ctx: ReducerEventContext, title: string) => void) {
     this.connection.offReducer("create_room", callback);
-  }
-
-  deleteRoom(roomId: number) {
-    const __args = { roomId };
-    let __writer = new BinaryWriter(1024);
-    DeleteRoom.getTypeScriptAlgebraicType().serialize(__writer, __args);
-    let __argsBuffer = __writer.getBuffer();
-    this.connection.callReducer("delete_room", __argsBuffer, this.setCallReducerFlags.deleteRoomFlags);
-  }
-
-  onDeleteRoom(callback: (ctx: ReducerEventContext, roomId: number) => void) {
-    this.connection.onReducer("delete_room", callback);
-  }
-
-  removeOnDeleteRoom(callback: (ctx: ReducerEventContext, roomId: number) => void) {
-    this.connection.offReducer("delete_room", callback);
   }
 
   dropPiece(column: number) {
@@ -419,14 +428,14 @@ export class RemoteReducers {
 }
 
 export class SetReducerFlags {
+  autoDeleteRoomFlags: CallReducerFlags = 'FullUpdate';
+  autoDeleteRoom(flags: CallReducerFlags) {
+    this.autoDeleteRoomFlags = flags;
+  }
+
   createRoomFlags: CallReducerFlags = 'FullUpdate';
   createRoom(flags: CallReducerFlags) {
     this.createRoomFlags = flags;
-  }
-
-  deleteRoomFlags: CallReducerFlags = 'FullUpdate';
-  deleteRoom(flags: CallReducerFlags) {
-    this.deleteRoomFlags = flags;
   }
 
   dropPieceFlags: CallReducerFlags = 'FullUpdate';
@@ -483,6 +492,10 @@ export class SetReducerFlags {
 
 export class RemoteTables {
   constructor(private connection: DbConnectionImpl) {}
+
+  get autoDeleteRoomTimer(): AutoDeleteRoomTimerTableHandle {
+    return new AutoDeleteRoomTimerTableHandle(this.connection.clientCache.getOrCreateTable<AutoDeleteRoomTimer>(REMOTE_MODULE.tables.auto_delete_room_timer));
+  }
 
   get game(): GameTableHandle {
     return new GameTableHandle(this.connection.clientCache.getOrCreateTable<Game>(REMOTE_MODULE.tables.game));

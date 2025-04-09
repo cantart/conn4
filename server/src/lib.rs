@@ -1,7 +1,9 @@
+use std::time::Duration;
+
 use log::info;
 use spacetimedb::{
-    rand::seq::IteratorRandom, reducer, table, Identity, ReducerContext, SpacetimeType, Table,
-    Timestamp,
+    rand::seq::IteratorRandom, reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType,
+    Table, TimeDuration, Timestamp,
 };
 
 const PLAYERS_REQUIRED: u32 = 2;
@@ -167,6 +169,35 @@ fn delete_join_room(ctx: &ReducerContext, by: DeleteJoinRoomBy) {
         }
         DeleteJoinRoomBy::RoomId(room_id) => {
             ctx.db.join_room().room_id().delete(room_id);
+        }
+    }
+}
+
+#[spacetimedb::table(name = auto_delete_room_timer, scheduled(auto_delete_room_if_all_offline))]
+pub struct AutoDeleteRoomTimer {
+    #[primary_key]
+    #[auto_inc]
+    scheduled_id: u64,
+    scheduled_at: spacetimedb::ScheduleAt,
+}
+
+#[reducer]
+fn auto_delete_room_if_all_offline(ctx: &ReducerContext, _timer: AutoDeleteRoomTimer) {
+    for room in ctx.db.room().iter() {
+        let mut offline_statuses = ctx
+            .db
+            .join_room()
+            .room_id()
+            .filter(room.id)
+            .filter_map(|jr| {
+                ctx.db
+                    .player()
+                    .identity()
+                    .find(jr.joiner)
+                    .map(|p| !p.online)
+            });
+        if offline_statuses.all(|offline| offline) {
+            delete_room(ctx, DeleteRoomBy::RoomId(room.id));
         }
     }
 }
@@ -560,8 +591,19 @@ pub fn leave_room(ctx: &ReducerContext) {
 }
 
 #[reducer(init)]
-pub fn init(ctx: &ReducerContext) {
+pub fn init(ctx: &ReducerContext) -> Result<(), String> {
     // Called when the module is initially published
+
+    ctx.db
+        .auto_delete_room_timer()
+        .try_insert(AutoDeleteRoomTimer {
+            scheduled_id: 0,
+            scheduled_at: ScheduleAt::Interval(
+                TimeDuration::from_duration(Duration::from_secs(60 * 60 * 24)), // 1 day
+            ),
+        })?;
+
+    Ok(())
 }
 
 #[reducer(client_connected)]
