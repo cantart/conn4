@@ -1,4 +1,1 @@
-{
-	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"hello_world": "Hello, {name} from jp!"
-}
+{"$schema":"https://inlang.com/schema/inlang-message-format","hello_world":"日本語からこんにちは、{name}！","just_suave_impala_pick":"再戦","noisy_least_newt_cure":"プレイヤー {number}","bald_great_cockroach_ripple":"{player}の勝ち！","any_cool_porpoise_grow":"引き分けだ"}

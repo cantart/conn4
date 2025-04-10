@@ -1,11 +1,12 @@
 <script lang="ts" module>
 	import GameUi from '$lib/GameUI.svelte';
 	import { createLocalGame } from '$lib/local-game.svelte';
+	import { m } from '$lib/paraglide/messages';
 
 	const game = createLocalGame({
 		players: [
-			{ id: '1', name: 'Player 1' },
-			{ id: '2', name: 'Player 2' }
+			{ id: '1', name: m.noisy_least_newt_cure({ number: 1 }) },
+			{ id: '2', name: m.noisy_least_newt_cure({ number: 2 }) }
 		]
 	});
 </script>

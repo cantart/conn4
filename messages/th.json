@@ -1,4 +1,1 @@
-{
-	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"hello_world": "Hello, {name} from th!"
-}
+{"$schema":"https://inlang.com/schema/inlang-message-format","hello_world":"สวัสดี {name} จากภาษาไทย","just_suave_impala_pick":"เริ่มใหม่","noisy_least_newt_cure":"ผู้เล่น {number}","bald_great_cockroach_ripple":"{player} ชนะ!","any_cool_porpoise_grow":"เสมอ"}
