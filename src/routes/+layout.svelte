@@ -2,12 +2,13 @@
 	import '../app.css';
 	let { children } = $props();
 	import { page } from '$app/state';
+	import { m } from '$lib/paraglide/messages';
 
 	const pages = [
-		{ pathname: '/', label: 'offline', icon: '😪' },
-		{ pathname: '/online', label: 'online', icon: '✈️' },
-		{ pathname: '/theme', label: 'theme', icon: '🎨' },
-		{ pathname: '/feedback', label: 'feedback', icon: '💬' }
+		{ pathname: '/', label: m.this_teary_hyena_value(), icon: '😪' },
+		{ pathname: '/online', label: m.sleek_strong_turtle_pat(), icon: '✈️' },
+		{ pathname: '/theme', label: m.cool_plain_elk_pull(), icon: '🎨' },
+		{ pathname: '/feedback', label: m.this_aware_larva_fry(), icon: '💬' }
 	] as const;
 </script>
 

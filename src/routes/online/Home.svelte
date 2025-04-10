@@ -3,6 +3,7 @@
 	import { DbConnection, Room } from '../../module_bindings';
 	import { onDestroy } from 'svelte';
 	import { UseRooms } from './UseRooms.svelte';
+	import { m } from '$lib/paraglide/messages';
 
 	let {
 		conn,
@@ -45,7 +46,7 @@
 
 	function createRoom() {
 		creatingRoom = true;
-		conn.reducers.createRoom(joiningRoomTitle.trim() || `${you.name}'s Room`);
+		conn.reducers.createRoom(joiningRoomTitle.trim() || (you.name ?? '???'));
 		conn.reducers.onCreateRoom((ctx) => {
 			if (ctx.event.status.tag === 'Failed') {
 				console.error('Failed to create room:', ctx.event.status.value);
@@ -70,7 +71,7 @@
 			class="input"
 			name="name"
 			type="text"
-			placeholder="Enter your name"
+			placeholder={m.legal_cool_dolphin_cry()}
 			bind:value={name}
 			disabled={nameUpdating}
 		/>
@@ -78,7 +79,7 @@
 			{#if nameUpdating}
 				<span class="loading loading-spinner loading-md"></span>
 			{:else}
-				Change
+				{m.save()}
 			{/if}
 		</button>
 	</form>
@@ -87,12 +88,12 @@
 <div class="flex flex-col gap-4 text-center">
 	{#if you.name}
 		<div class="flex items-center justify-center gap-2">
-			<h1>Hello, <span class="font-bold">{you.name}</span>!</h1>
+			<h1>{m.awake_acidic_deer_swim()}<span class="font-bold">{you.name}</span>!</h1>
 			<button
 				onclick={() => {
 					nameEditing = !nameEditing;
 				}}
-				class="btn btn-xs">{nameEditing ? 'Cancel' : 'Edit'}</button
+				class="btn btn-xs">{nameEditing ? m.cancel() : m.edit()}</button
 			>
 		</div>
 	{/if}
@@ -112,7 +113,7 @@
 					class="dropdown dropdown-hover dropdown-center"
 				>
 					<button type="submit" class="btn btn-primary" disabled={creatingRoom}
-						>Create Room{#if creatingRoom}
+						>{m.great_suave_dolphin_achieve()}{#if creatingRoom}
 							<span class="loading loading-spinner loading-md"></span>
 						{/if}</button
 					>
@@ -124,7 +125,7 @@
 						<input
 							type="text"
 							name="title"
-							placeholder="Enter room title"
+							placeholder={m.room_name()}
 							class="input input-bordered w-full max-w-xs"
 							bind:value={joiningRoomTitle}
 						/>
@@ -132,7 +133,7 @@
 				</form>
 			</div>
 			<div class={useRooms.rooms ? 'space-y-2' : 'hidden'}>
-				<h2>Rooms ({useRooms.rooms.length})</h2>
+				<h2>{m.actual_gray_scallop_sway()} ({useRooms.rooms.length})</h2>
 				<ol>
 					{#each useRooms.rooms as room (room.id)}
 						<li>

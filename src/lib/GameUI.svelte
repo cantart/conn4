@@ -2,6 +2,7 @@
 	import type { LocalPlayer } from '$lib/local-game.svelte';
 	import { fly, scale, slide, fade } from 'svelte/transition';
 	import { expoInOut, expoOut } from 'svelte/easing';
+	import { m } from './paraglide/messages';
 
 	export type GameUIDataProps = {
 		players: LocalPlayer[];
@@ -104,15 +105,18 @@
 		{#if props.winner}
 			<div class="mt-2 flex flex-col items-center justify-center gap-2" transition:slide>
 				<p class="text-base-rs font-bold">
-					{props.winner.playerId === props.players[0].id
-						? props.players[0].name
-						: props.players[1].name} wins!
+					{m.bald_great_cockroach_ripple({
+						player:
+							props.winner.playerId === props.players[0].id
+								? props.players[0].name
+								: props.players[1].name
+					})}
 				</p>
 				{@render restartButton(props.onRestartHasWinner, props.restarting)}
 			</div>
 		{:else if tableFull}
 			<div class="mt-2 flex flex-col items-center justify-center gap-2" transition:slide>
-				<p class="text-base-rs font-bold">It's a draw!</p>
+				<p class="text-base-rs font-bold">{m.any_cool_porpoise_grow()}</p>
 				{@render restartButton(props.onRestartFullTable, props.restarting)}
 			</div>
 		{/if}
@@ -126,7 +130,7 @@
 		disabled={restarting}
 		in:fade={{
 			delay: 500
-		}}>Restart</button
+		}}>{m.just_suave_impala_pick()}</button
 	>
 {/snippet}
 

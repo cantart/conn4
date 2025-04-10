@@ -8,6 +8,7 @@
 	import { UseRoom } from './UseRoom.svelte';
 	import { flip } from 'svelte/animate';
 	import { UseRoomMessages } from './UseRoomMessages.svelte';
+	import { m } from '$lib/paraglide/messages';
 
 	let { conn, players, roomId, initialRoomTitle, you, leaveRoom }: RoomData = $props();
 
@@ -161,7 +162,7 @@
 	<div class="flex items-center gap-4 justify-self-center">
 		{@render title()}
 
-		<button onclick={leave} class="btn btn-xs btn-error" disabled={leaving}>Leave</button>
+		<button onclick={leave} class="btn btn-xs btn-error" disabled={leaving}>{m.leave()}</button>
 	</div>
 
 	{@render gameArea()}
@@ -183,7 +184,7 @@
 					<!-- The match has started with at least you in it -->
 					{#if useGame.joinGames.length === 1}
 						<!-- can happen if the opponent left mid-game -->
-						<span> Your opponent left.<br />Waiting for another player to join. </span>
+						<span>{m.your_opponent_left()}<br />{m.waiting_another_player_to_join()}</span>
 					{/if}
 					<GameUi
 						as="player"
@@ -202,25 +203,25 @@
 						<button
 							disabled={useGame.gameJoining}
 							onclick={() => useGame.joinOrCreate()}
-							class="btn btn-primary">Join</button
+							class="btn btn-primary">{m.join_game()}</button
 						>
 					{/if}
 				{/if}
 			{:else if useGame.yourJoinGame}
 				<!-- You are the only one in the game and waiting for another player. -->
-				<span class="text-center">Waiting for opponent to join</span>
+				<span class="text-center">{m.waiting_for_player_to_join()}</span>
 				<span class="loading loading-spinner loading-xs"></span>
 			{:else}
 				<!-- There is someone in the game. You are not in it -->
 				<button
 					disabled={useGame.gameJoining}
 					onclick={() => useGame.joinOrCreate()}
-					class="btn btn-primary">Join</button
+					class="btn btn-primary">{m.join_game()}</button
 				>
 			{/if}
 		{:else}
 			<button onclick={onStartGame} disabled={useGame.gameJoining} class="btn btn-primary"
-				>Start Game</button
+				>{m.start_game()}</button
 			>
 		{/if}
 	</div>
@@ -245,7 +246,7 @@
 					></div>
 					{#if player.identity.data === you.identity.data}
 						<span>
-							<span class="font-bold">{player.name} (You)</span>
+							<span class="font-bold">{player.name} ({m.you()})</span>
 						</span>
 					{:else}
 						{player.name}
@@ -273,7 +274,13 @@
 				e.currentTarget.reset();
 			}}
 		>
-			<input autocomplete="off" type="text" name="text" placeholder="Message" class="input grow" />
+			<input
+				autocomplete="off"
+				type="text"
+				name="text"
+				placeholder={m.message()}
+				class="input grow"
+			/>
 			<button disabled={useMessages.sendingMessage} class="btn-primary btn" type="submit"
 				>&gt;</button
 			>
@@ -295,7 +302,7 @@
 				>
 					<div class="chat-header">
 						{#if msg.sender.data === you.identity.data}
-							You
+							{m.you()}
 						{:else if players.has(msg.sender.data)}
 							{@const player = players.get(msg.sender.data)!}
 							<div class="flex items-center gap-1 overflow-visible">
@@ -328,7 +335,7 @@
 					<!-- <div class="chat-footer opacity-50">Delivered</div> -->
 				</div>
 			{:else}
-				<p class="text-center">No messages</p>
+				<p class="text-center">{m.no_messages()}</p>
 			{/each}
 		</ol>
 	</div>
