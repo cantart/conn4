@@ -52,6 +52,7 @@
 		"vitest": "^3.0.0"
 	},
 	"dependencies": {
-		"@clockworklabs/spacetimedb-sdk": "^1.0.2"
+		"@clockworklabs/spacetimedb-sdk": "^1.0.2",
+		"@inlang/paraglide-js": "^2.0.0"
 	}
 }
