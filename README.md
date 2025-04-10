@@ -17,7 +17,7 @@
 
 ### First
 
-- Message rate limit on the frontend
+- UI for changing languages
 
 ### Next
 
@@ -40,6 +40,7 @@
 - Invite feature: when in a room, you can invite outside players to join the room
 - Message TTL: messages self-delete after a certain time
 - Advanced SEO: add meta tags for social media sharing
+- Message rate limit on the frontend
 - Attempt to reconnect if connection is lost
 - Keyboard mode:
   - to drop, `d` -> `columnName`
