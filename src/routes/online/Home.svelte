@@ -125,7 +125,7 @@
 						<input
 							type="text"
 							name="title"
-							placeholder="Enter room title"
+							placeholder={m.room_name()}
 							class="input input-bordered w-full max-w-xs"
 							bind:value={joiningRoomTitle}
 						/>
