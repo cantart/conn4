@@ -1,7 +1,14 @@
 <script lang="ts" module>
 	// Import the functions you need from the SDKs you need
 	import { initializeApp } from 'firebase/app';
-	import { getAuth, onAuthStateChanged, signInWithPopup, type User, signOut } from 'firebase/auth';
+	import {
+		getAuth,
+		onAuthStateChanged,
+		signInWithPopup,
+		type User,
+		signOut,
+		type AuthProvider
+	} from 'firebase/auth';
 	import { GoogleAuthProvider } from 'firebase/auth';
 
 	let firebaseUser = $state<
@@ -16,7 +23,7 @@
 		ready: false
 	});
 
-	const provider = new GoogleAuthProvider();
+	const googleProvider = new GoogleAuthProvider();
 
 	const firebaseConfig = {
 		apiKey: 'AIzaSyATTntrsu3XgqR1S73O_FemmFgAwkAw420',
@@ -27,6 +34,14 @@
 		appId: '1:255108508987:web:2d3b39a1fb097f8ab3db1e'
 	};
 
+	const postSignIn = (idToken: string) => {
+		conn?.disconnect();
+		conn = commonConnectionBuild()
+			.withToken(idToken)
+			.onConnect((conn, identity) => onConnect(conn, identity, { yes: false }))
+			.build();
+	};
+
 	// Initialize Firebase
 	const app = initializeApp(firebaseConfig);
 	const auth = getAuth(app);
@@ -34,10 +49,7 @@
 		if (!firebaseUser.ready) {
 			// Set up conn for the first time
 			if (user) {
-				conn = commonConnectionBuild()
-					.withToken(await user.getIdToken())
-					.onConnect((conn, identity) => onConnect(conn, identity, { yes: false }))
-					.build();
+				postSignIn(await user.getIdToken());
 			} else {
 				conn = commonConnectionBuild()
 					.withToken(localStorage.getItem('anon_token') ?? '')
@@ -193,6 +205,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { RoomData } from './types';
 	import Room from './Room.svelte';
+	import GoogleLoginButton from '../GoogleLoginButton.svelte';
 
 	let home: Home | null = $state(null);
 	$effect(() => {
@@ -217,6 +230,16 @@
 			}
 		}
 	});
+
+	const signInWithProvider = (provider: AuthProvider) => {
+		signInWithPopup(auth, provider)
+			.then(async (result) => {
+				postSignIn(await result.user.getIdToken());
+			})
+			.catch((error) => {
+				console.error('Error signing in provider', error);
+			});
+	};
 </script>
 
 <div class="space-y-4">
@@ -237,21 +260,11 @@
 				Sign out
 			</button>
 		{:else}
-			<button
+			<GoogleLoginButton
 				onclick={() => {
-					signInWithPopup(auth, provider)
-						.then(async (result) => {
-							conn?.disconnect();
-							conn = commonConnectionBuild()
-								.withToken(await result.user.getIdToken())
-								.onConnect((conn, identity) => onConnect(conn, identity, { yes: false }))
-								.build();
-						})
-						.catch((error) => {
-							console.error('Error signing in with Google:', error);
-						});
-				}}>Continue with Google</button
-			>
+					signInWithProvider(googleProvider);
+				}}
+			/>
 		{/if}
 	{:else}
 		<!-- else content here -->
