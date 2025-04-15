@@ -34,22 +34,14 @@
 		if (!firebaseUser.ready) {
 			// Set up conn for the first time
 			if (user) {
-				const idToken = await user.getIdToken();
-				conn = DbConnection.builder()
-					.withUri(import.meta.env.VITE_SPACETIME_DB_URI ?? 'ws://localhost:3000')
-					.withModuleName(import.meta.env.VITE_SPACETIME_DB_MODULE ?? 'fial')
-					.withToken(idToken)
-					.onConnect(onConnect)
-					.onConnectError(onConnectError)
+				conn = commonConnectionBuild()
+					.withToken(await user.getIdToken())
+					.onConnect((conn, identity) => onConnect(conn, identity, { yes: false }))
 					.build();
-				console.log('idToken', idToken);
 			} else {
-				conn = DbConnection.builder()
-					.withUri(import.meta.env.VITE_SPACETIME_DB_URI ?? 'ws://localhost:3000')
-					.withModuleName(import.meta.env.VITE_SPACETIME_DB_MODULE ?? 'fial')
-					.withToken('')
-					.onConnect(onConnect)
-					.onConnectError(onConnectError)
+				conn = commonConnectionBuild()
+					.withToken(localStorage.getItem('anon_token') ?? '')
+					.onConnect((conn, identity, token) => onConnect(conn, identity, { yes: true, token }))
 					.build();
 			}
 		}
@@ -127,8 +119,22 @@
 		console.error('Error connecting to SpacetimeDB:', error);
 	};
 
-	const onConnect = (conn: DbConnection, identity: Identity) => {
-		console.log('identity', identity);
+	const onConnect = (
+		conn: DbConnection,
+		identity: Identity,
+		anon:
+			| {
+					yes: true;
+					token: string;
+			  }
+			| {
+					yes: false;
+			  }
+	) => {
+		if (anon.yes) {
+			localStorage.setItem('anon_token', anon.token);
+		}
+
 		conn
 			.subscriptionBuilder()
 			.onApplied(async () => {
@@ -164,6 +170,13 @@
 
 	// svelte-ignore non_reactive_update
 	let conn: DbConnection | null = null;
+
+	const commonConnectionBuild = () => {
+		return DbConnection.builder()
+			.withUri(import.meta.env.VITE_SPACETIME_DB_URI ?? 'ws://localhost:3000')
+			.withModuleName(import.meta.env.VITE_SPACETIME_DB_MODULE ?? 'fial')
+			.onConnectError(onConnectError);
+	};
 </script>
 
 <script lang="ts">
@@ -206,69 +219,63 @@
 	});
 </script>
 
-{#if firebaseUser.ready}
-	<!-- content here -->
-	{#if firebaseUser.value}
-		<p>{firebaseUser.value.displayName}</p>
-		<button
-			onclick={() => {
-				conn?.disconnect();
-				conn = DbConnection.builder()
-					.withUri(import.meta.env.VITE_SPACETIME_DB_URI ?? 'ws://localhost:3000')
-					.withModuleName(import.meta.env.VITE_SPACETIME_DB_MODULE ?? 'fial')
-					.withToken('')
-					.onConnect(onConnect)
-					.onConnectError(onConnectError)
-					.build();
-				signOut(auth);
-			}}
-		>
-			Sign out
-		</button>
+<div class="space-y-4">
+	{#if firebaseUser.ready}
+		<!-- content here -->
+		{#if firebaseUser.value}
+			<p>{firebaseUser.value.displayName}</p>
+			<button
+				onclick={() => {
+					conn?.disconnect();
+					conn = commonConnectionBuild()
+						.withToken(localStorage.getItem('anon_token') ?? '')
+						.onConnect((conn, identity, token) => onConnect(conn, identity, { yes: true, token }))
+						.build();
+					signOut(auth);
+				}}
+			>
+				Sign out
+			</button>
+		{:else}
+			<button
+				onclick={() => {
+					signInWithPopup(auth, provider)
+						.then(async (result) => {
+							conn?.disconnect();
+							conn = commonConnectionBuild()
+								.withToken(await result.user.getIdToken())
+								.onConnect((conn, identity) => onConnect(conn, identity, { yes: false }))
+								.build();
+						})
+						.catch((error) => {
+							console.error('Error signing in with Google:', error);
+						});
+				}}>Continue with Google</button
+			>
+		{/if}
 	{:else}
-		<button
-			onclick={() => {
-				signInWithPopup(auth, provider)
-					.then(async (result) => {
-						// This gives you a Google Access Token. You can use it to access the Google API.
-						conn?.disconnect();
-						conn = DbConnection.builder()
-							.withUri(import.meta.env.VITE_SPACETIME_DB_URI ?? 'ws://localhost:3000')
-							.withModuleName(import.meta.env.VITE_SPACETIME_DB_MODULE ?? 'fial')
-							.withToken(await result.user.getIdToken())
-							.onConnect(onConnect)
-							.onConnectError(onConnectError)
-							.build();
-						// console.log('credential.idToken', credential.idToken);
-					})
-					.catch((error) => {
-						console.error('Error signing in with Google:', error);
-					});
-			}}>Continue with Google</button
-		>
+		<!-- else content here -->
 	{/if}
-{:else}
-	<!-- else content here -->
-{/if}
 
-{#if s.page === 'init' || !you || !conn}
-	<h1>Connecting...</h1>
-{:else if s.page === 'home'}
-	<Home bind:this={home} {conn} {you} />
-{:else if s.page === 'room'}
-	<Room
-		{conn}
-		initialRoomTitle={s.initialRoomTitle}
-		roomId={s.roomId}
-		{players}
-		{you}
-		leaveRoom={(y) => {
-			s = {
-				page: 'home'
-			};
-			setupYourJoinRoom(y);
-		}}
-	/>
-{:else}
-	<h1>Not implemented yet</h1>
-{/if}
+	{#if s.page === 'init' || !you || !conn}
+		<h1>Connecting...</h1>
+	{:else if s.page === 'home'}
+		<Home bind:this={home} {conn} {you} />
+	{:else if s.page === 'room'}
+		<Room
+			{conn}
+			initialRoomTitle={s.initialRoomTitle}
+			roomId={s.roomId}
+			{players}
+			{you}
+			leaveRoom={(y) => {
+				s = {
+					page: 'home'
+				};
+				setupYourJoinRoom(y);
+			}}
+		/>
+	{:else}
+		<h1>Not implemented yet</h1>
+	{/if}
+</div>
