@@ -233,6 +233,7 @@
 	});
 
 	const signInWithProvider = (provider: AuthProvider) => {
+		// TODO: set language
 		signInWithPopup(auth, provider)
 			.then(async (result) => {
 				postSignIn(await result.user.getIdToken());
