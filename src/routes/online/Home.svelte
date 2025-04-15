@@ -14,6 +14,11 @@
 	} = $props();
 
 	let name = $state(you.name);
+	$effect(() => {
+		if (you.name) {
+			name = you.name;
+		}
+	});
 	let nameUpdating = $state(false);
 	let nameEditing = $state(false);
 	let creatingRoom = $state(false);
