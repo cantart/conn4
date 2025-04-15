@@ -39,7 +39,7 @@
 	const disconnect = () => {
 		conn?.disconnect();
 		s = {
-			page: 'init'
+			page: 'loading'
 		};
 	};
 
@@ -85,10 +85,10 @@
 				page: 'room';
 		  } & Omit<RoomData, 'players' | 'you' | 'leaveRoom' | 'conn'>)
 		| {
-				page: 'init';
+				page: 'loading';
 		  }
 	>({
-		page: 'init'
+		page: 'loading'
 	});
 
 	let youJoinRoomOnInsert: (ctx: EventContext, jr: JoinRoom) => void = (ctx, jr) => {
@@ -301,7 +301,7 @@
 		<!-- else content here -->
 	{/if}
 
-	{#if s.page === 'init' || !you || !conn}
+	{#if s.page === 'loading' || !you || !conn}
 		<h1>Connecting...</h1>
 	{:else if s.page === 'home'}
 		<Home bind:this={home} {conn} {you} />
