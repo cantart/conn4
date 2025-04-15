@@ -240,14 +240,17 @@
 				console.error('Error signing in provider', error);
 			});
 	};
+
+	//svelte-ignore non_reactive_update
+	let signInModal: HTMLDialogElement | null = null;
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4 text-center">
 	{#if firebaseUser.ready}
 		<!-- content here -->
 		{#if firebaseUser.value}
-			<p>{firebaseUser.value.displayName}</p>
 			<button
+				class="btn btn-warning btn-xs"
 				onclick={() => {
 					conn?.disconnect();
 					conn = commonConnectionBuild()
@@ -260,11 +263,24 @@
 				Sign out
 			</button>
 		{:else}
-			<GoogleLoginButton
+			<button
+				class="btn btn-accent btn-xs"
 				onclick={() => {
-					signInWithProvider(googleProvider);
-				}}
-			/>
+					signInModal?.showModal();
+				}}>Sign In</button
+			>
+			<dialog bind:this={signInModal} class="modal">
+				<div class="modal-box flex flex-wrap justify-center gap-2">
+					<GoogleLoginButton
+						onclick={() => {
+							signInWithProvider(googleProvider);
+						}}
+					/>
+				</div>
+				<form method="dialog" class="modal-backdrop">
+					<button>close</button>
+				</form>
+			</dialog>
 		{/if}
 	{:else}
 		<!-- else content here -->
