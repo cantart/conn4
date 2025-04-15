@@ -7,7 +7,8 @@
 		signInWithPopup,
 		type User,
 		signOut,
-		type AuthProvider
+		type AuthProvider,
+		FacebookAuthProvider
 	} from 'firebase/auth';
 	import { GoogleAuthProvider } from 'firebase/auth';
 
@@ -24,6 +25,7 @@
 	});
 
 	const googleProvider = new GoogleAuthProvider();
+	const facebookProvider = new FacebookAuthProvider();
 
 	const firebaseConfig = {
 		apiKey: 'AIzaSyATTntrsu3XgqR1S73O_FemmFgAwkAw420',
@@ -180,8 +182,7 @@
 		});
 	};
 
-	// svelte-ignore non_reactive_update
-	let conn: DbConnection | null = null;
+	let conn = $state<DbConnection | null>(null);
 
 	const commonConnectionBuild = () => {
 		return DbConnection.builder()
@@ -207,6 +208,7 @@
 	import Room from './Room.svelte';
 	import GoogleLoginButton from './GoogleLoginButton.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import FacebookLoginButton from './FacebookLoginButton.svelte';
 
 	let home: Home | null = $state(null);
 	$effect(() => {
@@ -232,9 +234,9 @@
 		}
 	});
 
-	const signInWithProvider = (provider: AuthProvider) => {
+	const signInWithProvider = async (provider: AuthProvider) => {
 		// TODO: set language
-		signInWithPopup(auth, provider)
+		return signInWithPopup(auth, provider)
 			.then(async (result) => {
 				postSignIn(await result.user.getIdToken());
 			})
@@ -243,8 +245,7 @@
 			});
 	};
 
-	//svelte-ignore non_reactive_update
-	let signInModal: HTMLDialogElement | null = null;
+	let signInModal = $state<HTMLDialogElement | null>(null);
 </script>
 
 <div class="space-y-4 text-center">
@@ -276,6 +277,11 @@
 					<GoogleLoginButton
 						onclick={() => {
 							signInWithProvider(googleProvider);
+						}}
+					/>
+					<FacebookLoginButton
+						onclick={() => {
+							signInWithProvider(facebookProvider);
 						}}
 					/>
 				</div>
