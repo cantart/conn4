@@ -205,7 +205,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { RoomData } from './types';
 	import Room from './Room.svelte';
-	import GoogleLoginButton from '../GoogleLoginButton.svelte';
+	import GoogleLoginButton from './GoogleLoginButton.svelte';
 	import { m } from '$lib/paraglide/messages';
 
 	let home: Home | null = $state(null);
