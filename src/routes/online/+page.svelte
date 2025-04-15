@@ -206,6 +206,7 @@
 	import type { RoomData } from './types';
 	import Room from './Room.svelte';
 	import GoogleLoginButton from '../GoogleLoginButton.svelte';
+	import { m } from '$lib/paraglide/messages';
 
 	let home: Home | null = $state(null);
 	$effect(() => {
@@ -260,14 +261,14 @@
 					signOut(auth);
 				}}
 			>
-				Sign out
+				{m.sign_out()}
 			</button>
 		{:else}
 			<button
 				class="btn btn-accent btn-xs"
 				onclick={() => {
 					signInModal?.showModal();
-				}}>Sign In</button
+				}}>{m.sign_in()}</button
 			>
 			<dialog bind:this={signInModal} class="modal">
 				<div class="modal-box flex flex-wrap justify-center gap-2">
@@ -278,7 +279,7 @@
 					/>
 				</div>
 				<form method="dialog" class="modal-backdrop">
-					<button>close</button>
+					<button>{m.close()}</button>
 				</form>
 			</dialog>
 		{/if}
