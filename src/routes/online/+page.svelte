@@ -256,8 +256,7 @@
 </script>
 
 <div class="space-y-4 text-center">
-	<!-- TODO: Move this to Home only -->
-	{#if firebaseUser.ready}
+	{#if firebaseUser.ready && s.page === 'home'}
 		<!-- content here -->
 		{#if firebaseUser.value}
 			<button
@@ -298,8 +297,6 @@
 				</form>
 			</dialog>
 		{/if}
-	{:else}
-		<!-- else content here -->
 	{/if}
 
 	{#if s.page === 'loading' || !you || !conn}
