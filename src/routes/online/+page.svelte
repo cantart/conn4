@@ -256,6 +256,7 @@
 </script>
 
 <div class="space-y-4 text-center">
+	<!-- TODO: Move this to Home only -->
 	{#if firebaseUser.ready}
 		<!-- content here -->
 		{#if firebaseUser.value}
