@@ -36,8 +36,15 @@
 		appId: '1:255108508987:web:2d3b39a1fb097f8ab3db1e'
 	};
 
-	const postSignIn = (idToken: string) => {
+	const disconnect = () => {
 		conn?.disconnect();
+		s = {
+			page: 'init'
+		};
+	};
+
+	const postSignIn = (idToken: string) => {
+		disconnect();
 		conn = commonConnectionBuild()
 			.withToken(idToken)
 			.onConnect((conn, identity) => onConnect(conn, identity, { yes: false }))
@@ -255,7 +262,7 @@
 			<button
 				class="btn btn-warning btn-xs"
 				onclick={() => {
-					conn?.disconnect();
+					disconnect();
 					conn = commonConnectionBuild()
 						.withToken(localStorage.getItem('anon_token') ?? '')
 						.onConnect((conn, identity, token) => onConnect(conn, identity, { yes: true, token }))

@@ -74,7 +74,6 @@
 	onDestroy(async () => {
 		conn.reducers.removeOnSetName(onSetName);
 		conn.reducers.removeOnCreateRoom(onCreateRoom);
-		await stopUseRooms();
 	});
 </script>
 
