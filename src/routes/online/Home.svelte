@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { You } from '$lib';
-	import { DbConnection, Room } from '../../module_bindings';
+	import { DbConnection, type ReducerEventContext, Room } from '../../module_bindings';
 	import { onDestroy } from 'svelte';
 	import { UseRooms } from './UseRooms.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -47,15 +47,18 @@
 		nameUpdating = true;
 	}
 
+	const onCreateRoom: (ctx: ReducerEventContext, title: string) => void = (ctx) => {
+		if (ctx.event.status.tag === 'Failed') {
+			console.error('Failed to create room:', ctx.event.status.value);
+		}
+		creatingRoom = false;
+		conn.reducers.removeOnCreateRoom(onCreateRoom);
+	};
+
 	function createRoom() {
 		creatingRoom = true;
 		conn.reducers.createRoom(joiningRoomTitle.trim() || (you.name ?? '???'));
-		conn.reducers.onCreateRoom((ctx) => {
-			if (ctx.event.status.tag === 'Failed') {
-				console.error('Failed to create room:', ctx.event.status.value);
-			}
-			creatingRoom = false;
-		});
+		conn.reducers.onCreateRoom(onCreateRoom);
 	}
 
 	function joinRoom(room: Room) {
@@ -65,6 +68,8 @@
 
 	onDestroy(async () => {
 		conn.reducers.removeOnSetName(onSetName);
+		conn.reducers.removeOnCreateRoom(onCreateRoom);
+		await stopUseRooms();
 	});
 </script>
 
