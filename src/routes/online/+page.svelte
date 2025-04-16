@@ -8,7 +8,8 @@
 		type User,
 		signOut,
 		type AuthProvider,
-		FacebookAuthProvider
+		FacebookAuthProvider,
+		GithubAuthProvider
 	} from 'firebase/auth';
 	import { GoogleAuthProvider } from 'firebase/auth';
 
@@ -26,6 +27,7 @@
 
 	const googleProvider = new GoogleAuthProvider();
 	const facebookProvider = new FacebookAuthProvider();
+	const githubProvider = new GithubAuthProvider();
 
 	const firebaseConfig = {
 		apiKey: 'AIzaSyATTntrsu3XgqR1S73O_FemmFgAwkAw420',
@@ -216,6 +218,7 @@
 	import GoogleLoginButton from './GoogleLoginButton.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import FacebookLoginButton from './FacebookLoginButton.svelte';
+	import GitHubLoginButton from './GitHubLoginButton.svelte';
 
 	let home: Home | null = $state(null);
 	$effect(() => {
@@ -284,6 +287,11 @@
 					<GoogleLoginButton
 						onclick={() => {
 							signInWithProvider(googleProvider);
+						}}
+					/>
+					<GitHubLoginButton
+						onclick={() => {
+							signInWithProvider(githubProvider);
 						}}
 					/>
 					<FacebookLoginButton
