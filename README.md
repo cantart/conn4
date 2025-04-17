@@ -21,7 +21,6 @@
 
 ### Next
 
-- Authentication: login, register, logout
 - Leaderboard: last month, 6 months, all time
 - Coin skins
 - Money to buy skins
