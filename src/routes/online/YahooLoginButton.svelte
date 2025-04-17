@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import type { MouseEventHandler } from 'svelte/elements';
 
 	let {
@@ -29,5 +30,5 @@
 			</g>
 		</g></svg
 	>
-	Login with Yahoo!
+	{m.login_with({ name: 'Yahoo!' })}
 </button>

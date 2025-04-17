@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import type { MouseEventHandler } from 'svelte/elements';
 
 	let {
@@ -26,5 +27,5 @@
 			></path></g
 		></svg
 	>
-	Login with Google
+	{m.login_with({ name: 'Google' })}
 </button>
