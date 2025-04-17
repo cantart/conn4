@@ -10,7 +10,8 @@
 		type AuthProvider,
 		FacebookAuthProvider,
 		GithubAuthProvider,
-		TwitterAuthProvider
+		TwitterAuthProvider,
+		OAuthProvider
 	} from 'firebase/auth';
 	import { GoogleAuthProvider } from 'firebase/auth';
 
@@ -30,6 +31,7 @@
 	const facebookProvider = new FacebookAuthProvider();
 	const githubProvider = new GithubAuthProvider();
 	const xProvider = new TwitterAuthProvider();
+	const yahooProvider = new OAuthProvider('yahoo.com');
 
 	const firebaseConfig = {
 		apiKey: 'AIzaSyATTntrsu3XgqR1S73O_FemmFgAwkAw420',
@@ -222,6 +224,7 @@
 	import FacebookLoginButton from './FacebookLoginButton.svelte';
 	import GitHubLoginButton from './GitHubLoginButton.svelte';
 	import XLoginButton from './XLoginButton.svelte';
+	import YahooLoginButton from './YahooLoginButton.svelte';
 
 	let home: Home | null = $state(null);
 	$effect(() => {
@@ -291,14 +294,19 @@
 						onclick={() => {
 							signInWithProvider(googleProvider);
 						}}
+					/><XLoginButton
+						onclick={() => {
+							signInWithProvider(xProvider);
+						}}
+					/>
+					<YahooLoginButton
+						onclick={() => {
+							signInWithProvider(yahooProvider);
+						}}
 					/>
 					<GitHubLoginButton
 						onclick={() => {
 							signInWithProvider(githubProvider);
-						}}
-					/><XLoginButton
-						onclick={() => {
-							signInWithProvider(xProvider);
 						}}
 					/>
 					<FacebookLoginButton
