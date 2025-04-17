@@ -29,5 +29,6 @@
 	"sign_out": "Sign out",
 	"sign_in": "Sign in",
 	"close": "Close",
-	"login_with": "Login with {name}"
+	"login_with": "Login with {name}",
+	"language_label": "English"
 }

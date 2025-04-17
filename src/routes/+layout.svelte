@@ -3,6 +3,7 @@
 	let { children } = $props();
 	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
+	import { getLocale, setLocale } from '$lib/paraglide/runtime';
 
 	const pages = [
 		{ pathname: '/', label: m.this_teary_hyena_value(), icon: '😪' },
@@ -10,6 +11,21 @@
 		{ pathname: '/theme', label: m.cool_plain_elk_pull(), icon: '🎨' },
 		{ pathname: '/feedback', label: m.this_aware_larva_fry(), icon: '💬' }
 	] as const;
+	const languages = [
+		{
+			code: 'en',
+			label: m.language_label(
+				{},
+				{
+					locale: 'en'
+				}
+			)
+		},
+		{ code: 'jp', label: m.language_label({}, { locale: 'jp' }) },
+		{ code: 'th', label: m.language_label({}, { locale: 'th' }) }
+	] as const;
+
+	const currentLanguageLabel = languages.find((lang) => lang.code === getLocale())?.label;
 </script>
 
 <div
@@ -46,7 +62,7 @@
 				</ul>
 			</div>
 		</div>
-		<div class="navbar-center hidden sm:flex">
+		<div class="navbar-center hidden gap-2 sm:flex">
 			<ul class="menu menu-horizontal rounded-box bg-base-200">
 				{#each pages as p (p.pathname)}
 					<li>
@@ -59,9 +75,24 @@
 					</li>
 				{/each}
 			</ul>
+			{@render languageSwitcher()}
 		</div>
-		<div class="navbar-end"></div>
+		<div class="navbar-end">
+			<div class="sm:hidden">{@render languageSwitcher()}</div>
+		</div>
 	</div>
 
 	<div class="flex grow flex-col items-center justify-center">{@render children()}</div>
 </div>
+
+{#snippet languageSwitcher()}
+	<div class="dropdown dropdown-hover dropdown-end sm:dropdown-start text-sm">
+		<div tabindex="0" role="button">🌐 {currentLanguageLabel}</div>
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-1 w-32 p-2 shadow-sm">
+			{#each languages as lang (lang.code)}
+				<li><button onclick={() => setLocale(lang.code)}>{lang.label}</button></li>
+			{/each}
+		</ul>
+	</div>
+{/snippet}

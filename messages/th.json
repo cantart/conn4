@@ -29,5 +29,6 @@
 	"sign_in": "ลอกอิน",
 	"sign_out": "ลอกเอาท์",
 	"close": "ปิด",
-	"login_with": "ลอกอินด้วย {name}"
+	"login_with": "ลอกอินด้วย {name}",
+	"language_label": "ภาษาไทย"
 }
