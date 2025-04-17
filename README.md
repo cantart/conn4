@@ -24,7 +24,6 @@
 - Leaderboard: last month, 6 months, all time
 - Coin skins
 - Money to buy skins
-- Internationalization: 日本語, ภาษาไทย
 
 ### Later
 
