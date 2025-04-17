@@ -27,12 +27,6 @@
 		ready: false
 	});
 
-	const googleProvider = new GoogleAuthProvider();
-	const facebookProvider = new FacebookAuthProvider();
-	const githubProvider = new GithubAuthProvider();
-	const xProvider = new TwitterAuthProvider();
-	const yahooProvider = new OAuthProvider('yahoo.com');
-
 	const firebaseConfig = {
 		apiKey: 'AIzaSyATTntrsu3XgqR1S73O_FemmFgAwkAw420',
 		authDomain: 'conn4-a3b1f.firebaseapp.com',
@@ -308,26 +302,26 @@
 		<div class="modal-box flex flex-wrap justify-center gap-2">
 			<GoogleLoginButton
 				onclick={() => {
-					signInWithProvider(googleProvider);
+					signInWithProvider(new GoogleAuthProvider());
 				}}
 			/><XLoginButton
 				onclick={() => {
-					signInWithProvider(xProvider);
+					signInWithProvider(new TwitterAuthProvider());
 				}}
 			/>
 			<YahooLoginButton
 				onclick={() => {
-					signInWithProvider(yahooProvider);
+					signInWithProvider(new OAuthProvider('yahoo.com'));
 				}}
 			/>
 			<GitHubLoginButton
 				onclick={() => {
-					signInWithProvider(githubProvider);
+					signInWithProvider(new GithubAuthProvider());
 				}}
 			/>
 			<FacebookLoginButton
 				onclick={() => {
-					signInWithProvider(facebookProvider);
+					signInWithProvider(new FacebookAuthProvider());
 				}}
 			/>
 		</div>
