@@ -33,7 +33,6 @@ import {
 export type JoinGame = {
   roomId: number,
   joiner: Identity,
-  index: number,
 };
 
 /**
@@ -48,7 +47,6 @@ export namespace JoinGame {
     return AlgebraicType.createProductType([
       new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
       new ProductTypeElement("joiner", AlgebraicType.createIdentityType()),
-      new ProductTypeElement("index", AlgebraicType.createU32Type()),
     ]);
   }
 

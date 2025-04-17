@@ -32,8 +32,8 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 
 // Import and reexport all reducer arg types
-import { AutoDeleteRoom } from "./auto_delete_room_reducer.ts";
-export { AutoDeleteRoom };
+import { AutoDeleteRoomIfAllOffline } from "./auto_delete_room_if_all_offline_reducer.ts";
+export { AutoDeleteRoomIfAllOffline };
 import { CreateRoom } from "./create_room_reducer.ts";
 export { CreateRoom };
 import { DropPiece } from "./drop_piece_reducer.ts";
@@ -135,9 +135,9 @@ const REMOTE_MODULE = {
     },
   },
   reducers: {
-    auto_delete_room: {
-      reducerName: "auto_delete_room",
-      argsType: AutoDeleteRoom.getTypeScriptAlgebraicType(),
+    auto_delete_room_if_all_offline: {
+      reducerName: "auto_delete_room_if_all_offline",
+      argsType: AutoDeleteRoomIfAllOffline.getTypeScriptAlgebraicType(),
     },
     create_room: {
       reducerName: "create_room",
@@ -218,7 +218,7 @@ const REMOTE_MODULE = {
 
 // A type representing all the possible variants of a reducer.
 export type Reducer = never
-| { name: "AutoDeleteRoom", args: AutoDeleteRoom }
+| { name: "AutoDeleteRoomIfAllOffline", args: AutoDeleteRoomIfAllOffline }
 | { name: "CreateRoom", args: CreateRoom }
 | { name: "DropPiece", args: DropPiece }
 | { name: "Hello", args: Hello }
@@ -237,20 +237,20 @@ export type Reducer = never
 export class RemoteReducers {
   constructor(private connection: DbConnectionImpl, private setCallReducerFlags: SetReducerFlags) {}
 
-  autoDeleteRoom(timer: AutoDeleteRoomTimer) {
+  autoDeleteRoomIfAllOffline(timer: AutoDeleteRoomTimer) {
     const __args = { timer };
     let __writer = new BinaryWriter(1024);
-    AutoDeleteRoom.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    AutoDeleteRoomIfAllOffline.getTypeScriptAlgebraicType().serialize(__writer, __args);
     let __argsBuffer = __writer.getBuffer();
-    this.connection.callReducer("auto_delete_room", __argsBuffer, this.setCallReducerFlags.autoDeleteRoomFlags);
+    this.connection.callReducer("auto_delete_room_if_all_offline", __argsBuffer, this.setCallReducerFlags.autoDeleteRoomIfAllOfflineFlags);
   }
 
-  onAutoDeleteRoom(callback: (ctx: ReducerEventContext, timer: AutoDeleteRoomTimer) => void) {
-    this.connection.onReducer("auto_delete_room", callback);
+  onAutoDeleteRoomIfAllOffline(callback: (ctx: ReducerEventContext, timer: AutoDeleteRoomTimer) => void) {
+    this.connection.onReducer("auto_delete_room_if_all_offline", callback);
   }
 
-  removeOnAutoDeleteRoom(callback: (ctx: ReducerEventContext, timer: AutoDeleteRoomTimer) => void) {
-    this.connection.offReducer("auto_delete_room", callback);
+  removeOnAutoDeleteRoomIfAllOffline(callback: (ctx: ReducerEventContext, timer: AutoDeleteRoomTimer) => void) {
+    this.connection.offReducer("auto_delete_room_if_all_offline", callback);
   }
 
   createRoom(title: string) {
@@ -428,9 +428,9 @@ export class RemoteReducers {
 }
 
 export class SetReducerFlags {
-  autoDeleteRoomFlags: CallReducerFlags = 'FullUpdate';
-  autoDeleteRoom(flags: CallReducerFlags) {
-    this.autoDeleteRoomFlags = flags;
+  autoDeleteRoomIfAllOfflineFlags: CallReducerFlags = 'FullUpdate';
+  autoDeleteRoomIfAllOffline(flags: CallReducerFlags) {
+    this.autoDeleteRoomIfAllOfflineFlags = flags;
   }
 
   createRoomFlags: CallReducerFlags = 'FullUpdate';

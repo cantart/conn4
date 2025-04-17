@@ -28,8 +28,6 @@ pub struct JoinGame {
     room_id: u32,
     #[primary_key]
     joiner: Identity,
-    #[auto_inc]
-    index: u32,
 }
 
 enum DeleteJoinGameBy {
@@ -445,7 +443,6 @@ pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
     ctx.db.join_game().try_insert(JoinGame {
         room_id: jr.room_id,
         joiner: ctx.sender,
-        index: 0,
     })?;
     join_count += 1;
 

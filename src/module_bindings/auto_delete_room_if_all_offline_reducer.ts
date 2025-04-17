@@ -33,14 +33,14 @@ import {
 
 import { AutoDeleteRoomTimer as __AutoDeleteRoomTimer } from "./auto_delete_room_timer_type";
 
-export type AutoDeleteRoom = {
+export type AutoDeleteRoomIfAllOffline = {
   timer: __AutoDeleteRoomTimer,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace AutoDeleteRoom {
+export namespace AutoDeleteRoomIfAllOffline {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
@@ -51,12 +51,12 @@ export namespace AutoDeleteRoom {
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: AutoDeleteRoom): void {
-    AutoDeleteRoom.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: AutoDeleteRoomIfAllOffline): void {
+    AutoDeleteRoomIfAllOffline.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): AutoDeleteRoom {
-    return AutoDeleteRoom.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): AutoDeleteRoomIfAllOffline {
+    return AutoDeleteRoomIfAllOffline.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }
