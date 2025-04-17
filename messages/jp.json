@@ -30,5 +30,6 @@
 	"sign_in": "ログイン",
 	"close": "閉じる",
 	"login_with": "{name}でログイン",
-	"language_label": "日本語"
+	"language_label": "日本語",
+	"connecting": "接続しています。"
 }

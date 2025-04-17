@@ -269,7 +269,7 @@
 	{/if}
 
 	{#if s.page === 'loading' || !you || !conn}
-		<h1>Connecting...</h1>
+		<h1>{m.connecting()}</h1>
 	{:else if s.page === 'home'}
 		<Home bind:this={home} {conn} {you} />
 	{:else if s.page === 'room'}
