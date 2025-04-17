@@ -268,57 +268,9 @@
 	{#if firebaseUser.ready && s.page === 'home'}
 		<!-- content here -->
 		{#if firebaseUser.value}
-			<button
-				class="btn btn-warning btn-xs"
-				onclick={() => {
-					disconnect();
-					conn = commonConnectionBuild()
-						.withToken(localStorage.getItem('anon_token') ?? '')
-						.onConnect((conn, identity, token) => onConnect(conn, identity, { yes: true, token }))
-						.build();
-					signOut(auth);
-				}}
-			>
-				{m.sign_out()}
-			</button>
+			{@render logoutButton()}
 		{:else}
-			<button
-				class="btn btn-accent btn-xs"
-				onclick={() => {
-					signInModal?.showModal();
-				}}>{m.sign_in()}</button
-			>
-			<dialog bind:this={signInModal} class="modal">
-				<div class="modal-box flex flex-wrap justify-center gap-2">
-					<GoogleLoginButton
-						onclick={() => {
-							signInWithProvider(googleProvider);
-						}}
-					/><XLoginButton
-						onclick={() => {
-							signInWithProvider(xProvider);
-						}}
-					/>
-					<YahooLoginButton
-						onclick={() => {
-							signInWithProvider(yahooProvider);
-						}}
-					/>
-					<GitHubLoginButton
-						onclick={() => {
-							signInWithProvider(githubProvider);
-						}}
-					/>
-					<FacebookLoginButton
-						onclick={() => {
-							signInWithProvider(facebookProvider);
-						}}
-					/>
-				</div>
-				<form method="dialog" class="modal-backdrop">
-					<button>{m.close()}</button>
-				</form>
-			</dialog>
+			{@render loginModal()}
 		{/if}
 	{/if}
 
@@ -344,3 +296,59 @@
 		<h1>Not implemented yet</h1>
 	{/if}
 </div>
+
+{#snippet loginModal()}
+	<button
+		class="btn btn-accent btn-xs"
+		onclick={() => {
+			signInModal?.showModal();
+		}}>{m.sign_in()}</button
+	>
+	<dialog bind:this={signInModal} class="modal">
+		<div class="modal-box flex flex-wrap justify-center gap-2">
+			<GoogleLoginButton
+				onclick={() => {
+					signInWithProvider(googleProvider);
+				}}
+			/><XLoginButton
+				onclick={() => {
+					signInWithProvider(xProvider);
+				}}
+			/>
+			<YahooLoginButton
+				onclick={() => {
+					signInWithProvider(yahooProvider);
+				}}
+			/>
+			<GitHubLoginButton
+				onclick={() => {
+					signInWithProvider(githubProvider);
+				}}
+			/>
+			<FacebookLoginButton
+				onclick={() => {
+					signInWithProvider(facebookProvider);
+				}}
+			/>
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>{m.close()}</button>
+		</form>
+	</dialog>
+{/snippet}
+
+{#snippet logoutButton()}
+	<button
+		class="btn btn-warning btn-xs"
+		onclick={() => {
+			disconnect();
+			conn = commonConnectionBuild()
+				.withToken(localStorage.getItem('anon_token') ?? '')
+				.onConnect((conn, identity, token) => onConnect(conn, identity, { yes: true, token }))
+				.build();
+			signOut(auth);
+		}}
+	>
+		{m.sign_out()}
+	</button>
+{/snippet}
