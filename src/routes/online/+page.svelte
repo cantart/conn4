@@ -194,7 +194,7 @@
 	const commonConnectionBuild = () => {
 		return DbConnection.builder()
 			.withUri(import.meta.env.VITE_SPACETIME_DB_URI ?? 'ws://localhost:3000')
-			.withModuleName(import.meta.env.VITE_SPACETIME_DB_MODULE ?? 'fial')
+			.withModuleName(import.meta.env.VITE_SPACETIME_DB_MODULE ?? 'conn4')
 			.onConnectError(onConnectError);
 	};
 </script>
