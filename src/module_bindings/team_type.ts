@@ -30,32 +30,32 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-export type JoinGame = {
-  roomId: number,
-  joiner: Identity,
+export type Team = {
+  id: number,
+  gameId: number,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace JoinGame {
+export namespace Team {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
-      new ProductTypeElement("joiner", AlgebraicType.createIdentityType()),
+      new ProductTypeElement("id", AlgebraicType.createU32Type()),
+      new ProductTypeElement("gameId", AlgebraicType.createU32Type()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: JoinGame): void {
-    JoinGame.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: Team): void {
+    Team.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): JoinGame {
-    return JoinGame.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): Team {
+    return Team.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

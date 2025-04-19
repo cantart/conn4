@@ -30,23 +30,23 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-import { JoinGame } from "./join_game_type";
+import { JoinTeam } from "./join_team_type";
 import { EventContext, Reducer, RemoteReducers, RemoteTables } from ".";
 
 /**
- * Table handle for the table `join_game`.
+ * Table handle for the table `join_team`.
  *
- * Obtain a handle from the [`joinGame`] property on [`RemoteTables`],
- * like `ctx.db.joinGame`.
+ * Obtain a handle from the [`joinTeam`] property on [`RemoteTables`],
+ * like `ctx.db.joinTeam`.
  *
  * Users are encouraged not to explicitly reference this type,
  * but to directly chain method calls,
- * like `ctx.db.joinGame.on_insert(...)`.
+ * like `ctx.db.joinTeam.on_insert(...)`.
  */
-export class JoinGameTableHandle {
-  tableCache: TableCache<JoinGame>;
+export class JoinTeamTableHandle {
+  tableCache: TableCache<JoinTeam>;
 
-  constructor(tableCache: TableCache<JoinGame>) {
+  constructor(tableCache: TableCache<JoinTeam>) {
     this.tableCache = tableCache;
   }
 
@@ -54,24 +54,24 @@ export class JoinGameTableHandle {
     return this.tableCache.count();
   }
 
-  iter(): Iterable<JoinGame> {
+  iter(): Iterable<JoinTeam> {
     return this.tableCache.iter();
   }
   /**
-   * Access to the `joiner` unique index on the table `join_game`,
+   * Access to the `joiner` unique index on the table `join_team`,
    * which allows point queries on the field of the same name
-   * via the [`JoinGameJoinerUnique.find`] method.
+   * via the [`JoinTeamJoinerUnique.find`] method.
    *
    * Users are encouraged not to explicitly reference this type,
    * but to directly chain method calls,
-   * like `ctx.db.joinGame.joiner().find(...)`.
+   * like `ctx.db.joinTeam.joiner().find(...)`.
    *
-   * Get a handle on the `joiner` unique index on the table `join_game`.
+   * Get a handle on the `joiner` unique index on the table `join_team`.
    */
   joiner = {
     // Find the subscribed row whose `joiner` column value is equal to `col_val`,
     // if such a row is present in the client cache.
-    find: (col_val: Identity): JoinGame | undefined => {
+    find: (col_val: Identity): JoinTeam | undefined => {
       for (let row of this.tableCache.iter()) {
         if (deepEqual(row.joiner, col_val)) {
           return row;
@@ -80,27 +80,27 @@ export class JoinGameTableHandle {
     },
   };
 
-  onInsert = (cb: (ctx: EventContext, row: JoinGame) => void) => {
+  onInsert = (cb: (ctx: EventContext, row: JoinTeam) => void) => {
     return this.tableCache.onInsert(cb);
   }
 
-  removeOnInsert = (cb: (ctx: EventContext, row: JoinGame) => void) => {
+  removeOnInsert = (cb: (ctx: EventContext, row: JoinTeam) => void) => {
     return this.tableCache.removeOnInsert(cb);
   }
 
-  onDelete = (cb: (ctx: EventContext, row: JoinGame) => void) => {
+  onDelete = (cb: (ctx: EventContext, row: JoinTeam) => void) => {
     return this.tableCache.onDelete(cb);
   }
 
-  removeOnDelete = (cb: (ctx: EventContext, row: JoinGame) => void) => {
+  removeOnDelete = (cb: (ctx: EventContext, row: JoinTeam) => void) => {
     return this.tableCache.removeOnDelete(cb);
   }
 
   // Updates are only defined for tables with primary keys.
-  onUpdate = (cb: (ctx: EventContext, oldRow: JoinGame, newRow: JoinGame) => void) => {
+  onUpdate = (cb: (ctx: EventContext, oldRow: JoinTeam, newRow: JoinTeam) => void) => {
     return this.tableCache.onUpdate(cb);
   }
 
-  removeOnUpdate = (cb: (ctx: EventContext, onRow: JoinGame, newRow: JoinGame) => void) => {
+  removeOnUpdate = (cb: (ctx: EventContext, onRow: JoinTeam, newRow: JoinTeam) => void) => {
     return this.tableCache.removeOnUpdate(cb);
   }}

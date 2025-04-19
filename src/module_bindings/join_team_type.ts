@@ -30,20 +30,16 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-import { Winner as __Winner } from "./winner_type";
-import { Coord as __Coord } from "./coord_type";
-
-export type Game = {
+export type JoinTeam = {
   roomId: number,
-  winner: __Winner | undefined,
-  table: (Identity | undefined)[][],
-  latestMove: __Coord | undefined,
+  joiner: Identity,
+  teamId: number,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace Game {
+export namespace JoinTeam {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
@@ -51,18 +47,17 @@ export namespace Game {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
-      new ProductTypeElement("winner", AlgebraicType.createOptionType(__Winner.getTypeScriptAlgebraicType())),
-      new ProductTypeElement("table", AlgebraicType.createArrayType(AlgebraicType.createArrayType(AlgebraicType.createOptionType(AlgebraicType.createIdentityType())))),
-      new ProductTypeElement("latestMove", AlgebraicType.createOptionType(__Coord.getTypeScriptAlgebraicType())),
+      new ProductTypeElement("joiner", AlgebraicType.createIdentityType()),
+      new ProductTypeElement("teamId", AlgebraicType.createU32Type()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: Game): void {
-    Game.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: JoinTeam): void {
+    JoinTeam.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): Game {
-    return Game.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): JoinTeam {
+    return JoinTeam.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

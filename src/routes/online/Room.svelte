@@ -74,25 +74,27 @@
 	};
 
 	const onStartGame = async () => {
-		await useGame.joinOrCreate();
+		await useGame.createGame();
 	};
 
+	$inspect('useGame.gameCurrentTeam', useGame.gameCurrentTeam);
 	let dropping = $state(false);
 	/**
 	 * Not null if the game is ready to be played.
 	 */
 	const readyGameState = $derived.by((): GameUIDataProps | null => {
-		if (!useGame.game || !useGame.game.currentTurnPlayer) {
+		if (!useGame.game || !useGame.gameCurrentTeam) {
 			return null;
 		}
 
-		const yourTurn = useGame.game.currentTurnPlayer.data === useGame.yourJoinGame?.joiner.data;
+		const yourTurn = useGame.gameCurrentTeam.teamId === useGame.yourJoinTeam?.teamId;
+		console.log('yourTurn', yourTurn);
 		return {
-			currentPlayerTurnId: useGame.game.currentTurnPlayer.toHexString(),
+			currentPlayerTurnId: useGame.gameCurrentTeam.teamId.toString(),
 			latestPiecePosition: useGame.game.latestMove
 				? [useGame.game.latestMove.x, useGame.game.latestMove.y]
 				: undefined,
-			players: useGame.joinGames.map((j) => {
+			players: useGame.joinTeams.map((j) => {
 				return {
 					id: j.joiner.toHexString(),
 					name: players.get(j.joiner.data)?.name ?? '???',
@@ -177,45 +179,34 @@
 	<div class="text-center">
 		{#if useGame.loading}
 			<span class="loading loading-spinner loading-lg"></span>
-		{:else if useGame.game}
-			{#if readyGameState}
-				<!-- Game is being displayed. -->
-				{#if useGame.yourJoinGame}
-					<!-- The match has started with at least you in it -->
-					{#if useGame.joinGames.length === 1}
-						<!-- can happen if the opponent left mid-game -->
-						<span>{m.your_opponent_left()}<br />{m.waiting_another_player_to_join()}</span>
-					{/if}
-					<GameUi
-						as="player"
-						{...readyGameState}
-						onDrop={drop}
-						onRestartHasWinner={restartGameHasWinner}
-						onRestartFullTable={restartGameFullTable}
-						{restarting}
-						{dropping}
-					/>
-				{:else}
-					<!-- You are watching a match as a spectator. -->
-					<GameUi as="spectator" {...readyGameState} />
-					{#if useGame.joinGames.length === 1}
-						<!-- A player left mid-game. You can now join. -->
-						<button
-							disabled={useGame.gameJoining}
-							onclick={() => useGame.joinOrCreate()}
-							class="btn btn-primary">{m.join_game()}</button
-						>
-					{/if}
+		{:else if readyGameState}
+			<!-- Game is being displayed. -->
+			{#if useGame.yourJoinTeam}
+				<!-- The match has started with at least you in it -->
+				{#if useGame.emptyTeamIds.length > 0}
+					<!-- can happen if the opponent left mid-game -->
+					<span>{m.waiting_another_player_to_join()}</span>
 				{/if}
-			{:else if useGame.yourJoinGame}
-				<!-- You are the only one in the game and waiting for another player. -->
-				<span class="text-center">{m.waiting_for_player_to_join()}</span>
-				<span class="loading loading-spinner loading-xs"></span>
+				<GameUi
+					as="player"
+					{...readyGameState}
+					onDrop={drop}
+					onRestartHasWinner={restartGameHasWinner}
+					onRestartFullTable={restartGameFullTable}
+					{restarting}
+					{dropping}
+				/>
 			{:else}
-				<!-- There is someone in the game. You are not in it -->
+				<!-- You are watching a match as a spectator. -->
+				<GameUi as="spectator" {...readyGameState} />
 				<button
 					disabled={useGame.gameJoining}
-					onclick={() => useGame.joinOrCreate()}
+					onclick={() => useGame.joinTeam(useGame.teams[0].id)}
+					class="btn btn-primary">{m.join_game()}</button
+				>
+				<button
+					disabled={useGame.gameJoining}
+					onclick={() => useGame.joinTeam(useGame.teams[1].id)}
 					class="btn btn-primary">{m.join_game()}</button
 				>
 			{/if}

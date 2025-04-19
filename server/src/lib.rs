@@ -2,11 +2,10 @@ use std::time::Duration;
 
 use log::info;
 use spacetimedb::{
-    rand::seq::IteratorRandom, reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType,
-    Table, TimeDuration, Timestamp,
+    rand::{seq::IteratorRandom, Rng},
+    reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table, TimeDuration,
+    Timestamp,
 };
-
-const PLAYERS_REQUIRED: u32 = 2;
 
 const STREAK_REQUIRED: usize = 4;
 
@@ -22,26 +21,28 @@ pub struct Player {
     online: bool,
 }
 
-#[table(name = join_game, public)]
-pub struct JoinGame {
+#[table(name = join_team, public)]
+pub struct JoinTeam {
     #[index(btree)]
+    /// TODO: Since a join_team belongs to a Team, we could delete this field and refactor???
     room_id: u32,
     #[primary_key]
     joiner: Identity,
+    team_id: u32,
 }
 
-enum DeleteJoinGameBy {
+enum DeleteJoinTeamBy {
     Joiner(Identity),
     RoomId(u32),
 }
 
-fn delete_join_game(ctx: &ReducerContext, by: DeleteJoinGameBy) {
+fn delete_join_team(ctx: &ReducerContext, by: DeleteJoinTeamBy) {
     match by {
-        DeleteJoinGameBy::Joiner(joiner) => {
-            ctx.db.join_game().joiner().delete(joiner);
+        DeleteJoinTeamBy::Joiner(joiner) => {
+            ctx.db.join_team().joiner().delete(joiner);
         }
-        DeleteJoinGameBy::RoomId(room_id) => {
-            ctx.db.join_game().room_id().delete(room_id);
+        DeleteJoinTeamBy::RoomId(room_id) => {
+            ctx.db.join_team().room_id().delete(room_id);
         }
     }
 }
@@ -60,6 +61,23 @@ struct Winner {
 
 type GameTable = Vec<Vec<Option<Identity>>>;
 
+#[table(name = team, public)]
+pub struct Team {
+    #[primary_key]
+    #[auto_inc]
+    id: u32,
+    #[index(btree)]
+    game_id: u32,
+}
+
+#[table(name = game_current_team, public)]
+pub struct GameCurrentTeam {
+    #[primary_key]
+    game_id: u32,
+    #[unique]
+    team_id: u32,
+}
+
 #[table(name = game, public)]
 pub struct Game {
     #[primary_key]
@@ -69,12 +87,23 @@ pub struct Game {
     winner: Option<Winner>,
     /// table of the game
     table: GameTable,
-    /// `None` if the game hasn't started yet
-    current_turn_player: Option<Identity>,
+    /// `None` only when the game is being created
+    /// Consider creating a new table just for this field.
+    /// Moved to game_current_team table
+    // current_team: Option<Identity>,
     /// last move made by a player
     latest_move: Option<Coord>,
+}
 
-    players_required: u32,
+impl Game {
+    fn new(room_id: u32) -> Self {
+        Self {
+            room_id: room_id,
+            winner: None,
+            table: vec![vec![None; COLS]; ROWS],
+            latest_move: None,
+        }
+    }
 }
 
 enum DeleteGameBy {
@@ -85,6 +114,8 @@ fn delete_game(ctx: &ReducerContext, by: DeleteGameBy) {
     match by {
         DeleteGameBy::RoomId(room_id) => {
             ctx.db.game().room_id().delete(room_id);
+            ctx.db.team().game_id().delete(room_id);
+            ctx.db.game_current_team().game_id().delete(room_id);
         }
     }
 }
@@ -116,7 +147,7 @@ fn delete_room(ctx: &ReducerContext, by: DeleteRoomBy) {
         DeleteRoomBy::RoomId(room_id) => {
             ctx.db.room().id().delete(room_id);
 
-            delete_join_game(ctx, DeleteJoinGameBy::RoomId(room_id));
+            delete_join_team(ctx, DeleteJoinTeamBy::RoomId(room_id));
             delete_game(ctx, DeleteGameBy::RoomId(room_id));
             delete_message(ctx, DeleteMessageBy::RoomId(room_id));
             delete_join_room(ctx, DeleteJoinRoomBy::RoomId(room_id));
@@ -200,17 +231,18 @@ fn auto_delete_room_if_all_offline(ctx: &ReducerContext, _timer: AutoDeleteRoomT
     }
 }
 
-fn leave_game(ctx: &ReducerContext) {
-    let Some(jg) = ctx.db.join_game().joiner().find(ctx.sender) else {
+fn leave_team(ctx: &ReducerContext) {
+    let Some(jt) = ctx.db.join_team().joiner().find(ctx.sender) else {
         // player was not in a game
         return;
     };
 
-    delete_join_game(ctx, DeleteJoinGameBy::Joiner(ctx.sender));
+    delete_join_team(ctx, DeleteJoinTeamBy::Joiner(ctx.sender));
 
-    // remove game if the player was the last one in the game
-    if ctx.db.join_game().room_id().filter(jg.room_id).count() == 0 {
-        delete_game(ctx, DeleteGameBy::RoomId(jg.room_id));
+    // remove game if there are no player in all teams
+    // TODO: Maybe in the future we could keep the game alive as long as there are players in the room.
+    if ctx.db.join_team().room_id().filter(jt.room_id).count() == 0 {
+        delete_game(ctx, DeleteGameBy::RoomId(jt.room_id));
     }
 }
 
@@ -291,29 +323,40 @@ fn check_win(ctx: &ReducerContext, table: &GameTable) -> Option<Vec<Coord>> {
     None
 }
 
-fn game_random_player(ctx: &ReducerContext, room_id: u32) -> Result<Identity, String> {
+fn game_random_team(ctx: &ReducerContext, game_id: u32) -> Result<Team, String> {
     let mut rng = ctx.rng();
-    let random_player_id = ctx
+    let random_team = ctx
         .db
-        .join_game()
-        .room_id()
-        .filter(room_id)
+        .team()
+        .game_id()
+        .filter(game_id)
         .choose(&mut rng)
-        .ok_or("Cannot find a random player in the game")?
-        .joiner;
-    Ok(random_player_id)
+        .ok_or("Cannot find a random team in the game")?;
+    Ok(random_team)
 }
 
 fn game_of_sender(ctx: &ReducerContext) -> Result<Game, String> {
-    let Some(jg) = ctx.db.join_game().joiner().find(ctx.sender) else {
-        return Err("Player not in a game".to_string());
+    let Some(jt) = ctx.db.join_team().joiner().find(ctx.sender) else {
+        return Err("Player not in a team".to_string());
     };
 
-    let Some(game) = ctx.db.game().room_id().find(jg.room_id) else {
+    let Some(game) = ctx.db.game().room_id().find(jt.room_id) else {
         return Err("Game not found".to_string());
     };
 
     Ok(game)
+}
+
+/// TODO: Consider having this in Game impl
+fn assign_random_team(ctx: &ReducerContext, game_id: u32) -> Result<(), String> {
+    ctx.db
+        .game_current_team()
+        .game_id()
+        .update(GameCurrentTeam {
+            team_id: game_random_team(ctx, game_id)?.id,
+            game_id: game_id,
+        });
+    Ok(())
 }
 
 #[reducer]
@@ -324,13 +367,8 @@ pub fn restart_game_table_full(ctx: &ReducerContext) -> Result<(), String> {
         return Err("Cannot restart game if the table is not full".to_string());
     }
 
-    ctx.db.game().room_id().update(Game {
-        winner: None,
-        table: vec![vec![None; COLS]; ROWS],
-        latest_move: None,
-        current_turn_player: Some(game_random_player(ctx, game.room_id)?),
-        ..game
-    });
+    ctx.db.game().room_id().update(Game::new(game.room_id));
+    assign_random_team(ctx, game.room_id)?;
 
     Ok(())
 }
@@ -343,13 +381,8 @@ pub fn restart_game_has_winner(ctx: &ReducerContext) -> Result<(), String> {
         return Err("Cannot restart game if there is no winner".to_string());
     }
 
-    ctx.db.game().room_id().update(Game {
-        winner: None,
-        table: vec![vec![None; COLS]; ROWS],
-        latest_move: None,
-        current_turn_player: Some(game_random_player(ctx, game.room_id)?),
-        ..game
-    });
+    ctx.db.game().room_id().update(Game::new(game.room_id));
+    assign_random_team(ctx, game.room_id)?;
 
     Ok(())
 }
@@ -357,11 +390,11 @@ pub fn restart_game_has_winner(ctx: &ReducerContext) -> Result<(), String> {
 #[reducer]
 pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
     // check if the player is in a game
-    let Some(jg) = ctx.db.join_game().joiner().find(ctx.sender) else {
-        return Err("Cannot drop piece if not in a game".to_string());
+    let Some(jt) = ctx.db.join_team().joiner().find(ctx.sender) else {
+        return Err("Cannot drop piece if not in a team".to_string());
     };
 
-    let Some(mut game) = ctx.db.game().room_id().find(jg.room_id) else {
+    let Some(mut game) = ctx.db.game().room_id().find(jt.room_id) else {
         return Err("Cannot drop piece if game does not exist".to_string());
     };
 
@@ -374,12 +407,13 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
         return Err("Cannot drop piece if game is already won".to_string());
     }
 
-    let Some(current_turn_player) = game.current_turn_player else {
-        return Err("Cannot drop piece if there is no turn for anyone".to_string());
+    let Some(game_current_team) = ctx.db.game_current_team().game_id().find(game.room_id) else {
+        log::error!("Game current team not found for game {}. It appears that no current team was created when the game was created.", game.room_id);
+        return Err("Cannot drop piece if there is no current team in game".to_string());
     };
 
-    if ctx.sender != current_turn_player {
-        return Err("Cannot drop piece if it's not your turn".to_string());
+    if jt.team_id != game_current_team.team_id {
+        return Err("Cannot drop piece if it's not your team's turn".to_string());
     }
 
     // check if the column is full
@@ -402,15 +436,23 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
                     coordinates: coords,
                 });
             } else {
-                let other_player_jg = ctx
+                info!("Current team: {:?}", game_current_team.team_id);
+                let another_team = ctx
                     .db
-                    .join_game()
-                    .room_id()
-                    .filter(jg.room_id)
-                    .filter(|jg| jg.joiner != ctx.sender)
+                    .team()
+                    .game_id()
+                    .filter(game.room_id)
+                    .filter(|team| team.id != game_current_team.team_id)
                     .next()
-                    .ok_or("Cannot find other player")?;
-                game.current_turn_player = Some(other_player_jg.joiner);
+                    .ok_or("Cannot find another team")?;
+                info!("Another team: {:?}", another_team.id);
+                ctx.db
+                    .game_current_team()
+                    .game_id()
+                    .update(GameCurrentTeam {
+                        team_id: another_team.id,
+                        ..game_current_team
+                    });
             }
 
             break;
@@ -422,68 +464,80 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
     Ok(())
 }
 
-#[reducer]
-pub fn join_or_create_game(ctx: &ReducerContext) -> Result<(), String> {
+fn validate_can_join_or_create(ctx: &ReducerContext) -> Result<JoinRoom, String> {
     // check if the player is in a room
     let Some(jr) = ctx.db.join_room().joiner().find(ctx.sender) else {
         return Err("Cannot join the game when not in a room".to_string());
     };
 
-    // check if the player is already in a game
-    if ctx.db.join_game().joiner().find(ctx.sender).is_some() {
+    // check if the player is already in a team
+    if ctx.db.join_team().joiner().find(ctx.sender).is_some() {
         return Err("Cannot join the game when already in one".to_string());
     }
 
-    // check if game is full i.e. 2 players are already in the game
-    let mut join_count = ctx.db.join_game().room_id().filter(jr.room_id).count();
-    if join_count >= PLAYERS_REQUIRED as usize {
-        return Err("Cannot join the game when it is full".to_string());
+    Ok(jr)
+}
+
+#[reducer]
+pub fn create_game(ctx: &ReducerContext) -> Result<(), String> {
+    let jr = validate_can_join_or_create(ctx)?;
+
+    if ctx.db.game().room_id().find(jr.room_id).is_some() {
+        return Err("Cannot create a game when one already exists in a room".to_string());
     }
 
-    ctx.db.join_game().try_insert(JoinGame {
+    let game = ctx.db.game().try_insert(Game::new(jr.room_id))?;
+
+    let team1 = ctx.db.team().try_insert(Team {
+        id: 0,
+        game_id: game.room_id,
+    })?;
+    let team2 = ctx.db.team().try_insert(Team {
+        id: 0,
+        game_id: game.room_id,
+    })?;
+
+    let start_team_id = if ctx.rng().gen_bool(0.5) {
+        team1.id
+    } else {
+        team2.id
+    };
+    // TODO: Move this once both players join both teams
+    ctx.db.game_current_team().try_insert(GameCurrentTeam {
+        game_id: game.room_id,
+        team_id: start_team_id,
+    })?;
+
+    ctx.db.join_team().try_insert(JoinTeam {
         room_id: jr.room_id,
         joiner: ctx.sender,
+        team_id: team1.id,
     })?;
-    join_count += 1;
 
-    if let Some(game) = ctx.db.game().room_id().find(jr.room_id) {
-        if let Some(current_turn_player_id) = game.current_turn_player {
-            let another_player_jg = ctx
-                .db
-                .join_game()
-                .room_id()
-                .filter(jr.room_id)
-                .filter(|jg| jg.joiner != ctx.sender)
-                .next()
-                .ok_or("Cannot find another player")?;
-            if current_turn_player_id != another_player_jg.joiner {
-                // The game was already in progress before we joined.
-                // If the current turn doesn't belong to the one already in the game, that means we just joined in place of another player who left while owning the turn.
-                // So we need to take the turn from them.
-                ctx.db.game().room_id().update(Game {
-                    current_turn_player: Some(ctx.sender),
-                    ..game
-                });
-            }
-        } else {
-            if join_count == game.players_required as usize {
-                // if the game is full, set the current turn to a random player
-                ctx.db.game().room_id().update(Game {
-                    current_turn_player: Some(game_random_player(ctx, game.room_id)?),
-                    ..game
-                });
-            }
+    Ok(())
+}
+
+#[reducer]
+pub fn join_to_team(ctx: &ReducerContext, team_id: u32) -> Result<(), String> {
+    let jr = validate_can_join_or_create(ctx)?;
+
+    let Some(team) = ctx.db.team().id().find(team_id) else {
+        return Err("Cannot join to a game when team does not exist".to_string());
+    };
+
+    if let Some(jt) = ctx.db.join_team().joiner().find(ctx.sender) {
+        if jt.team_id == team.id {
+            return Err("Cannot join to the same team".to_string());
         }
+        ctx.db.join_team().joiner().update(JoinTeam {
+            team_id: team.id,
+            ..jt
+        });
     } else {
-        // if there is no game in the room, create one
-        ctx.db.game().try_insert(Game {
+        ctx.db.join_team().try_insert(JoinTeam {
             room_id: jr.room_id,
-
-            winner: None,
-            table: vec![vec![None; COLS]; ROWS],
-            latest_move: None,
-            players_required: PLAYERS_REQUIRED,
-            current_turn_player: None,
+            joiner: ctx.sender,
+            team_id: team.id,
         })?;
     }
 
@@ -572,7 +626,7 @@ pub fn join_to_room(ctx: &ReducerContext, room_id: u32) -> Result<(), String> {
 #[reducer]
 pub fn leave_room(ctx: &ReducerContext) {
     delete_join_room(ctx, DeleteJoinRoomBy::Joiner(ctx.sender));
-    leave_game(ctx);
+    leave_team(ctx);
     if let Some(room) = ctx.db.room().owner().find(ctx.sender) {
         if let Some(other_jr) = ctx.db.join_room().room_id().filter(room.id).next() {
             // Promote the next player to owner

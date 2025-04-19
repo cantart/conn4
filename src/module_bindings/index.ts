@@ -34,6 +34,8 @@ import {
 // Import and reexport all reducer arg types
 import { AutoDeleteRoomIfAllOffline } from "./auto_delete_room_if_all_offline_reducer.ts";
 export { AutoDeleteRoomIfAllOffline };
+import { CreateGame } from "./create_game_reducer.ts";
+export { CreateGame };
 import { CreateRoom } from "./create_room_reducer.ts";
 export { CreateRoom };
 import { DropPiece } from "./drop_piece_reducer.ts";
@@ -46,10 +48,10 @@ import { IdentityConnected } from "./identity_connected_reducer.ts";
 export { IdentityConnected };
 import { IdentityDisconnected } from "./identity_disconnected_reducer.ts";
 export { IdentityDisconnected };
-import { JoinOrCreateGame } from "./join_or_create_game_reducer.ts";
-export { JoinOrCreateGame };
 import { JoinToRoom } from "./join_to_room_reducer.ts";
 export { JoinToRoom };
+import { JoinToTeam } from "./join_to_team_reducer.ts";
+export { JoinToTeam };
 import { LeaveRoom } from "./leave_room_reducer.ts";
 export { LeaveRoom };
 import { RestartGameHasWinner } from "./restart_game_has_winner_reducer.ts";
@@ -66,16 +68,20 @@ import { AutoDeleteRoomTimerTableHandle } from "./auto_delete_room_timer_table.t
 export { AutoDeleteRoomTimerTableHandle };
 import { GameTableHandle } from "./game_table.ts";
 export { GameTableHandle };
-import { JoinGameTableHandle } from "./join_game_table.ts";
-export { JoinGameTableHandle };
+import { GameCurrentTeamTableHandle } from "./game_current_team_table.ts";
+export { GameCurrentTeamTableHandle };
 import { JoinRoomTableHandle } from "./join_room_table.ts";
 export { JoinRoomTableHandle };
+import { JoinTeamTableHandle } from "./join_team_table.ts";
+export { JoinTeamTableHandle };
 import { MessageTableHandle } from "./message_table.ts";
 export { MessageTableHandle };
 import { PlayerTableHandle } from "./player_table.ts";
 export { PlayerTableHandle };
 import { RoomTableHandle } from "./room_table.ts";
 export { RoomTableHandle };
+import { TeamTableHandle } from "./team_table.ts";
+export { TeamTableHandle };
 
 // Import and reexport all types
 import { AutoDeleteRoomTimer } from "./auto_delete_room_timer_type.ts";
@@ -84,16 +90,20 @@ import { Coord } from "./coord_type.ts";
 export { Coord };
 import { Game } from "./game_type.ts";
 export { Game };
-import { JoinGame } from "./join_game_type.ts";
-export { JoinGame };
+import { GameCurrentTeam } from "./game_current_team_type.ts";
+export { GameCurrentTeam };
 import { JoinRoom } from "./join_room_type.ts";
 export { JoinRoom };
+import { JoinTeam } from "./join_team_type.ts";
+export { JoinTeam };
 import { Message } from "./message_type.ts";
 export { Message };
 import { Player } from "./player_type.ts";
 export { Player };
 import { Room } from "./room_type.ts";
 export { Room };
+import { Team } from "./team_type.ts";
+export { Team };
 import { Winner } from "./winner_type.ts";
 export { Winner };
 
@@ -109,14 +119,19 @@ const REMOTE_MODULE = {
       rowType: Game.getTypeScriptAlgebraicType(),
       primaryKey: "roomId",
     },
-    join_game: {
-      tableName: "join_game",
-      rowType: JoinGame.getTypeScriptAlgebraicType(),
-      primaryKey: "joiner",
+    game_current_team: {
+      tableName: "game_current_team",
+      rowType: GameCurrentTeam.getTypeScriptAlgebraicType(),
+      primaryKey: "gameId",
     },
     join_room: {
       tableName: "join_room",
       rowType: JoinRoom.getTypeScriptAlgebraicType(),
+      primaryKey: "joiner",
+    },
+    join_team: {
+      tableName: "join_team",
+      rowType: JoinTeam.getTypeScriptAlgebraicType(),
       primaryKey: "joiner",
     },
     message: {
@@ -133,11 +148,20 @@ const REMOTE_MODULE = {
       rowType: Room.getTypeScriptAlgebraicType(),
       primaryKey: "id",
     },
+    team: {
+      tableName: "team",
+      rowType: Team.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
+    },
   },
   reducers: {
     auto_delete_room_if_all_offline: {
       reducerName: "auto_delete_room_if_all_offline",
       argsType: AutoDeleteRoomIfAllOffline.getTypeScriptAlgebraicType(),
+    },
+    create_game: {
+      reducerName: "create_game",
+      argsType: CreateGame.getTypeScriptAlgebraicType(),
     },
     create_room: {
       reducerName: "create_room",
@@ -163,13 +187,13 @@ const REMOTE_MODULE = {
       reducerName: "identity_disconnected",
       argsType: IdentityDisconnected.getTypeScriptAlgebraicType(),
     },
-    join_or_create_game: {
-      reducerName: "join_or_create_game",
-      argsType: JoinOrCreateGame.getTypeScriptAlgebraicType(),
-    },
     join_to_room: {
       reducerName: "join_to_room",
       argsType: JoinToRoom.getTypeScriptAlgebraicType(),
+    },
+    join_to_team: {
+      reducerName: "join_to_team",
+      argsType: JoinToTeam.getTypeScriptAlgebraicType(),
     },
     leave_room: {
       reducerName: "leave_room",
@@ -219,14 +243,15 @@ const REMOTE_MODULE = {
 // A type representing all the possible variants of a reducer.
 export type Reducer = never
 | { name: "AutoDeleteRoomIfAllOffline", args: AutoDeleteRoomIfAllOffline }
+| { name: "CreateGame", args: CreateGame }
 | { name: "CreateRoom", args: CreateRoom }
 | { name: "DropPiece", args: DropPiece }
 | { name: "Hello", args: Hello }
 | { name: "HelloWithText", args: HelloWithText }
 | { name: "IdentityConnected", args: IdentityConnected }
 | { name: "IdentityDisconnected", args: IdentityDisconnected }
-| { name: "JoinOrCreateGame", args: JoinOrCreateGame }
 | { name: "JoinToRoom", args: JoinToRoom }
+| { name: "JoinToTeam", args: JoinToTeam }
 | { name: "LeaveRoom", args: LeaveRoom }
 | { name: "RestartGameHasWinner", args: RestartGameHasWinner }
 | { name: "RestartGameTableFull", args: RestartGameTableFull }
@@ -251,6 +276,18 @@ export class RemoteReducers {
 
   removeOnAutoDeleteRoomIfAllOffline(callback: (ctx: ReducerEventContext, timer: AutoDeleteRoomTimer) => void) {
     this.connection.offReducer("auto_delete_room_if_all_offline", callback);
+  }
+
+  createGame() {
+    this.connection.callReducer("create_game", new Uint8Array(0), this.setCallReducerFlags.createGameFlags);
+  }
+
+  onCreateGame(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.onReducer("create_game", callback);
+  }
+
+  removeOnCreateGame(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.offReducer("create_game", callback);
   }
 
   createRoom(title: string) {
@@ -329,18 +366,6 @@ export class RemoteReducers {
     this.connection.offReducer("identity_disconnected", callback);
   }
 
-  joinOrCreateGame() {
-    this.connection.callReducer("join_or_create_game", new Uint8Array(0), this.setCallReducerFlags.joinOrCreateGameFlags);
-  }
-
-  onJoinOrCreateGame(callback: (ctx: ReducerEventContext) => void) {
-    this.connection.onReducer("join_or_create_game", callback);
-  }
-
-  removeOnJoinOrCreateGame(callback: (ctx: ReducerEventContext) => void) {
-    this.connection.offReducer("join_or_create_game", callback);
-  }
-
   joinToRoom(roomId: number) {
     const __args = { roomId };
     let __writer = new BinaryWriter(1024);
@@ -355,6 +380,22 @@ export class RemoteReducers {
 
   removeOnJoinToRoom(callback: (ctx: ReducerEventContext, roomId: number) => void) {
     this.connection.offReducer("join_to_room", callback);
+  }
+
+  joinToTeam(teamId: number) {
+    const __args = { teamId };
+    let __writer = new BinaryWriter(1024);
+    JoinToTeam.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("join_to_team", __argsBuffer, this.setCallReducerFlags.joinToTeamFlags);
+  }
+
+  onJoinToTeam(callback: (ctx: ReducerEventContext, teamId: number) => void) {
+    this.connection.onReducer("join_to_team", callback);
+  }
+
+  removeOnJoinToTeam(callback: (ctx: ReducerEventContext, teamId: number) => void) {
+    this.connection.offReducer("join_to_team", callback);
   }
 
   leaveRoom() {
@@ -433,6 +474,11 @@ export class SetReducerFlags {
     this.autoDeleteRoomIfAllOfflineFlags = flags;
   }
 
+  createGameFlags: CallReducerFlags = 'FullUpdate';
+  createGame(flags: CallReducerFlags) {
+    this.createGameFlags = flags;
+  }
+
   createRoomFlags: CallReducerFlags = 'FullUpdate';
   createRoom(flags: CallReducerFlags) {
     this.createRoomFlags = flags;
@@ -453,14 +499,14 @@ export class SetReducerFlags {
     this.helloWithTextFlags = flags;
   }
 
-  joinOrCreateGameFlags: CallReducerFlags = 'FullUpdate';
-  joinOrCreateGame(flags: CallReducerFlags) {
-    this.joinOrCreateGameFlags = flags;
-  }
-
   joinToRoomFlags: CallReducerFlags = 'FullUpdate';
   joinToRoom(flags: CallReducerFlags) {
     this.joinToRoomFlags = flags;
+  }
+
+  joinToTeamFlags: CallReducerFlags = 'FullUpdate';
+  joinToTeam(flags: CallReducerFlags) {
+    this.joinToTeamFlags = flags;
   }
 
   leaveRoomFlags: CallReducerFlags = 'FullUpdate';
@@ -501,12 +547,16 @@ export class RemoteTables {
     return new GameTableHandle(this.connection.clientCache.getOrCreateTable<Game>(REMOTE_MODULE.tables.game));
   }
 
-  get joinGame(): JoinGameTableHandle {
-    return new JoinGameTableHandle(this.connection.clientCache.getOrCreateTable<JoinGame>(REMOTE_MODULE.tables.join_game));
+  get gameCurrentTeam(): GameCurrentTeamTableHandle {
+    return new GameCurrentTeamTableHandle(this.connection.clientCache.getOrCreateTable<GameCurrentTeam>(REMOTE_MODULE.tables.game_current_team));
   }
 
   get joinRoom(): JoinRoomTableHandle {
     return new JoinRoomTableHandle(this.connection.clientCache.getOrCreateTable<JoinRoom>(REMOTE_MODULE.tables.join_room));
+  }
+
+  get joinTeam(): JoinTeamTableHandle {
+    return new JoinTeamTableHandle(this.connection.clientCache.getOrCreateTable<JoinTeam>(REMOTE_MODULE.tables.join_team));
   }
 
   get message(): MessageTableHandle {
@@ -519,6 +569,10 @@ export class RemoteTables {
 
   get room(): RoomTableHandle {
     return new RoomTableHandle(this.connection.clientCache.getOrCreateTable<Room>(REMOTE_MODULE.tables.room));
+  }
+
+  get team(): TeamTableHandle {
+    return new TeamTableHandle(this.connection.clientCache.getOrCreateTable<Team>(REMOTE_MODULE.tables.team));
   }
 }
 
