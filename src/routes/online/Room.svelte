@@ -119,7 +119,8 @@
 					}
 					return {
 						playerId: cell.dropper.toHexString(),
-						teamId: cell.teamId
+						teamId: cell.teamId,
+						playerName: players.get(cell.dropper.data)?.name
 					};
 				})
 			),

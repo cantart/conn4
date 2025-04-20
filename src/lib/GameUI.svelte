@@ -15,7 +15,7 @@
 			name: string;
 		}[];
 		currentTeamId: number;
-		table: ({ playerId: string; teamId: number } | undefined)[][];
+		table: ({ playerId: string; teamId: number; playerName?: string } | undefined)[][];
 		winner:
 			| {
 					teamId: number;
@@ -114,10 +114,17 @@
 						>
 							{#if cell}
 								<div
-									class="h-full w-full {useLatestPieceRing &&
-										props.latestPiecePosition?.[0] === i &&
-										props.latestPiecePosition?.[1] === j &&
-										'ring-accent z-10 rounded-full ring-4'}"
+									class={[
+										'h-full w-full',
+										{
+											'ring-accent z-10 rounded-full ring-4':
+												useLatestPieceRing &&
+												props.latestPiecePosition?.[0] === i &&
+												props.latestPiecePosition?.[1] === j,
+											tooltip: !!cell.playerName
+										}
+									]}
+									data-tip={cell.playerName}
 									in:fly={{ y: -10, easing: expoOut }}
 									out:scale={{
 										delay: Math.random() * 300,
