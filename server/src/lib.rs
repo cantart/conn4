@@ -499,6 +499,8 @@ fn validate_can_join_or_create(ctx: &ReducerContext) -> Result<JoinRoom, String>
     Ok(jr)
 }
 
+const FACIAL_EMOJIS: &str = "😀😃😄😁😆🥹😅😂🤣🥲☺️😊😇🙂🙃😉😌😍🥰😘😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😶‍🌫️😱😨😰😥😓🤗🤔🫣🤭🫢🫡🤫🫠🤥😶🫥😐🫤😑😬🙄😯😦😧😮😲🥱😴🤤😪😮‍💨😵😵‍💫🤐🥴🤢🤮🤧😷🤒🤕🤑🤠😈👿👹👺🤡💩👻💀☠️👽👾🤖🎃😺😸😹😻😼😽🙀😿😾🙈🙉🙊";
+
 #[reducer]
 pub fn create_game(ctx: &ReducerContext) -> Result<(), String> {
     let jr = validate_can_join_or_create(ctx)?;
@@ -509,15 +511,16 @@ pub fn create_game(ctx: &ReducerContext) -> Result<(), String> {
 
     let game = ctx.db.game().try_insert(Game::new(jr.room_id))?;
 
+    let emojis = FACIAL_EMOJIS.chars().choose_multiple(&mut ctx.rng(), 2);
     let team1 = ctx.db.team().try_insert(Team {
         id: 0,
         game_id: game.room_id,
-        name: "🥺".into(),
+        name: emojis[0].into(),
     })?;
     let team2 = ctx.db.team().try_insert(Team {
         id: 0,
         game_id: game.room_id,
-        name: "😍".into(),
+        name: emojis[1].into(),
     })?;
 
     let start_team_id = if ctx.rng().gen_bool(0.5) {
