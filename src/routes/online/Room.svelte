@@ -225,24 +225,20 @@
 				<!-- You are watching a match as a spectator. -->
 				<div class="space-y-2">
 					<GameUi as="spectator" {...readyGameState} />
-					<div>
-						<button
-							disabled={useGame.gameJoining}
-							onclick={() => useGame.joinTeam(useGame.teams[0].id)}
-							class="btn btn-primary"
-							>{m.join_game({
-								name: useGame.teams[0].name
-							})}</button
-						>
-						<button
-							disabled={useGame.gameJoining}
-							onclick={() => useGame.joinTeam(useGame.teams[1].id)}
-							class="btn btn-primary"
-							>{m.join_game({
-								name: useGame.teams[1].name
-							})}</button
-						>
-					</div>
+					<ul class="flex justify-center gap-2">
+						{#each useGame.teams as team (team.id)}
+							<li>
+								<button
+									disabled={useGame.gameJoining}
+									onclick={() => useGame.joinTeam(team.id)}
+									class="btn btn-primary"
+									>{m.join_game({
+										name: team.name
+									})}</button
+								>
+							</li>
+						{/each}
+					</ul>
 				</div>
 			{/if}
 		{:else}
