@@ -175,7 +175,6 @@ export class UseGame {
             .subscribe(`SELECT * FROM join_team WHERE room_id = '${roomId}'`);
 
         this.gameCurrentTeamOnUpdate = (ctx, _, n) => {
-            console.log('new game current team', n);
             this._gameCurrentTeam = n;
         }
         conn.db.gameCurrentTeam.onUpdate(this.gameCurrentTeamOnUpdate);

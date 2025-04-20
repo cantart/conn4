@@ -29,7 +29,6 @@
 	}
 
 	const onSetName = () => {
-		console.log('Name updated');
 		nameUpdating = false;
 		nameEditing = false;
 		conn.reducers.removeOnSetName(onSetName);
@@ -46,7 +45,6 @@
 		const newName = new FormData(e.currentTarget).get('name') as string;
 		if (!newName || newName === you.name) return;
 
-		console.log('Setting name to', newName);
 		conn.reducers.onSetName(onSetName);
 		conn.reducers.setName(newName);
 		nameUpdating = true;
