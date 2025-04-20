@@ -211,9 +211,10 @@
 						{restarting}
 						{dropping}
 					/>
-					{#if useGame.oppositeTeam}
+					{#if useGame.oppositeTeam && !readyGameState.winner}
 						{@const oppositeTeam = useGame.oppositeTeam}
 						<button
+							transition:fly={{ y: -10, duration: 150 }}
 							disabled={useGame.gameJoining}
 							onclick={() => useGame.joinTeam(oppositeTeam.id)}
 							class="btn btn-primary"
