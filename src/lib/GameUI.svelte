@@ -3,9 +3,13 @@
 	import { fly, scale, slide, fade } from 'svelte/transition';
 	import { expoInOut, expoOut } from 'svelte/easing';
 	import { m } from './paraglide/messages';
+	import { flip } from 'svelte/animate';
+	import { useCrossfade } from './transitions';
+
+	type GameUIPlayer = LocalPlayer & { teamId: number; online?: boolean };
 
 	export type GameUIDataProps = {
-		players: (LocalPlayer & { teamId: number })[];
+		players: GameUIPlayer[];
 		teams: {
 			id: number;
 			name: string;
@@ -38,7 +42,7 @@
 		) = $props();
 
 	let teamToPlayers = $derived.by(() => {
-		const map = new Map<number, LocalPlayer[]>();
+		const map = new Map<number, GameUIPlayer[]>();
 		for (const player of props.players) {
 			if (!map.has(player.teamId)) {
 				map.set(player.teamId, [player]);
@@ -52,20 +56,31 @@
 	const useLatestPieceRing = import.meta.env.VITE_USE_LATEST_PIECE_RING === 'true';
 
 	let tableFull = $derived(!props.table.some((row) => row.some((cell) => cell === undefined)));
+
+	const { send, receive } = useCrossfade();
 </script>
 
 <div class="flex flex-col justify-center gap-2">
 	<div class="flex flex-wrap justify-center gap-4">
-		{#each props.teams as { id, name }, i (id)}
+		{#each props.teams as team, i (team.id)}
 			<span
-				class:opacity-25={props.currentTeamId !== id}
+				class:opacity-25={props.currentTeamId !== team.id}
 				class="flex items-center gap-2 transition-all"
 			>
 				<div class="aspect-square h-8 rounded-full {i === 0 ? 'bg-primary' : 'bg-secondary'}"></div>
-				<p class="text-base-rs font-bold">{name}</p>
-				<ul>
-					{#each teamToPlayers.get(id)! as player, j (j)}
-						<li class="text-xs-rs">{player.name}</li>
+				<p class="text-base-rs font-bold">{team.name}</p>
+				<ul class="text-left">
+					{#each teamToPlayers.get(team.id)! as player (player.id)}
+						<li animate:flip in:receive={{ key: player.id }} out:send={{ key: player.id }}>
+							{#if player.online !== undefined}
+								<div
+									class="status transition-colors {player.online
+										? 'status-success'
+										: 'status-error'}"
+								></div>
+							{/if}
+							{player.name}
+						</li>
 					{/each}
 				</ul>
 			</span>

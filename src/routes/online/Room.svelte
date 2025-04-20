@@ -93,10 +93,12 @@
 				? [useGame.game.latestMove.x, useGame.game.latestMove.y]
 				: undefined,
 			players: useGame.joinTeams.map((jt) => {
+				const player = players.get(jt.joiner.data);
 				return {
 					id: jt.joiner.toHexString(),
-					name: players.get(jt.joiner.data)?.name ?? 'Unknown',
-					teamId: jt.teamId
+					name: player?.name ?? 'Unknown',
+					teamId: jt.teamId,
+					online: player?.online
 				};
 			}),
 			teams: useGame.teams.map((team) => {
