@@ -112,10 +112,6 @@ pub struct Game {
     winner: Option<Winner>,
     /// table of the game
     table: GameTable,
-    /// `None` only when the game is being created
-    /// Consider creating a new table just for this field.
-    /// Moved to game_current_team table
-    // current_team: Option<Identity>,
     /// last move made by a player
     latest_move: Option<Coord>,
 }
