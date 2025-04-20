@@ -59,7 +59,15 @@ struct Winner {
     coordinates: Vec<Coord>, // cells that are part of the winning line
 }
 
-type GameTable = Vec<Vec<Option<Identity>>>;
+#[derive(SpacetimeType, Clone)]
+struct DroppedPiece {
+    team_id: u32,
+    dropper: Identity,
+}
+
+type Cell = Option<DroppedPiece>;
+
+type GameTable = Vec<Vec<Cell>>;
 
 #[table(name = team, public)]
 pub struct Team {
@@ -267,7 +275,11 @@ fn leave_team(ctx: &ReducerContext) {
     }
 }
 
-fn check_win(ctx: &ReducerContext, table: &GameTable) -> Option<Vec<Coord>> {
+fn cell_belongs_to_team(cell: &Cell, team_id: u32) -> bool {
+    cell.as_ref().map_or(false, |c| c.team_id == team_id)
+}
+
+fn check_win(table: &GameTable, team_id: u32) -> Option<Vec<Coord>> {
     let rows = table.len();
     let cols = table[0].len();
 
@@ -276,7 +288,10 @@ fn check_win(ctx: &ReducerContext, table: &GameTable) -> Option<Vec<Coord>> {
         for col in 0..=(cols - STREAK_REQUIRED) {
             let cols_to_check = col..col + STREAK_REQUIRED;
             let cells_to_check = &table[row][cols_to_check.clone()];
-            if cells_to_check.iter().all(|&cell| cell == Some(ctx.sender)) {
+            if cells_to_check
+                .iter()
+                .all(|cell| cell_belongs_to_team(&cell, team_id))
+            {
                 return Some(
                     cols_to_check
                         .map(|col| Coord {
@@ -294,7 +309,7 @@ fn check_win(ctx: &ReducerContext, table: &GameTable) -> Option<Vec<Coord>> {
         for row in 0..=(rows - STREAK_REQUIRED) {
             let rows_to_check = row..row + STREAK_REQUIRED;
             let mut cells_to_check = rows_to_check.clone().map(|row| &table[row][col]);
-            if cells_to_check.all(|&cell| cell == Some(ctx.sender)) {
+            if cells_to_check.all(|cell| cell_belongs_to_team(&cell, team_id)) {
                 return Some(
                     rows_to_check
                         .map(|row| Coord {
@@ -311,7 +326,7 @@ fn check_win(ctx: &ReducerContext, table: &GameTable) -> Option<Vec<Coord>> {
     for row in 0..=(rows - STREAK_REQUIRED) {
         for col in 0..=(cols - STREAK_REQUIRED) {
             let mut cells_to_check = (0..STREAK_REQUIRED).map(|i| &table[row + i][col + i]);
-            if cells_to_check.all(|&cell| cell == Some(ctx.sender)) {
+            if cells_to_check.all(|cell| cell_belongs_to_team(&cell, team_id)) {
                 return Some(
                     (0..STREAK_REQUIRED)
                         .map(|i| Coord {
@@ -328,7 +343,7 @@ fn check_win(ctx: &ReducerContext, table: &GameTable) -> Option<Vec<Coord>> {
     for row in (STREAK_REQUIRED - 1)..rows {
         for col in 0..=(cols - STREAK_REQUIRED) {
             let mut cells_to_check = (0..STREAK_REQUIRED).map(|i| &table[row - i][col + i]);
-            if cells_to_check.all(|&cell| cell == Some(ctx.sender)) {
+            if cells_to_check.all(|cell| cell_belongs_to_team(&cell, team_id)) {
                 return Some(
                     (0..STREAK_REQUIRED)
                         .map(|i| Coord {
@@ -445,13 +460,16 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
     for i in (0..game.table.len()).rev() {
         // find the first topmost empty cell in the column
         if game.table[i][col_usize].is_none() {
-            game.table[i][col_usize] = Some(ctx.sender);
+            game.table[i][col_usize] = Some(DroppedPiece {
+                team_id: jt.team_id,
+                dropper: ctx.sender,
+            });
             game.latest_move = Some(Coord {
                 x: i as u32,
                 y: column,
             });
 
-            if let Some(coords) = check_win(ctx, &game.table) {
+            if let Some(coords) = check_win(&game.table, jt.team_id) {
                 game.winner = Some(Winner {
                     team_id: jt.team_id,
                     coordinates: coords,

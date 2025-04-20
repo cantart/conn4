@@ -33,6 +33,7 @@ import {
 import { Game } from "./game_type";
 import { Winner as __Winner } from "./winner_type";
 import { Coord as __Coord } from "./coord_type";
+import { DroppedPiece as __DroppedPiece } from "./dropped_piece_type";
 
 import { EventContext, Reducer, RemoteReducers, RemoteTables } from ".";
 

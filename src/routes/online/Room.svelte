@@ -110,13 +110,9 @@
 					if (cell === undefined) {
 						return undefined;
 					}
-					const teamId = useGame.playersToTeams.get(cell.toHexString());
-					if (teamId === undefined) {
-						throw new Error(`Player ${cell.toHexString()} not found in playersToTeams`);
-					}
 					return {
-						playerId: cell.toHexString(),
-						teamId
+						playerId: cell.dropper.toHexString(),
+						teamId: cell.teamId
 					};
 				})
 			),

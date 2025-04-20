@@ -88,6 +88,8 @@ import { AutoDeleteRoomTimer } from "./auto_delete_room_timer_type.ts";
 export { AutoDeleteRoomTimer };
 import { Coord } from "./coord_type.ts";
 export { Coord };
+import { DroppedPiece } from "./dropped_piece_type.ts";
+export { DroppedPiece };
 import { Game } from "./game_type.ts";
 export { Game };
 import { GameCurrentTeam } from "./game_current_team_type.ts";

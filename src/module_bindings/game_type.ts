@@ -32,11 +32,12 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 import { Winner as __Winner } from "./winner_type";
 import { Coord as __Coord } from "./coord_type";
+import { DroppedPiece as __DroppedPiece } from "./dropped_piece_type";
 
 export type Game = {
   roomId: number,
   winner: __Winner | undefined,
-  table: (Identity | undefined)[][],
+  table: (__DroppedPiece | undefined)[][],
   latestMove: __Coord | undefined,
 };
 
@@ -52,7 +53,7 @@ export namespace Game {
     return AlgebraicType.createProductType([
       new ProductTypeElement("roomId", AlgebraicType.createU32Type()),
       new ProductTypeElement("winner", AlgebraicType.createOptionType(__Winner.getTypeScriptAlgebraicType())),
-      new ProductTypeElement("table", AlgebraicType.createArrayType(AlgebraicType.createArrayType(AlgebraicType.createOptionType(AlgebraicType.createIdentityType())))),
+      new ProductTypeElement("table", AlgebraicType.createArrayType(AlgebraicType.createArrayType(AlgebraicType.createOptionType(__DroppedPiece.getTypeScriptAlgebraicType())))),
       new ProductTypeElement("latestMove", AlgebraicType.createOptionType(__Coord.getTypeScriptAlgebraicType())),
     ]);
   }
