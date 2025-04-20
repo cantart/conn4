@@ -9,7 +9,7 @@
 	"this_aware_larva_fry": "ข้อเสนอแนะ",
 	"cool_plain_elk_pull": "ธีม",
 	"sleek_strong_turtle_pat": "ออนไลน์",
-	"legal_cool_dolphin_cry": "ชื่อของคุณ",
+	"legal_cool_dolphin_cry": "ชื่อผู้ใช้งาน",
 	"edit": "แก้ไข",
 	"awake_acidic_deer_swim": "สวัสดี ",
 	"cancel": "ยกเลิก",
@@ -18,9 +18,8 @@
 	"save": "บันทึก",
 	"room_name": "ชื่อห้อง",
 	"leave": "ออก",
-	"your_opponent_left": "คู่แข่งออกเกม",
-	"waiting_another_player_to_join": "กำลังรอผู้เล่นคนใหม่",
-	"join_game": "เข้าเกม",
+	"waiting_another_player_to_join": "กำลังรออีกทีม",
+	"join_game": "ทีม {name}",
 	"waiting_for_player_to_join": "กำลังรอผู้เล่น",
 	"start_game": "เริ่มเกม",
 	"you": "คุณ",
@@ -31,5 +30,6 @@
 	"close": "ปิด",
 	"login_with": "ลอกอินด้วย {name}",
 	"language_label": "ภาษาไทย",
-	"connecting": "กำลังเชื่อมต่อ"
+	"connecting": "กำลังเชื่อมต่อ",
+	"steep_large_snail_catch": "ย้ายไป {name} "
 }

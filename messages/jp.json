@@ -10,7 +10,7 @@
 	"cool_plain_elk_pull": "テーマ",
 	"this_aware_larva_fry": "フィードバック",
 	"awake_acidic_deer_swim": "こんにちは、",
-	"legal_cool_dolphin_cry": "あなたのあ名前",
+	"legal_cool_dolphin_cry": "ユーザー名",
 	"edit": "編集",
 	"cancel": "キャンセル",
 	"great_suave_dolphin_achieve": "ルームを作成",
@@ -18,9 +18,8 @@
 	"save": "保存",
 	"room_name": "ルーム名",
 	"leave": "退出",
-	"your_opponent_left": "相手が提出しました。",
-	"waiting_another_player_to_join": "他のプレイヤーを待っています。",
-	"join_game": "ゲームに参加",
+	"waiting_another_player_to_join": "他のチームを待っています。",
+	"join_game": "チーム{name}",
 	"waiting_for_player_to_join": "プレイヤーを待っています。",
 	"start_game": "ゲームをスタート",
 	"you": "あなた",
@@ -31,5 +30,6 @@
 	"close": "閉じる",
 	"login_with": "{name}でログイン",
 	"language_label": "日本語",
-	"connecting": "接続しています。"
+	"connecting": "接続しています。",
+	"steep_large_snail_catch": "{name}に移動"
 }

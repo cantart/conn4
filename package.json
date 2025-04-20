@@ -18,6 +18,7 @@
 		"test:e2e": "playwright test",
 		"mod:gen": "spacetime generate --lang typescript --out-dir src/module_bindings --project-path server",
 		"mod:pub": "spacetime publish --project-path server conn4",
+		"mod:pub:del": "spacetime publish --project-path server conn4 --delete-data",
 		"mod:pub:mc": "spacetime publish -s maincloud --project-path server conn4",
 		"db": "spacetime start",
 		"logs": "spacetime logs conn4",

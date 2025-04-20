@@ -30,36 +30,29 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-import { Coord as __Coord } from "./coord_type";
 
-export type Winner = {
-  teamId: number,
-  coordinates: __Coord[],
-};
+export type CreateGame = {};
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace Winner {
+export namespace CreateGame {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("teamId", AlgebraicType.createU32Type()),
-      new ProductTypeElement("coordinates", AlgebraicType.createArrayType(__Coord.getTypeScriptAlgebraicType())),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: Winner): void {
-    Winner.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: CreateGame): void {
+    CreateGame.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): Winner {
-    return Winner.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): CreateGame {
+    return CreateGame.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }
-
 

@@ -5,12 +5,16 @@
 	import { m } from './paraglide/messages';
 
 	export type GameUIDataProps = {
-		players: LocalPlayer[];
-		currentPlayerTurnId: string;
-		table: (string | undefined)[][];
+		players: (LocalPlayer & { teamId: number })[];
+		teams: {
+			id: number;
+			name: string;
+		}[];
+		currentTeamId: number;
+		table: ({ playerId: string; teamId: number } | undefined)[][];
 		winner:
 			| {
-					playerId: string;
+					teamId: number;
 					coordinates: [number, number][];
 			  }
 			| undefined;
@@ -33,6 +37,18 @@
 			  }
 		) = $props();
 
+	let teamToPlayers = $derived.by(() => {
+		const map = new Map<number, LocalPlayer[]>();
+		for (const player of props.players) {
+			if (!map.has(player.teamId)) {
+				map.set(player.teamId, [player]);
+			} else {
+				map.get(player.teamId)?.push(player);
+			}
+		}
+		return map;
+	});
+
 	const useLatestPieceRing = import.meta.env.VITE_USE_LATEST_PIECE_RING === 'true';
 
 	let tableFull = $derived(!props.table.some((row) => row.some((cell) => cell === undefined)));
@@ -40,15 +56,18 @@
 
 <div class="flex flex-col justify-center gap-2">
 	<div class="flex flex-wrap justify-center gap-4">
-		{#each props.players as player, i (player.id)}
+		{#each props.teams as { id, name }, i (id)}
 			<span
-				class:opacity-25={props.currentPlayerTurnId !== player.id}
+				class:opacity-25={props.currentTeamId !== id}
 				class="flex items-center gap-2 transition-all"
 			>
 				<div class="aspect-square h-8 rounded-full {i === 0 ? 'bg-primary' : 'bg-secondary'}"></div>
-				<p class="text-xs-rs">
-					{player.name}
-				</p>
+				<p class="text-base-rs font-bold">{name}</p>
+				<ul>
+					{#each teamToPlayers.get(id)! as player, j (j)}
+						<li class="text-xs-rs">{player.name}</li>
+					{/each}
+				</ul>
 			</span>
 		{/each}
 	</div>
@@ -69,7 +88,7 @@
 									props.as === 'spectator' ||
 									props.dropDisabled ||
 									props?.dropping ||
-									props.players.length !== 2 ||
+									props.teams.length !== 2 ||
 									tableFull
 								)
 									return;
@@ -90,7 +109,7 @@
 								>
 									{@render piece({
 										halfOpacity,
-										skin: cell.toString() === props.players[0].id ? 'bg-primary' : 'bg-secondary'
+										skin: cell.teamId === props.teams[0].id ? 'bg-primary' : 'bg-secondary'
 									})}
 								</div>
 							{/if}
@@ -107,9 +126,7 @@
 				<p class="text-base-rs font-bold">
 					{m.bald_great_cockroach_ripple({
 						player:
-							props.winner.playerId === props.players[0].id
-								? props.players[0].name
-								: props.players[1].name
+							props.winner.teamId === props.teams[0].id ? props.teams[0].name : props.teams[1].name
 					})}
 				</p>
 				{@render restartButton(props.onRestartHasWinner, props.restarting)}

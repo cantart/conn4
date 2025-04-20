@@ -30,17 +30,15 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-import { Coord as __Coord } from "./coord_type";
-
-export type Winner = {
+export type DroppedPiece = {
   teamId: number,
-  coordinates: __Coord[],
+  dropper: Identity,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace Winner {
+export namespace DroppedPiece {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
@@ -48,16 +46,16 @@ export namespace Winner {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("teamId", AlgebraicType.createU32Type()),
-      new ProductTypeElement("coordinates", AlgebraicType.createArrayType(__Coord.getTypeScriptAlgebraicType())),
+      new ProductTypeElement("dropper", AlgebraicType.createIdentityType()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: Winner): void {
-    Winner.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: DroppedPiece): void {
+    DroppedPiece.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): Winner {
-    return Winner.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): DroppedPiece {
+    return DroppedPiece.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

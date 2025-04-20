@@ -2,8 +2,6 @@
 
 ## First
 
-- ??
-
 ## Next
 
 - Leaderboard: last month, 6 months, all time
@@ -13,8 +11,6 @@
 
 ## Later
 
-- Add team mechanics to the game: Not just 1v1, any player in the team can drop piece on behalf of the team
-  - Maybe add `team` field to `join_game` table
 - Show warning modal when a player is about to leave but still in game
 - Add new chat item: player joined/left the room
 - Add the ability to select how many columns to play with

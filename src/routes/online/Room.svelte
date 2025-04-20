@@ -74,7 +74,7 @@
 	};
 
 	const onStartGame = async () => {
-		await useGame.joinOrCreate();
+		await useGame.createGame();
 	};
 
 	let dropping = $state(false);
@@ -82,28 +82,44 @@
 	 * Not null if the game is ready to be played.
 	 */
 	const readyGameState = $derived.by((): GameUIDataProps | null => {
-		if (!useGame.game || !useGame.game.currentTurnPlayer) {
+		if (!useGame.game || !useGame.gameCurrentTeam || !useGame.teams.length) {
 			return null;
 		}
 
-		const yourTurn = useGame.game.currentTurnPlayer.data === useGame.yourJoinGame?.joiner.data;
+		const yourTurn = useGame.gameCurrentTeam.teamId === useGame.yourJoinTeam?.teamId;
 		return {
-			currentPlayerTurnId: useGame.game.currentTurnPlayer.toHexString(),
+			currentTeamId: useGame.gameCurrentTeam.teamId,
 			latestPiecePosition: useGame.game.latestMove
 				? [useGame.game.latestMove.x, useGame.game.latestMove.y]
 				: undefined,
-			players: useGame.joinGames.map((j) => {
+			players: useGame.joinTeams.map((jt) => {
 				return {
-					id: j.joiner.toHexString(),
-					name: players.get(j.joiner.data)?.name ?? '???',
-					online: players.get(j.joiner.data)?.online ?? false
+					id: jt.joiner.toHexString(),
+					name: players.get(jt.joiner.data)?.name ?? 'Unknown',
+					teamId: jt.teamId
 				};
 			}),
-			table: useGame.game.table.map((row) => row.map((cell) => cell?.toHexString())),
+			teams: useGame.teams.map((team) => {
+				return {
+					id: team.id,
+					name: team.name
+				};
+			}),
+			table: useGame.game.table.map((row) =>
+				row.map((cell) => {
+					if (cell === undefined) {
+						return undefined;
+					}
+					return {
+						playerId: cell.dropper.toHexString(),
+						teamId: cell.teamId
+					};
+				})
+			),
 			winner: useGame.game.winner
 				? {
 						coordinates: useGame.game.winner.coordinates.map((c) => [c.x, c.y]),
-						playerId: useGame.game.winner.player.toHexString()
+						teamId: useGame.game.winner.teamId
 					}
 				: undefined,
 			dropDisabled: !!useGame.game.winner || !yourTurn
@@ -177,15 +193,15 @@
 	<div class="text-center">
 		{#if useGame.loading}
 			<span class="loading loading-spinner loading-lg"></span>
-		{:else if useGame.game}
-			{#if readyGameState}
-				<!-- Game is being displayed. -->
-				{#if useGame.yourJoinGame}
-					<!-- The match has started with at least you in it -->
-					{#if useGame.joinGames.length === 1}
-						<!-- can happen if the opponent left mid-game -->
-						<span>{m.your_opponent_left()}<br />{m.waiting_another_player_to_join()}</span>
-					{/if}
+		{:else if readyGameState}
+			<!-- Game is being displayed. -->
+			{#if useGame.yourJoinTeam}
+				<!-- The match has started with at least you in it -->
+				{#if useGame.emptyTeamIds.size > 0}
+					<!-- can happen if the opponent left mid-game -->
+					<span>{m.waiting_another_player_to_join()}</span>
+				{/if}
+				<div class="space-y-2">
 					<GameUi
 						as="player"
 						{...readyGameState}
@@ -195,29 +211,36 @@
 						{restarting}
 						{dropping}
 					/>
-				{:else}
-					<!-- You are watching a match as a spectator. -->
-					<GameUi as="spectator" {...readyGameState} />
-					{#if useGame.joinGames.length === 1}
-						<!-- A player left mid-game. You can now join. -->
+					{#if useGame.oppositeTeam && !readyGameState.winner}
+						{@const oppositeTeam = useGame.oppositeTeam}
 						<button
+							transition:fly={{ y: -10, duration: 150 }}
 							disabled={useGame.gameJoining}
-							onclick={() => useGame.joinOrCreate()}
-							class="btn btn-primary">{m.join_game()}</button
+							onclick={() => useGame.joinTeam(oppositeTeam.id)}
+							class="btn btn-primary"
+							>{m.steep_large_snail_catch({ name: oppositeTeam.name })}</button
 						>
 					{/if}
-				{/if}
-			{:else if useGame.yourJoinGame}
-				<!-- You are the only one in the game and waiting for another player. -->
-				<span class="text-center">{m.waiting_for_player_to_join()}</span>
-				<span class="loading loading-spinner loading-xs"></span>
+				</div>
 			{:else}
-				<!-- There is someone in the game. You are not in it -->
-				<button
-					disabled={useGame.gameJoining}
-					onclick={() => useGame.joinOrCreate()}
-					class="btn btn-primary">{m.join_game()}</button
-				>
+				<!-- You are watching a match as a spectator. -->
+				<div class="space-y-2">
+					<GameUi as="spectator" {...readyGameState} />
+					<ul class="flex justify-center gap-2">
+						{#each useGame.teams as team (team.id)}
+							<li>
+								<button
+									disabled={useGame.gameJoining}
+									onclick={() => useGame.joinTeam(team.id)}
+									class="btn btn-primary"
+									>{m.join_game({
+										name: team.name
+									})}</button
+								>
+							</li>
+						{/each}
+					</ul>
+				</div>
 			{/if}
 		{:else}
 			<button onclick={onStartGame} disabled={useGame.gameJoining} class="btn btn-primary"
