@@ -19,7 +19,7 @@
 	"room_name": "ルーム名",
 	"leave": "退出",
 	"waiting_another_player_to_join": "他のチームを待っています。",
-	"join_game": "ゲームに参加",
+	"join_game": "チーム{name}",
 	"waiting_for_player_to_join": "プレイヤーを待っています。",
 	"start_game": "ゲームをスタート",
 	"you": "あなた",

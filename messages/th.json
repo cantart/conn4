@@ -19,7 +19,7 @@
 	"room_name": "ชื่อห้อง",
 	"leave": "ออก",
 	"waiting_another_player_to_join": "กำลังรออีกทีม",
-	"join_game": "เข้าเกม",
+	"join_game": "ทีม {name}",
 	"waiting_for_player_to_join": "กำลังรอผู้เล่น",
 	"start_game": "เริ่มเกม",
 	"you": "คุณ",

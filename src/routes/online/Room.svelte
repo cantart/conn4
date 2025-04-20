@@ -216,17 +216,27 @@
 				/>
 			{:else}
 				<!-- You are watching a match as a spectator. -->
-				<GameUi as="spectator" {...readyGameState} />
-				<button
-					disabled={useGame.gameJoining}
-					onclick={() => useGame.joinTeam(useGame.teams[0].id)}
-					class="btn btn-primary">{m.join_game()}</button
-				>
-				<button
-					disabled={useGame.gameJoining}
-					onclick={() => useGame.joinTeam(useGame.teams[1].id)}
-					class="btn btn-primary">{m.join_game()}</button
-				>
+				<div class="space-y-2">
+					<GameUi as="spectator" {...readyGameState} />
+					<div>
+						<button
+							disabled={useGame.gameJoining}
+							onclick={() => useGame.joinTeam(useGame.teams[0].id)}
+							class="btn btn-primary"
+							>{m.join_game({
+								name: useGame.teams[0].name
+							})}</button
+						>
+						<button
+							disabled={useGame.gameJoining}
+							onclick={() => useGame.joinTeam(useGame.teams[1].id)}
+							class="btn btn-primary"
+							>{m.join_game({
+								name: useGame.teams[1].name
+							})}</button
+						>
+					</div>
+				</div>
 			{/if}
 		{:else}
 			<button onclick={onStartGame} disabled={useGame.gameJoining} class="btn btn-primary"
