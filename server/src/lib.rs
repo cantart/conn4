@@ -71,12 +71,36 @@ pub struct Team {
     name: String,
 }
 
+enum DeleteTeamBy {
+    GameId(u32),
+}
+
+fn delete_team(ctx: &ReducerContext, by: DeleteTeamBy) {
+    match by {
+        DeleteTeamBy::GameId(game_id) => {
+            ctx.db.team().game_id().delete(game_id);
+        }
+    }
+}
+
 #[table(name = game_current_team, public)]
 pub struct GameCurrentTeam {
     #[primary_key]
     game_id: u32,
     #[unique]
     team_id: u32,
+}
+
+enum DeleteGameCurrentTeamBy {
+    GameId(u32),
+}
+
+fn delete_game_current_team(ctx: &ReducerContext, by: DeleteGameCurrentTeamBy) {
+    match by {
+        DeleteGameCurrentTeamBy::GameId(game_id) => {
+            ctx.db.game_current_team().game_id().delete(game_id);
+        }
+    }
 }
 
 #[table(name = game, public)]
@@ -115,8 +139,8 @@ fn delete_game(ctx: &ReducerContext, by: DeleteGameBy) {
     match by {
         DeleteGameBy::RoomId(room_id) => {
             ctx.db.game().room_id().delete(room_id);
-            ctx.db.team().game_id().delete(room_id);
-            ctx.db.game_current_team().game_id().delete(room_id);
+            delete_team(ctx, DeleteTeamBy::GameId(room_id));
+            delete_game_current_team(ctx, DeleteGameCurrentTeamBy::GameId(room_id));
         }
     }
 }
