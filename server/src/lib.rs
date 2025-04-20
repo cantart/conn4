@@ -410,7 +410,7 @@ pub fn restart_game_has_winner(ctx: &ReducerContext) -> Result<(), String> {
 
 #[reducer]
 pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
-    // check if the player is in a game
+    // check if the player is in a team
     let Some(jt) = ctx.db.join_team().joiner().find(ctx.sender) else {
         return Err("Cannot drop piece if not in a team".to_string());
     };
