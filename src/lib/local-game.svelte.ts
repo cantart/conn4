@@ -11,6 +11,7 @@ const createTable = () => {
 export type LocalPlayer = {
 	id: string;
 	name: string;
+	// teamId: number;
 };
 
 export type LocalGameState = {

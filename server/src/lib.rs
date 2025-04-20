@@ -55,7 +55,7 @@ struct Coord {
 
 #[derive(SpacetimeType)]
 struct Winner {
-    player: Identity,
+    team_id: u32,
     coordinates: Vec<Coord>, // cells that are part of the winning line
 }
 
@@ -68,6 +68,7 @@ pub struct Team {
     id: u32,
     #[index(btree)]
     game_id: u32,
+    name: String,
 }
 
 #[table(name = game_current_team, public)]
@@ -432,7 +433,7 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
 
             if let Some(coords) = check_win(ctx, &game.table) {
                 game.winner = Some(Winner {
-                    player: ctx.sender,
+                    team_id: jt.team_id,
                     coordinates: coords,
                 });
             } else {
@@ -491,10 +492,12 @@ pub fn create_game(ctx: &ReducerContext) -> Result<(), String> {
     let team1 = ctx.db.team().try_insert(Team {
         id: 0,
         game_id: game.room_id,
+        name: "🥺".into(),
     })?;
     let team2 = ctx.db.team().try_insert(Team {
         id: 0,
         game_id: game.room_id,
+        name: "😍".into(),
     })?;
 
     let start_team_id = if ctx.rng().gen_bool(0.5) {

@@ -37,6 +37,8 @@ export class UseGame {
         return this._joinTeams;
     }
     bothTeamsHavePlayers = $derived(new Set(this._joinTeams.map((jt) => jt.teamId)).size === 2)
+    // TODO: Change the mapping to from bigint
+    playersToTeams = $derived(new Map<string, number>(this._joinTeams.map((jt) => [jt.joiner.toHexString(), jt.teamId])))
 
     private _gameJoining = $state(false);
     get gameJoining() {
@@ -51,11 +53,11 @@ export class UseGame {
     }
     emptyTeamIds = $derived.by(() => {
         if (!this._teams || !this._joinTeams) {
-            return [];
+            return new Set<number>();
         }
         const teamIds = new Set(this._teams.map((t) => t.id));
         const joinTeamIds = new Set(this._joinTeams.map((jt) => jt.teamId));
-        return Array.from(teamIds.difference(joinTeamIds));
+        return teamIds.difference(joinTeamIds);
     })
 
     private readonly gameCurrentTeamHandle: SubscriptionHandle;
@@ -197,14 +199,22 @@ export class UseGame {
             if (this._teams.length > 2) {
                 throw new Error('There cannot be more than two teams. Check the subscription or something is wrong on the backend.')
             }
+            this._teams.sort((a, b) => a.id - b.id);
         }
-        conn.db.team.onInsert(this.teamOnInsert);
 
         this.subscriptions++;
         this.teamHandle = conn
             .subscriptionBuilder()
             .onApplied(() => {
                 this.activeSubscriptions++;
+                const teams = Array.from(conn.db.team.iter());
+                if (teams.length) {
+                    // joined into a room when there are teams (there is a game)
+                    this._teams = teams;
+                } else {
+                    // joined a room when there is no team (there is no game yet)
+                    conn.db.team.onInsert(this.teamOnInsert);
+                }
             })
             .onError((ctx) => {
                 console.error('Error fetching teams:', ctx.event);

@@ -33,6 +33,7 @@ import {
 export type Team = {
   id: number,
   gameId: number,
+  name: string,
 };
 
 /**
@@ -47,6 +48,7 @@ export namespace Team {
     return AlgebraicType.createProductType([
       new ProductTypeElement("id", AlgebraicType.createU32Type()),
       new ProductTypeElement("gameId", AlgebraicType.createU32Type()),
+      new ProductTypeElement("name", AlgebraicType.createStringType()),
     ]);
   }
 

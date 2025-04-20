@@ -77,35 +77,53 @@
 		await useGame.createGame();
 	};
 
-	$inspect('useGame.gameCurrentTeam', useGame.gameCurrentTeam);
 	let dropping = $state(false);
 	/**
 	 * Not null if the game is ready to be played.
 	 */
 	const readyGameState = $derived.by((): GameUIDataProps | null => {
-		if (!useGame.game || !useGame.gameCurrentTeam) {
+		if (!useGame.game || !useGame.gameCurrentTeam || !useGame.teams.length) {
 			return null;
 		}
 
 		const yourTurn = useGame.gameCurrentTeam.teamId === useGame.yourJoinTeam?.teamId;
-		console.log('yourTurn', yourTurn);
 		return {
-			currentPlayerTurnId: useGame.gameCurrentTeam.teamId.toString(),
+			currentTeamId: useGame.gameCurrentTeam.teamId,
 			latestPiecePosition: useGame.game.latestMove
 				? [useGame.game.latestMove.x, useGame.game.latestMove.y]
 				: undefined,
-			players: useGame.joinTeams.map((j) => {
+			players: useGame.joinTeams.map((jt) => {
 				return {
-					id: j.joiner.toHexString(),
-					name: players.get(j.joiner.data)?.name ?? '???',
-					online: players.get(j.joiner.data)?.online ?? false
+					id: jt.joiner.toHexString(),
+					name: players.get(jt.joiner.data)?.name ?? 'Unknown',
+					teamId: jt.teamId
 				};
 			}),
-			table: useGame.game.table.map((row) => row.map((cell) => cell?.toHexString())),
+			teams: useGame.teams.map((team) => {
+				return {
+					id: team.id,
+					name: team.name
+				};
+			}),
+			table: useGame.game.table.map((row) =>
+				row.map((cell) => {
+					if (cell === undefined) {
+						return undefined;
+					}
+					const teamId = useGame.playersToTeams.get(cell.toHexString());
+					if (teamId === undefined) {
+						throw new Error(`Player ${cell.toHexString()} not found in playersToTeams`);
+					}
+					return {
+						playerId: cell.toHexString(),
+						teamId
+					};
+				})
+			),
 			winner: useGame.game.winner
 				? {
 						coordinates: useGame.game.winner.coordinates.map((c) => [c.x, c.y]),
-						playerId: useGame.game.winner.player.toHexString()
+						teamId: useGame.game.winner.teamId
 					}
 				: undefined,
 			dropDisabled: !!useGame.game.winner || !yourTurn
@@ -183,7 +201,7 @@
 			<!-- Game is being displayed. -->
 			{#if useGame.yourJoinTeam}
 				<!-- The match has started with at least you in it -->
-				{#if useGame.emptyTeamIds.length > 0}
+				{#if useGame.emptyTeamIds.size > 0}
 					<!-- can happen if the opponent left mid-game -->
 					<span>{m.waiting_another_player_to_join()}</span>
 				{/if}
