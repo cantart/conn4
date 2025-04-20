@@ -122,7 +122,7 @@
 						teamId: useGame.game.winner.teamId
 					}
 				: undefined,
-			dropDisabled: !!useGame.game.winner || !yourTurn
+			dropDisabled: !!useGame.game.winner || !yourTurn || useGame.gameJoining
 		};
 	});
 
