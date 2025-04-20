@@ -181,7 +181,7 @@
 	});
 </script>
 
-<div class="space-y-8">
+<div class="space-y-4 sm:space-y-6">
 	<div class="flex items-center gap-4 justify-self-center">
 		{@render title()}
 
@@ -206,18 +206,19 @@
 				<!-- The match has started with at least you in it -->
 				{#if useGame.emptyTeamIds.size > 0}
 					<!-- can happen if the opponent left mid-game -->
-					<span>{m.waiting_another_player_to_join()}</span>
+					<span class="text-lg">{m.waiting_another_player_to_join()}</span>
+				{:else}
+					<div
+						class={[
+							'animate-bounce text-xl font-bold sm:text-2xl',
+							{
+								'opacity-0': !yourTurn || readyGameState.winner
+							}
+						]}
+					>
+						<span>{m.neat_funny_carp_endure()}</span>
+					</div>
 				{/if}
-				<div
-					class={[
-						'animate-bounce text-xl font-bold sm:text-2xl',
-						{
-							'opacity-0': !yourTurn || readyGameState.winner
-						}
-					]}
-				>
-					<span>{m.neat_funny_carp_endure()}</span>
-				</div>
 
 				<div class="space-y-2">
 					<GameUi
