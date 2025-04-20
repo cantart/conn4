@@ -457,7 +457,6 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
                     coordinates: coords,
                 });
             } else {
-                info!("Current team: {:?}", game_current_team.team_id);
                 let another_team = ctx
                     .db
                     .team()
@@ -466,7 +465,6 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
                     .filter(|team| team.id != game_current_team.team_id)
                     .next()
                     .ok_or("Cannot find another team")?;
-                info!("Another team: {:?}", another_team.id);
                 ctx.db
                     .game_current_team()
                     .game_id()
