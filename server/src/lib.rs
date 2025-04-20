@@ -528,7 +528,7 @@ pub fn create_game(ctx: &ReducerContext) -> Result<(), String> {
     } else {
         team2.id
     };
-    // TODO: Move this once both players join both teams
+
     ctx.db.game_current_team().try_insert(GameCurrentTeam {
         game_id: game.room_id,
         team_id: start_team_id,
