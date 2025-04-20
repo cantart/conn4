@@ -2,6 +2,8 @@
 
 ## First
 
+- Invite to room via link
+
 ## Next
 
 - Leaderboard: last month, 6 months, all time
@@ -16,7 +18,6 @@
 - Add the ability to select how many columns to play with
 - Game history: show the last 10 games played, and the ability to replay them
   - Store moves in the game table (best if replace `table` field with this field, though check win logic will be changed completely)
-- Invite to room via link
 - Invite feature: when in a room, you can invite outside players to join the room
 - Message TTL: messages self-delete after a certain time
 - Advanced SEO: add meta tags for social media sharing
