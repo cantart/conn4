@@ -77,6 +77,12 @@
 		await useGame.createGame();
 	};
 
+	let yourTurn = $derived.by(() => {
+		if (!useGame.gameCurrentTeam) {
+			return false;
+		}
+		return useGame.gameCurrentTeam.teamId === useGame.yourJoinTeam?.teamId;
+	});
 	let dropping = $state(false);
 	/**
 	 * Not null if the game is ready to be played.
@@ -86,7 +92,6 @@
 			return null;
 		}
 
-		const yourTurn = useGame.gameCurrentTeam.teamId === useGame.yourJoinTeam?.teamId;
 		return {
 			currentTeamId: useGame.gameCurrentTeam.teamId,
 			latestPiecePosition: useGame.game.latestMove
@@ -203,6 +208,17 @@
 					<!-- can happen if the opponent left mid-game -->
 					<span>{m.waiting_another_player_to_join()}</span>
 				{/if}
+				<div
+					class={[
+						'animate-bounce text-xl font-bold sm:text-2xl',
+						{
+							'opacity-0': !yourTurn || readyGameState.winner
+						}
+					]}
+				>
+					<span>{m.neat_funny_carp_endure()}</span>
+				</div>
+
 				<div class="space-y-2">
 					<GameUi
 						as="player"
