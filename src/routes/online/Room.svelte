@@ -181,8 +181,8 @@
 	});
 </script>
 
-<div class="space-y-4 sm:space-y-6">
-	<div class="flex items-center gap-4 justify-self-center">
+<div class="space-y-4 lg:space-y-5">
+	<div class="flex items-center gap-2 justify-self-center">
 		{@render title()}
 
 		<button onclick={leave} class="btn btn-xs btn-error" disabled={leaving}>{m.leave()}</button>
@@ -206,7 +206,7 @@
 				<!-- The match has started with at least you in it -->
 				{#if useGame.emptyTeamIds.size > 0}
 					<!-- can happen if the opponent left mid-game -->
-					<span class="text-lg">{m.waiting_another_player_to_join()}</span>
+					<span class="text-base md:text-lg">{m.waiting_another_player_to_join()}</span>
 				{:else}
 					<div
 						class={[
@@ -236,7 +236,7 @@
 							transition:fly={{ y: -10, duration: 150 }}
 							disabled={useGame.gameJoining}
 							onclick={() => useGame.joinTeam(oppositeTeam.id)}
-							class="btn btn-primary"
+							class="btn btn-primary btn-sm md:btn-md"
 							>{m.steep_large_snail_catch({ name: oppositeTeam.name })}</button
 						>
 					{/if}
@@ -251,7 +251,7 @@
 								<button
 									disabled={useGame.gameJoining}
 									onclick={() => useGame.joinTeam(team.id)}
-									class="btn btn-primary"
+									class="btn btn-primary btn-sm md:btn-md"
 									>{m.join_game({
 										name: team.name
 									})}</button
@@ -281,17 +281,15 @@
 	<ul>
 		{#each joinRooms as jr (jr.joiner)}
 			{@const player = players.get(jr.joiner.data)}
-			<li>
+			<li class="text-left">
 				{#if player}
 					<div
 						class="status transition-colors {player.online ? 'status-success' : 'status-error'}"
 					></div>
 					{#if player.identity.data === you.identity.data}
-						<span>
-							<span class="font-bold">{player.name} ({m.you()})</span>
-						</span>
+						<span class="text-sm font-bold md:text-base">{player.name} ({m.you()})</span>
 					{:else}
-						{player.name}
+						<span class="text-sm md:text-base">{player.name}</span>
 					{/if}
 				{:else}
 					<span class="loading loading-spinner loading-sm"></span>
@@ -366,7 +364,7 @@
 					</div>
 					<div
 						class={[
-							'chat-bubble',
+							'chat-bubble text-sm md:text-base',
 							{
 								'chat-bubble-accent': isYours
 							}
@@ -377,7 +375,7 @@
 					<!-- <div class="chat-footer opacity-50">Delivered</div> -->
 				</div>
 			{:else}
-				<p class="text-center">{m.no_messages()}</p>
+				<p class="opacity-75 text-sm md:text-base text-center">{m.no_messages()}</p>
 			{/each}
 		</ol>
 	</div>

@@ -65,10 +65,12 @@
 		{#each props.teams as team, i (team.id)}
 			<span
 				class:opacity-25={props.currentTeamId !== team.id}
-				class="flex items-center gap-2 transition-all"
+				class="flex items-center gap-1 transition-all"
 			>
-				<div class="aspect-square h-8 rounded-full {i === 0 ? 'bg-primary' : 'bg-secondary'}"></div>
-				<p class="text-base-rs font-bold">{team.name}</p>
+				<div
+					class="aspect-square h-7 rounded-full md:h-8 {i === 0 ? 'bg-primary' : 'bg-secondary'}"
+				></div>
+				<p>{team.name}</p>
 				<ul class="text-left">
 					{#each teamToPlayers.get(team.id)! as player (player.id)}
 						<li animate:flip in:receive={{ key: player.id }} out:send={{ key: player.id }}>
@@ -79,7 +81,7 @@
 										: 'status-error'}"
 								></div>
 							{/if}
-							{player.name}
+							<span class="text-sm md:text-base">{player.name}</span>
 						</li>
 					{/each}
 				</ul>
@@ -97,7 +99,7 @@
 							!props.winner.coordinates.some(([row, col]) => row === i && col === j)}
 						<button
 							class:cursor-auto={props.dropDisabled}
-							class="border-neutral grid aspect-square w-14 place-items-center border md:w-16 lg:w-20"
+							class="border-neutral grid aspect-square w-12 place-items-center border sm:w-14 md:w-16 2xl:w-20"
 							onclick={() => {
 								if (
 									props.as === 'spectator' ||
