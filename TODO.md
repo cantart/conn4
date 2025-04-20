@@ -2,6 +2,8 @@
 
 ## First
 
+- Improve responsiveness
+
 ## Next
 
 - Leaderboard: last month, 6 months, all time
