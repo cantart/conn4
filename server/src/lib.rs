@@ -6,6 +6,7 @@ use spacetimedb::{
     reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table, TimeDuration,
     Timestamp,
 };
+use unicode_segmentation::UnicodeSegmentation;
 
 const STREAK_REQUIRED: usize = 4;
 
@@ -522,7 +523,9 @@ pub fn create_game(ctx: &ReducerContext) -> Result<(), String> {
 
     let game = ctx.db.game().try_insert(Game::new(jr.room_id))?;
 
-    let emojis = FACIAL_EMOJIS.chars().choose_multiple(&mut ctx.rng(), 2);
+    let emojis = FACIAL_EMOJIS
+        .graphemes(true) // true for extended grapheme clusters
+        .choose_multiple(&mut ctx.rng(), 2);
     let team1 = ctx.db.team().try_insert(Team {
         id: 0,
         game_id: game.room_id,
