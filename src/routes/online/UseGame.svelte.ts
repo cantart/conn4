@@ -1,6 +1,6 @@
 import { SubscriptionHandle } from "$lib";
 import { Identity } from "@clockworklabs/spacetimedb-sdk";
-import { type JoinTeam, type DbConnection, type EventContext, type Game, type ReducerEventContext, type GameCurrentTeam, type Team } from "../../module_bindings";
+import { type DbConnection, type EventContext, type Game, type GameCurrentTeam, type JoinTeam, type ReducerEventContext, type Team } from "../../module_bindings";
 
 export class UseGame {
     // TODO: Try to refactor so that we can do some union type i.e. if loading is true, game is undefined, if not game is Game or null. Maybe we need to convert the class to a function that returns an object with the correct types.
@@ -11,14 +11,6 @@ export class UseGame {
 
     private readonly subscriptions = 0;
     private activeSubscriptions = $state(0);
-
-    private _yourJoinTeam = $state<JoinTeam | undefined>(undefined);
-    /**
-     * Not `undefined` if you are one of the joiners of the game.
-     */
-    get yourJoinTeam() {
-        return this._yourJoinTeam;
-    }
 
     private readonly gameHandle: SubscriptionHandle;
     private readonly gameOnUpdate: (ctx: EventContext, oldRow: Game, newRow: Game) => void
@@ -31,6 +23,7 @@ export class UseGame {
 
     private readonly joinTeamHandle: SubscriptionHandle;
     private readonly joinTeamOnInsert: (ctx: EventContext, jt: JoinTeam) => void
+    private readonly joinTeamOnUpdate: (ctx: EventContext, oldRow: JoinTeam, newRow: JoinTeam) => void
     private readonly joinTeamOnDelete: (ctx: EventContext, jt: JoinTeam) => void
     private _joinTeams = $state<JoinTeam[]>([]);
     get joinTeams() {
@@ -39,6 +32,19 @@ export class UseGame {
     bothTeamsHavePlayers = $derived(new Set(this._joinTeams.map((jt) => jt.teamId)).size === 2)
     // TODO: Change the mapping to from bigint
     playersToTeams = $derived(new Map<string, number>(this._joinTeams.map((jt) => [jt.joiner.toHexString(), jt.teamId])))
+    oppositeTeam = $derived.by(() => {
+        if (!this.yourJoinTeam || !this._teams.length) {
+            return null;
+        }
+        const yourTeamId = this.yourJoinTeam.teamId;
+        const oppositeTeam = this._teams.find((team) => team.id !== yourTeamId);
+        return oppositeTeam ?? null;
+    })
+
+    /**
+     * Not `undefined` if you are one of the joiners of the game.
+     */
+    yourJoinTeam = $derived(this._joinTeams.find((jt) => jt.joiner.data === this.yourIdentity.data))
 
     private _gameJoining = $state(false);
     get gameJoining() {
@@ -69,11 +75,7 @@ export class UseGame {
     }
 
 
-    constructor(private readonly conn: DbConnection, roomId: number, yourIdentity: Identity) {
-        $effect(() => {
-            this._yourJoinTeam = this._joinTeams.find((jt) => jt.joiner.data === yourIdentity.data);
-        })
-
+    constructor(private readonly conn: DbConnection, roomId: number, private readonly yourIdentity: Identity) {
         $effect(() => {
             if (this.activeSubscriptions === this.subscriptions) {
                 this._loading = false
@@ -119,9 +121,6 @@ export class UseGame {
 
         this.joinTeamOnInsert = (ctx, jt) => {
             if (jt.joiner.data === yourIdentity.data) {
-                if (this._yourJoinTeam) {
-                    throw new Error('You already joined to a team.')
-                }
                 this._gameJoining = false;
             }
             let existing = this._joinTeams.find((j) => j.joiner.data === jt.joiner.data);
@@ -131,9 +130,20 @@ export class UseGame {
                 this._joinTeams.push(jt);
             }
         }
+        this.joinTeamOnUpdate = (ctx, _, n) => {
+            const idx = this._joinTeams.findIndex((j) => j.joiner.data === n.joiner.data);
+            if (idx !== -1) {
+                this._joinTeams[idx] = n;
+                if (n.joiner.data === yourIdentity.data) {
+                    this._gameJoining = false;
+                }
+            } else {
+                throw new Error('Got updated but could not find the existing item.')
+            }
+        }
         this.joinTeamOnDelete = (ctx, jt) => {
             if (jt.joiner.data === yourIdentity.data) {
-                if (!this._yourJoinTeam) {
+                if (!this.yourJoinTeam) {
                     throw new Error('You have not joined to the game.')
                 }
             }
@@ -144,6 +154,7 @@ export class UseGame {
         }
         conn.db.joinTeam.onInsert(this.joinTeamOnInsert);
         conn.db.joinTeam.onDelete(this.joinTeamOnDelete);
+        conn.db.joinTeam.onUpdate(this.joinTeamOnUpdate);
 
         this.subscriptions++;
         this.joinTeamHandle = conn
@@ -151,11 +162,6 @@ export class UseGame {
             .onApplied(() => {
                 this.activeSubscriptions++;
                 for (const jt of conn.db.joinTeam.iter()) {
-                    if (jt.joiner.data === yourIdentity.data) {
-                        if (this._yourJoinTeam) {
-                            throw new Error('You already joined to a team.')
-                        }
-                    }
                     if (jt.roomId === roomId) {
                         this._joinTeams.push(jt);
                     } else {
@@ -274,6 +280,7 @@ export class UseGame {
         const removeListeners = () => {
             this.conn.db.joinTeam.removeOnInsert(this.joinTeamOnInsert);
             this.conn.db.joinTeam.removeOnDelete(this.joinTeamOnDelete);
+            this.conn.db.joinTeam.removeOnUpdate(this.joinTeamOnUpdate);
         }
 
         return new Promise<void>(resolve => {

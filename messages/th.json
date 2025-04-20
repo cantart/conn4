@@ -30,5 +30,6 @@
 	"close": "ปิด",
 	"login_with": "ลอกอินด้วย {name}",
 	"language_label": "ภาษาไทย",
-	"connecting": "กำลังเชื่อมต่อ"
+	"connecting": "กำลังเชื่อมต่อ",
+	"steep_large_snail_catch": "ย้ายไป {name} "
 }

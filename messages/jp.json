@@ -30,5 +30,6 @@
 	"close": "閉じる",
 	"login_with": "{name}でログイン",
 	"language_label": "日本語",
-	"connecting": "接続しています。"
+	"connecting": "接続しています。",
+	"steep_large_snail_catch": "{name}に移動"
 }

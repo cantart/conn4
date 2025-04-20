@@ -201,15 +201,26 @@
 					<!-- can happen if the opponent left mid-game -->
 					<span>{m.waiting_another_player_to_join()}</span>
 				{/if}
-				<GameUi
-					as="player"
-					{...readyGameState}
-					onDrop={drop}
-					onRestartHasWinner={restartGameHasWinner}
-					onRestartFullTable={restartGameFullTable}
-					{restarting}
-					{dropping}
-				/>
+				<div class="space-y-2">
+					<GameUi
+						as="player"
+						{...readyGameState}
+						onDrop={drop}
+						onRestartHasWinner={restartGameHasWinner}
+						onRestartFullTable={restartGameFullTable}
+						{restarting}
+						{dropping}
+					/>
+					{#if useGame.oppositeTeam}
+						{@const oppositeTeam = useGame.oppositeTeam}
+						<button
+							disabled={useGame.gameJoining}
+							onclick={() => useGame.joinTeam(oppositeTeam.id)}
+							class="btn btn-primary"
+							>{m.steep_large_snail_catch({ name: oppositeTeam.name })}</button
+						>
+					{/if}
+				</div>
 			{:else}
 				<!-- You are watching a match as a spectator. -->
 				<div class="space-y-2">

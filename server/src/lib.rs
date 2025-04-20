@@ -507,11 +507,6 @@ fn validate_can_join_or_create(ctx: &ReducerContext) -> Result<JoinRoom, String>
         return Err("Cannot join the game when not in a room".to_string());
     };
 
-    // check if the player is already in a team
-    if ctx.db.join_team().joiner().find(ctx.sender).is_some() {
-        return Err("Cannot join the game when already in one".to_string());
-    }
-
     Ok(jr)
 }
 
