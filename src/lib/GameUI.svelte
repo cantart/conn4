@@ -5,7 +5,7 @@
 	import { m } from './paraglide/messages';
 
 	export type GameUIDataProps = {
-		players: (LocalPlayer & {teamId: number})[];
+		players: (LocalPlayer & { teamId: number })[];
 		teams: {
 			id: number;
 			name: string;
@@ -68,7 +68,6 @@
 						<li class="text-xs-rs">{player.name}</li>
 					{/each}
 				</ul>
-				<!-- </p> -->
 			</span>
 		{/each}
 	</div>
