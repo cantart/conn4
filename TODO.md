@@ -2,8 +2,6 @@
 
 ## First
 
-- Invite to room via link
-
 ## Next
 
 - Leaderboard: last month, 6 months, all time
