@@ -203,6 +203,13 @@ fn auto_delete_game_history(ctx: &ReducerContext, _timer: AutoDeleteGameHistoryT
 // TODO: Create a public table for showing the complete leaderboard
 // This one is scheduled to be updated after a game ends
 // Clients can subscribe to this table to get the leaderboard
+#[table(name = stats_one_month, public)]
+pub struct StatsOneMonth {
+    #[primary_key]
+    player: Identity,
+    wins: u32,
+    total: u32,
+}
 
 #[table(name = room, public)]
 pub struct Room {
@@ -470,18 +477,47 @@ pub fn restart_game_has_winner(ctx: &ReducerContext) -> Result<(), String> {
     Ok(())
 }
 
-fn create_game_history_entries(
-    ctx: &ReducerContext,
-    game_id: u32,
-    winner_team_id: u32,
-) -> Result<(), String> {
+fn post_game_end(ctx: &ReducerContext, game_id: u32, winner_team_id: u32) -> Result<(), String> {
     for jt in ctx.db.join_team().room_id().filter(game_id) {
+        let won = jt.team_id == winner_team_id;
+
+        // create game history
         ctx.db.game_history().try_insert(GameHistory {
             id: 0,
             player: jt.joiner,
             timestamp: ctx.timestamp,
-            won: jt.team_id == winner_team_id,
+            won,
         })?;
+
+        // update stats
+        let one_month_dur = Duration::from_secs(60 * 60 * 24 * 30);
+        let mut one_month_total = 0;
+        let mut one_month_wins = 0;
+        for history in ctx.db.game_history().player().filter(jt.joiner) {
+            let elapsed = ctx
+                .timestamp
+                .duration_since(history.timestamp)
+                .ok_or("Timestamp is in the future")?;
+            if elapsed <= one_month_dur {
+                one_month_total += 1;
+                if history.won {
+                    one_month_wins += 1;
+                }
+            }
+        }
+        if let Some(stat) = ctx.db.stats_one_month().player().find(jt.joiner) {
+            ctx.db.stats_one_month().player().update(StatsOneMonth {
+                wins: one_month_wins,
+                total: one_month_total,
+                ..stat
+            });
+        } else {
+            ctx.db.stats_one_month().try_insert(StatsOneMonth {
+                player: jt.joiner,
+                wins: one_month_wins,
+                total: one_month_total,
+            })?;
+        }
     }
 
     Ok(())
@@ -538,7 +574,7 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
                     team_id: jt.team_id,
                     coordinates: coords,
                 });
-                create_game_history_entries(ctx, game.room_id, jt.team_id)?;
+                post_game_end(ctx, game.room_id, jt.team_id)?;
             } else {
                 let another_team = ctx
                     .db
