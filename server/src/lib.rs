@@ -200,9 +200,6 @@ fn auto_delete_game_history(ctx: &ReducerContext, _timer: AutoDeleteGameHistoryT
     }
 }
 
-// TODO: Create a public table for showing the complete leaderboard
-// This one is scheduled to be updated after a game ends
-// Clients can subscribe to this table to get the leaderboard
 #[table(name = stats_one_month, public)]
 pub struct StatsOneMonth {
     #[primary_key]
