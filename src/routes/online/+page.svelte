@@ -102,7 +102,9 @@
 		});
 	};
 
-	$inspect('getConnected()', getConnected());
+	$effect(() => {
+		console.log('getConnected()', $state.snapshot(getConnected()));
+	});
 
 	$effect(() => {
 		if (!getConnected()) {
