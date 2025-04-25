@@ -64,7 +64,7 @@
 						<th>{i + 1}</th>
 						<td
 							><div
-								data-tip="You"
+								data-tip={m.you()}
 								class={{
 									'font-semibold': isYou,
 									tooltip: isYou
