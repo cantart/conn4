@@ -6,7 +6,7 @@
 	import { getLocale, setLocale } from '$lib/paraglide/runtime';
 
 	const pages = [
-		{ pathname: '/', label: m.this_teary_hyena_value(), icon: '😪' },
+		{ pathname: '/offline', label: m.this_teary_hyena_value(), icon: '😪' },
 		{ pathname: '/online', label: m.sleek_strong_turtle_pat(), icon: '✈️' },
 		{ pathname: '/theme', label: m.cool_plain_elk_pull(), icon: '🎨' },
 		{ pathname: '/feedback', label: m.this_aware_larva_fry(), icon: '💬' }
@@ -53,7 +53,7 @@
 				<ul class="menu dropdown-content rounded-box bg-base-100 z-[1] w-40 p-2 shadow">
 					{#each pages as p (p.pathname)}
 						<li>
-							<a href={p.pathname} class:active={page.url.pathname === p.pathname}>
+							<a href={p.pathname} class:active={page.url.pathname.includes(p.pathname)}>
 								{p.icon}
 								{p.label}
 							</a>
@@ -65,10 +65,11 @@
 		<div class="navbar-center hidden gap-2 sm:flex">
 			<ul class="menu menu-horizontal rounded-box bg-base-200">
 				{#each pages as p (p.pathname)}
+					{@const active = page.url.pathname.includes(p.pathname)}
 					<li>
-						<a href={p.pathname} class:active={page.url.pathname === p.pathname}>
+						<a href={p.pathname} class:active>
 							{p.icon}
-							{#if page.url.pathname === p.pathname}
+							{#if active}
 								{p.label}
 							{/if}
 						</a>
