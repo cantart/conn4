@@ -1,81 +1,35 @@
-<script lang="ts" module>
-	// Import the functions you need from the SDKs you need
-	import { initializeApp } from 'firebase/app';
+<script lang="ts">
 	import {
-		getAuth,
-		onAuthStateChanged,
 		signInWithPopup,
-		type User,
 		signOut,
 		type AuthProvider,
 		FacebookAuthProvider,
 		GithubAuthProvider,
 		TwitterAuthProvider,
-		OAuthProvider
+		OAuthProvider,
+		getAuth
 	} from 'firebase/auth';
 	import { GoogleAuthProvider } from 'firebase/auth';
+	import { type EventContext, type JoinRoom } from '../../module_bindings';
+	import type { SubscriptionHandle, You } from '$lib';
+	import Home from './Home.svelte';
+	import type { CustomerContext, RoomData } from './types';
+	import Room from './Room.svelte';
+	import GoogleLoginButton from './GoogleLoginButton.svelte';
+	import { m } from '$lib/paraglide/messages';
+	import FacebookLoginButton from './FacebookLoginButton.svelte';
+	import GitHubLoginButton from './GitHubLoginButton.svelte';
+	import XLoginButton from './XLoginButton.svelte';
+	import YahooLoginButton from './YahooLoginButton.svelte';
+	import { getContext } from 'svelte';
 
-	let firebaseUser = $state<
-		| {
-				ready: false;
-		  }
-		| {
-				ready: true;
-				value: User | null;
-		  }
-	>({
-		ready: false
-	});
-
-	const firebaseConfig = {
-		apiKey: 'AIzaSyATTntrsu3XgqR1S73O_FemmFgAwkAw420',
-		authDomain: 'conn4-a3b1f.firebaseapp.com',
-		projectId: 'conn4-a3b1f',
-		storageBucket: 'conn4-a3b1f.firebasestorage.app',
-		messagingSenderId: '255108508987',
-		appId: '1:255108508987:web:2d3b39a1fb097f8ab3db1e'
-	};
-
-	const disconnect = () => {
-		conn?.disconnect();
-		s = {
-			page: 'loading'
-		};
-	};
-
-	const postSignIn = (idToken: string) => {
-		disconnect();
-		conn = commonConnectionBuild()
-			.withToken(idToken)
-			.onConnect((conn, identity) => onConnect(conn, identity, { yes: false }))
-			.build();
-	};
-
-	// Initialize Firebase
-	const app = initializeApp(firebaseConfig);
-	const auth = getAuth(app);
-	onAuthStateChanged(auth, async (user) => {
-		if (!firebaseUser.ready) {
-			// Set up conn for the first time
-			if (user) {
-				postSignIn(await user.getIdToken());
-			} else {
-				conn = commonConnectionBuild()
-					.withToken(localStorage.getItem('anon_token') ?? '')
-					.onConnect((conn, identity, token) => onConnect(conn, identity, { yes: true, token }))
-					.build();
-			}
-		}
-		firebaseUser = {
-			ready: true,
-			value: user
-		};
-	});
-
-	let players = new SvelteMap<bigint, Player>();
-	let you = $state<You | null>(null);
-	let yourJoinRoom = $state<JoinRoom | null>(null);
-	let yourJoinRoomHandle: SubscriptionHandle | null = null;
+	const getConnected = getContext<CustomerContext['connected']>('connected');
+	// const getYou = getContext<CustomerContext['you']>('you');
+	let you = $derived(getContext<CustomerContext['you']>('you')());
+	let players = $derived(getContext<CustomerContext['players']>('players')());
+	let conn = $derived(getContext<CustomerContext['conn']>('conn')());
+	const postSignIn = getContext<CustomerContext['postSignIn']>('postSignIn');
+	let firebaseUser = $derived(getContext<CustomerContext['firebaseUser']>('firebaseUser')());
 
 	let s = $state<
 		| {
@@ -91,8 +45,21 @@
 		page: 'loading'
 	});
 
+	$effect(() => {
+		if (you && getConnected()) {
+			setupYourJoinRoom(you).then(() => {
+				s = {
+					page: 'home'
+				};
+			});
+		}
+	});
+
+	let yourJoinRoom = $state<JoinRoom | null>(null);
+	let yourJoinRoomHandle: SubscriptionHandle | null = null;
+
 	let youJoinRoomOnInsert: (ctx: EventContext, jr: JoinRoom) => void = (ctx, jr) => {
-		if (!you) {
+		if (you === null) {
 			throw new Error('You are not set yet');
 		}
 		if (!conn) {
@@ -136,89 +103,13 @@
 		});
 	};
 
-	const onConnectError = (_: ErrorContext, error: Error) => {
-		console.error('Error connecting to SpacetimeDB:', error);
-	};
-
-	const onConnect = (
-		conn: DbConnection,
-		identity: Identity,
-		anon:
-			| {
-					yes: true;
-					token: string;
-			  }
-			| {
-					yes: false;
-			  }
-	) => {
-		if (anon.yes) {
-			localStorage.setItem('anon_token', anon.token);
+	$effect(() => {
+		if (!getConnected()) {
+			s = {
+				page: 'loading'
+			};
 		}
-
-		conn
-			.subscriptionBuilder()
-			.onApplied(async () => {
-				for (const player of conn.db.player.iter()) {
-					players.set(player.identity.data, player);
-					if (player.identity.data === identity.data) {
-						you = {
-							name: player.name,
-							identity
-						};
-						await setupYourJoinRoom(you);
-						s = {
-							page: 'home'
-						};
-					}
-				}
-			})
-			.subscribe(['SELECT * FROM player']);
-
-		conn.db.player.onInsert((ctx, player) => {
-			players.set(player.identity.data, player);
-		});
-		conn.db.player.onUpdate((ctx, o, n) => {
-			players.set(n.identity.data, n);
-			if (n.identity.data === you?.identity.data) {
-				you = { name: n.name, identity: identity };
-			}
-		});
-		conn.db.player.onDelete((ctx, player) => {
-			players.delete(player.identity.data);
-		});
-	};
-
-	let conn = $state<DbConnection | null>(null);
-
-	const commonConnectionBuild = () => {
-		return DbConnection.builder()
-			.withUri(import.meta.env.VITE_SPACETIME_DB_URI ?? 'ws://localhost:3000')
-			.withModuleName(import.meta.env.VITE_SPACETIME_DB_MODULE ?? 'conn4')
-			.onConnectError(onConnectError);
-	};
-</script>
-
-<script lang="ts">
-	import type { Identity } from '@clockworklabs/spacetimedb-sdk';
-	import {
-		DbConnection,
-		type EventContext,
-		type JoinRoom,
-		Player,
-		type ErrorContext
-	} from '../../module_bindings';
-	import type { SubscriptionHandle, You } from '$lib';
-	import Home from './Home.svelte';
-	import { SvelteMap } from 'svelte/reactivity';
-	import type { RoomData } from './types';
-	import Room from './Room.svelte';
-	import GoogleLoginButton from './GoogleLoginButton.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import FacebookLoginButton from './FacebookLoginButton.svelte';
-	import GitHubLoginButton from './GitHubLoginButton.svelte';
-	import XLoginButton from './XLoginButton.svelte';
-	import YahooLoginButton from './YahooLoginButton.svelte';
+	});
 
 	let home: Home | null = $state(null);
 	$effect(() => {
@@ -246,7 +137,7 @@
 
 	const signInWithProvider = async (provider: AuthProvider) => {
 		// TODO: set language
-		return signInWithPopup(auth, provider)
+		return signInWithPopup(getAuth(), provider)
 			.then(async (result) => {
 				postSignIn(await result.user.getIdToken());
 			})
@@ -335,12 +226,7 @@
 	<button
 		class="btn btn-warning btn-xs"
 		onclick={() => {
-			disconnect();
-			conn = commonConnectionBuild()
-				.withToken(localStorage.getItem('anon_token') ?? '')
-				.onConnect((conn, identity, token) => onConnect(conn, identity, { yes: true, token }))
-				.build();
-			signOut(auth);
+			signOut(getAuth());
 		}}
 	>
 		{m.sign_out()}
