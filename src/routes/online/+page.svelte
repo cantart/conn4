@@ -24,7 +24,6 @@
 	import { getContext } from 'svelte';
 
 	const getConnected = getContext<CustomerContext['connected']>('connected');
-	// const getYou = getContext<CustomerContext['you']>('you');
 	let you = $derived(getContext<CustomerContext['you']>('you')());
 	let players = $derived(getContext<CustomerContext['players']>('players')());
 	let conn = $derived(getContext<CustomerContext['conn']>('conn')());
