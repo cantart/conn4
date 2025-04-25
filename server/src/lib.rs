@@ -2,9 +2,10 @@ use std::time::Duration;
 
 use log::info;
 use spacetimedb::{
+    client_visibility_filter,
     rand::{seq::IteratorRandom, Rng},
-    reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table, TimeDuration,
-    Timestamp,
+    reducer, table, Filter, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table,
+    TimeDuration, Timestamp,
 };
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -156,6 +157,55 @@ impl Game {
             .iter()
             .all(|row| row.iter().all(|cell| cell.is_some()))
     }
+}
+
+#[table(name = game_history, public)]
+pub struct GameHistory {
+    #[primary_key]
+    #[auto_inc]
+    id: u32,
+    #[index(btree)]
+    player: Identity,
+    won: bool,
+    timestamp: Timestamp,
+}
+
+/// A player can only see their own game history
+#[client_visibility_filter]
+const GAME_HISTORY_FILTER: Filter =
+    Filter::Sql("SELECT * FROM game_history WHERE player = :sender");
+
+#[spacetimedb::table(name = auto_delete_game_history_timer, scheduled(auto_delete_game_history))]
+pub struct AutoDeleteGameHistoryTimer {
+    #[primary_key]
+    scheduled_id: u64,
+    scheduled_at: spacetimedb::ScheduleAt,
+}
+
+#[reducer]
+fn auto_delete_game_history(ctx: &ReducerContext, _timer: AutoDeleteGameHistoryTimer) {
+    let one_year = Duration::from_secs(60 * 60 * 24 * 365);
+    for entry in ctx.db.game_history().iter() {
+        if let Some(elapsed) = ctx.timestamp.duration_since(entry.timestamp) {
+            if elapsed > one_year {
+                ctx.db.game_history().id().delete(entry.id);
+            }
+        } else {
+            log::warn!(
+                "entry.timestamp is strictly greater than ctx.timestamp??? {:?} > {:?}",
+                entry.timestamp,
+                ctx.timestamp
+            )
+        }
+    }
+}
+
+#[table(name = stats_one_month, public)]
+pub struct StatsOneMonth {
+    #[primary_key]
+    player: Identity,
+    wins: u32,
+    total: u32,
 }
 
 #[table(name = room, public)]
@@ -424,6 +474,52 @@ pub fn restart_game_has_winner(ctx: &ReducerContext) -> Result<(), String> {
     Ok(())
 }
 
+fn post_game_end(ctx: &ReducerContext, game_id: u32, winner_team_id: u32) -> Result<(), String> {
+    for jt in ctx.db.join_team().room_id().filter(game_id) {
+        let won = jt.team_id == winner_team_id;
+
+        // create game history
+        ctx.db.game_history().try_insert(GameHistory {
+            id: 0,
+            player: jt.joiner,
+            timestamp: ctx.timestamp,
+            won,
+        })?;
+
+        // update stats
+        let one_month_dur = Duration::from_secs(60 * 60 * 24 * 30);
+        let mut one_month_total = 0;
+        let mut one_month_wins = 0;
+        for history in ctx.db.game_history().player().filter(jt.joiner) {
+            let elapsed = ctx
+                .timestamp
+                .duration_since(history.timestamp)
+                .ok_or("Timestamp is in the future")?;
+            if elapsed <= one_month_dur {
+                one_month_total += 1;
+                if history.won {
+                    one_month_wins += 1;
+                }
+            }
+        }
+        if let Some(stat) = ctx.db.stats_one_month().player().find(jt.joiner) {
+            ctx.db.stats_one_month().player().update(StatsOneMonth {
+                wins: one_month_wins,
+                total: one_month_total,
+                ..stat
+            });
+        } else {
+            ctx.db.stats_one_month().try_insert(StatsOneMonth {
+                player: jt.joiner,
+                wins: one_month_wins,
+                total: one_month_total,
+            })?;
+        }
+    }
+
+    Ok(())
+}
+
 #[reducer]
 pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
     // check if the player is in a team
@@ -475,6 +571,7 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
                     team_id: jt.team_id,
                     coordinates: coords,
                 });
+                post_game_end(ctx, game.room_id, jt.team_id)?;
             } else {
                 let another_team = ctx
                     .db
@@ -685,13 +782,19 @@ pub fn leave_room(ctx: &ReducerContext) {
 pub fn init(ctx: &ReducerContext) -> Result<(), String> {
     // Called when the module is initially published
 
+    let one_day = Duration::from_secs(60 * 60 * 24);
     ctx.db
         .auto_delete_room_timer()
         .try_insert(AutoDeleteRoomTimer {
             scheduled_id: 0,
-            scheduled_at: ScheduleAt::Interval(
-                TimeDuration::from_duration(Duration::from_secs(60 * 60 * 24)), // 1 day
-            ),
+            scheduled_at: ScheduleAt::Interval(TimeDuration::from_duration(one_day)),
+        })?;
+
+    ctx.db
+        .auto_delete_game_history_timer()
+        .try_insert(AutoDeleteGameHistoryTimer {
+            scheduled_id: 0,
+            scheduled_at: ScheduleAt::Interval(TimeDuration::from_duration(one_day)),
         })?;
 
     Ok(())

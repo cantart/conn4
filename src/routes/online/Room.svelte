@@ -77,6 +77,35 @@
 		await useGame.createGame();
 	};
 
+	let teamsNotReady = $derived.by(() => {
+		if (
+			useGame.emptyTeamIds === undefined ||
+			useGame.emptyTeamIds.size > 0 ||
+			useGame.joinTeams.length === 0
+		) {
+			// Cannot determine if the game is ready yet.
+			return true;
+		}
+
+		const teamHasOnlinePlayer = new Map<number, boolean>();
+		for (const jt of useGame.joinTeams) {
+			const player = players.get(jt.joiner.data);
+			if (!player) {
+				console.error('Player not found:', jt.joiner);
+				continue;
+			}
+
+			const status = teamHasOnlinePlayer.get(jt.teamId);
+			if (status === undefined) {
+				teamHasOnlinePlayer.set(jt.teamId, player.online);
+			} else {
+				teamHasOnlinePlayer.set(jt.teamId, status || player.online);
+			}
+		}
+
+		return teamHasOnlinePlayer.values().some((hasOnline) => !hasOnline);
+	});
+
 	let yourTurn = $derived.by(() => {
 		if (!useGame.gameCurrentTeam) {
 			return false;
@@ -130,8 +159,7 @@
 						teamId: useGame.game.winner.teamId
 					}
 				: undefined,
-			dropDisabled:
-				!!useGame.game.winner || !yourTurn || useGame.gameJoining || useGame.emptyTeamIds.size > 0
+			dropDisabled: !!useGame.game.winner || !yourTurn || useGame.gameJoining || teamsNotReady
 		};
 	});
 
@@ -206,7 +234,7 @@
 			<!-- Game is being displayed. -->
 			{#if useGame.yourJoinTeam}
 				<!-- The match has started with at least you in it -->
-				{#if useGame.emptyTeamIds.size > 0}
+				{#if teamsNotReady}
 					<!-- can happen if the opponent left mid-game -->
 					<span class="text-base md:text-lg">{m.waiting_another_player_to_join()}</span>
 				{:else}

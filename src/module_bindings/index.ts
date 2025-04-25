@@ -32,6 +32,8 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 
 // Import and reexport all reducer arg types
+import { AutoDeleteGameHistory } from "./auto_delete_game_history_reducer.ts";
+export { AutoDeleteGameHistory };
 import { AutoDeleteRoomIfAllOffline } from "./auto_delete_room_if_all_offline_reducer.ts";
 export { AutoDeleteRoomIfAllOffline };
 import { CreateGame } from "./create_game_reducer.ts";
@@ -64,12 +66,16 @@ import { SetName } from "./set_name_reducer.ts";
 export { SetName };
 
 // Import and reexport all table handle types
+import { AutoDeleteGameHistoryTimerTableHandle } from "./auto_delete_game_history_timer_table.ts";
+export { AutoDeleteGameHistoryTimerTableHandle };
 import { AutoDeleteRoomTimerTableHandle } from "./auto_delete_room_timer_table.ts";
 export { AutoDeleteRoomTimerTableHandle };
 import { GameTableHandle } from "./game_table.ts";
 export { GameTableHandle };
 import { GameCurrentTeamTableHandle } from "./game_current_team_table.ts";
 export { GameCurrentTeamTableHandle };
+import { GameHistoryTableHandle } from "./game_history_table.ts";
+export { GameHistoryTableHandle };
 import { JoinRoomTableHandle } from "./join_room_table.ts";
 export { JoinRoomTableHandle };
 import { JoinTeamTableHandle } from "./join_team_table.ts";
@@ -80,10 +86,14 @@ import { PlayerTableHandle } from "./player_table.ts";
 export { PlayerTableHandle };
 import { RoomTableHandle } from "./room_table.ts";
 export { RoomTableHandle };
+import { StatsOneMonthTableHandle } from "./stats_one_month_table.ts";
+export { StatsOneMonthTableHandle };
 import { TeamTableHandle } from "./team_table.ts";
 export { TeamTableHandle };
 
 // Import and reexport all types
+import { AutoDeleteGameHistoryTimer } from "./auto_delete_game_history_timer_type.ts";
+export { AutoDeleteGameHistoryTimer };
 import { AutoDeleteRoomTimer } from "./auto_delete_room_timer_type.ts";
 export { AutoDeleteRoomTimer };
 import { Coord } from "./coord_type.ts";
@@ -94,6 +104,8 @@ import { Game } from "./game_type.ts";
 export { Game };
 import { GameCurrentTeam } from "./game_current_team_type.ts";
 export { GameCurrentTeam };
+import { GameHistory } from "./game_history_type.ts";
+export { GameHistory };
 import { JoinRoom } from "./join_room_type.ts";
 export { JoinRoom };
 import { JoinTeam } from "./join_team_type.ts";
@@ -104,6 +116,8 @@ import { Player } from "./player_type.ts";
 export { Player };
 import { Room } from "./room_type.ts";
 export { Room };
+import { StatsOneMonth } from "./stats_one_month_type.ts";
+export { StatsOneMonth };
 import { Team } from "./team_type.ts";
 export { Team };
 import { Winner } from "./winner_type.ts";
@@ -111,6 +125,11 @@ export { Winner };
 
 const REMOTE_MODULE = {
   tables: {
+    auto_delete_game_history_timer: {
+      tableName: "auto_delete_game_history_timer",
+      rowType: AutoDeleteGameHistoryTimer.getTypeScriptAlgebraicType(),
+      primaryKey: "scheduledId",
+    },
     auto_delete_room_timer: {
       tableName: "auto_delete_room_timer",
       rowType: AutoDeleteRoomTimer.getTypeScriptAlgebraicType(),
@@ -125,6 +144,11 @@ const REMOTE_MODULE = {
       tableName: "game_current_team",
       rowType: GameCurrentTeam.getTypeScriptAlgebraicType(),
       primaryKey: "gameId",
+    },
+    game_history: {
+      tableName: "game_history",
+      rowType: GameHistory.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
     },
     join_room: {
       tableName: "join_room",
@@ -150,6 +174,11 @@ const REMOTE_MODULE = {
       rowType: Room.getTypeScriptAlgebraicType(),
       primaryKey: "id",
     },
+    stats_one_month: {
+      tableName: "stats_one_month",
+      rowType: StatsOneMonth.getTypeScriptAlgebraicType(),
+      primaryKey: "player",
+    },
     team: {
       tableName: "team",
       rowType: Team.getTypeScriptAlgebraicType(),
@@ -157,6 +186,10 @@ const REMOTE_MODULE = {
     },
   },
   reducers: {
+    auto_delete_game_history: {
+      reducerName: "auto_delete_game_history",
+      argsType: AutoDeleteGameHistory.getTypeScriptAlgebraicType(),
+    },
     auto_delete_room_if_all_offline: {
       reducerName: "auto_delete_room_if_all_offline",
       argsType: AutoDeleteRoomIfAllOffline.getTypeScriptAlgebraicType(),
@@ -244,6 +277,7 @@ const REMOTE_MODULE = {
 
 // A type representing all the possible variants of a reducer.
 export type Reducer = never
+| { name: "AutoDeleteGameHistory", args: AutoDeleteGameHistory }
 | { name: "AutoDeleteRoomIfAllOffline", args: AutoDeleteRoomIfAllOffline }
 | { name: "CreateGame", args: CreateGame }
 | { name: "CreateRoom", args: CreateRoom }
@@ -263,6 +297,22 @@ export type Reducer = never
 
 export class RemoteReducers {
   constructor(private connection: DbConnectionImpl, private setCallReducerFlags: SetReducerFlags) {}
+
+  autoDeleteGameHistory(timer: AutoDeleteGameHistoryTimer) {
+    const __args = { timer };
+    let __writer = new BinaryWriter(1024);
+    AutoDeleteGameHistory.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("auto_delete_game_history", __argsBuffer, this.setCallReducerFlags.autoDeleteGameHistoryFlags);
+  }
+
+  onAutoDeleteGameHistory(callback: (ctx: ReducerEventContext, timer: AutoDeleteGameHistoryTimer) => void) {
+    this.connection.onReducer("auto_delete_game_history", callback);
+  }
+
+  removeOnAutoDeleteGameHistory(callback: (ctx: ReducerEventContext, timer: AutoDeleteGameHistoryTimer) => void) {
+    this.connection.offReducer("auto_delete_game_history", callback);
+  }
 
   autoDeleteRoomIfAllOffline(timer: AutoDeleteRoomTimer) {
     const __args = { timer };
@@ -471,6 +521,11 @@ export class RemoteReducers {
 }
 
 export class SetReducerFlags {
+  autoDeleteGameHistoryFlags: CallReducerFlags = 'FullUpdate';
+  autoDeleteGameHistory(flags: CallReducerFlags) {
+    this.autoDeleteGameHistoryFlags = flags;
+  }
+
   autoDeleteRoomIfAllOfflineFlags: CallReducerFlags = 'FullUpdate';
   autoDeleteRoomIfAllOffline(flags: CallReducerFlags) {
     this.autoDeleteRoomIfAllOfflineFlags = flags;
@@ -541,6 +596,10 @@ export class SetReducerFlags {
 export class RemoteTables {
   constructor(private connection: DbConnectionImpl) {}
 
+  get autoDeleteGameHistoryTimer(): AutoDeleteGameHistoryTimerTableHandle {
+    return new AutoDeleteGameHistoryTimerTableHandle(this.connection.clientCache.getOrCreateTable<AutoDeleteGameHistoryTimer>(REMOTE_MODULE.tables.auto_delete_game_history_timer));
+  }
+
   get autoDeleteRoomTimer(): AutoDeleteRoomTimerTableHandle {
     return new AutoDeleteRoomTimerTableHandle(this.connection.clientCache.getOrCreateTable<AutoDeleteRoomTimer>(REMOTE_MODULE.tables.auto_delete_room_timer));
   }
@@ -551,6 +610,10 @@ export class RemoteTables {
 
   get gameCurrentTeam(): GameCurrentTeamTableHandle {
     return new GameCurrentTeamTableHandle(this.connection.clientCache.getOrCreateTable<GameCurrentTeam>(REMOTE_MODULE.tables.game_current_team));
+  }
+
+  get gameHistory(): GameHistoryTableHandle {
+    return new GameHistoryTableHandle(this.connection.clientCache.getOrCreateTable<GameHistory>(REMOTE_MODULE.tables.game_history));
   }
 
   get joinRoom(): JoinRoomTableHandle {
@@ -571,6 +634,10 @@ export class RemoteTables {
 
   get room(): RoomTableHandle {
     return new RoomTableHandle(this.connection.clientCache.getOrCreateTable<Room>(REMOTE_MODULE.tables.room));
+  }
+
+  get statsOneMonth(): StatsOneMonthTableHandle {
+    return new StatsOneMonthTableHandle(this.connection.clientCache.getOrCreateTable<StatsOneMonth>(REMOTE_MODULE.tables.stats_one_month));
   }
 
   get team(): TeamTableHandle {

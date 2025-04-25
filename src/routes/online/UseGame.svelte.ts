@@ -59,7 +59,7 @@ export class UseGame {
     }
     emptyTeamIds = $derived.by(() => {
         if (!this._teams || !this._joinTeams) {
-            return new Set<number>();
+            return undefined;
         }
         const teamIds = new Set(this._teams.map((t) => t.id));
         const joinTeamIds = new Set(this._joinTeams.map((jt) => jt.teamId));

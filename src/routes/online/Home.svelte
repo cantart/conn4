@@ -113,7 +113,7 @@
 		{@render nameInputForm()}
 	{/if}
 	{#if you.name}
-		<div class="space-y-8">
+		<div class="space-y-4">
 			<div>
 				<form
 					onsubmit={(e) => {
@@ -142,9 +142,14 @@
 					</div>
 				</form>
 			</div>
+
+			<a href="/online/leaderboard" class="btn btn-outline btn-secondary btn-sm"
+				>🏅 {m.just_maroon_insect_soar()}</a
+			>
+
 			<div class={useRooms.rooms ? 'space-y-2' : 'hidden'}>
 				<h2>{m.actual_gray_scallop_sway()} ({useRooms.rooms.length})</h2>
-				<ol>
+				<ol class="space-y-1">
 					{#each useRooms.rooms as room (room.id)}
 						<li>
 							<button
