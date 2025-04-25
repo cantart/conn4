@@ -103,10 +103,6 @@
 	};
 
 	$effect(() => {
-		console.log('getConnected()', $state.snapshot(getConnected()));
-	});
-
-	$effect(() => {
 		if (!getConnected()) {
 			s = {
 				page: 'loading'
