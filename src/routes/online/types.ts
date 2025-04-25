@@ -12,7 +12,7 @@ export type RoomData = {
     leaveRoom: (you: You) => void;
 }
 
-export type CustomerContext = {
+export type CustomContext = {
     connected: () => boolean
     players: () => SvelteMap<bigint, Player>
     you: () => (You | null)

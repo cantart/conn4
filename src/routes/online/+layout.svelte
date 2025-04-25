@@ -6,7 +6,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { Identity } from '@clockworklabs/spacetimedb-sdk';
 	import { setContext } from 'svelte';
-	import type { CustomerContext } from './types';
+	import type { CustomContext } from './types';
 
 	const firebaseConfig = {
 		apiKey: 'AIzaSyATTntrsu3XgqR1S73O_FemmFgAwkAw420',
@@ -108,12 +108,12 @@
 <script lang="ts">
 	let { children } = $props();
 
-	setContext<CustomerContext['connected']>('connected', () => connected);
-	setContext<CustomerContext['players']>('players', () => players);
-	setContext<CustomerContext['you']>('you', () => you);
-	setContext<CustomerContext['conn']>('conn', () => conn);
-	setContext<CustomerContext['postSignIn']>('postSignIn', setupDbConnection);
-	setContext<CustomerContext['firebaseUser']>('firebaseUser', () => firebaseUser);
+	setContext<CustomContext['connected']>('connected', () => connected);
+	setContext<CustomContext['players']>('players', () => players);
+	setContext<CustomContext['you']>('you', () => you);
+	setContext<CustomContext['conn']>('conn', () => conn);
+	setContext<CustomContext['postSignIn']>('postSignIn', setupDbConnection);
+	setContext<CustomContext['firebaseUser']>('firebaseUser', () => firebaseUser);
 </script>
 
 {@render children()}
