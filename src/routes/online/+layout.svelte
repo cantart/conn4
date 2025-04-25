@@ -67,7 +67,6 @@
 		});
 		conn.db.player.onUpdate((ctx, o, n) => {
 			players.set(n.identity.data, n);
-			console.log(n);
 			if (n.identity.data === you?.identity.data) {
 				you = { name: n.name, identity: n.identity };
 			}
