@@ -30,7 +30,6 @@
 	});
 	let players = new SvelteMap<bigint, Player>();
 	let you = $state<You | null>(null);
-	// let yourIdentity = $state<Identity | null>(null);
 	let connected = $state(false);
 
 	const onConnectError = (_: ErrorContext, error: Error) => {
