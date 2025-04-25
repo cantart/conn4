@@ -12,6 +12,7 @@ export type RoomData = {
     leaveRoom: (you: You) => void;
 }
 
+// TODO: Find a better solution than this
 export type CustomContext = {
     connected: () => boolean
     players: () => SvelteMap<bigint, Player>
