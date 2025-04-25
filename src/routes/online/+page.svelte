@@ -102,6 +102,8 @@
 		});
 	};
 
+	$inspect('getConnected()', getConnected());
+
 	$effect(() => {
 		if (!getConnected()) {
 			s = {
