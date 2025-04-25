@@ -144,7 +144,7 @@
 			</div>
 			<div class={useRooms.rooms ? 'space-y-2' : 'hidden'}>
 				<h2>{m.actual_gray_scallop_sway()} ({useRooms.rooms.length})</h2>
-				<ol>
+				<ol class="space-y-1">
 					{#each useRooms.rooms as room (room.id)}
 						<li>
 							<button
