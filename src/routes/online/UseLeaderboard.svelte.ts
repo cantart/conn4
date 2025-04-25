@@ -6,8 +6,14 @@ export class UseLeaderboard {
     public oneMonth = $state<{
         loading: true
     } | {
-        loading: false, data: StatsOneMonth[]
+        loading: false, data: (StatsOneMonth & { winRate: number })[]
     }>({ loading: true });
+
+    private readonly sort = (data: object & { winRate: number }[]) => {
+        return data.sort((a, b) => {
+            return b.winRate - a.winRate
+        })
+    }
 
     private readonly oneMonthSubHandle: SubscriptionHandle
     private readonly oneMonthOnInsert: (ctx: EventContext, row: StatsOneMonth) => void = (ctx, row) => {
@@ -15,7 +21,13 @@ export class UseLeaderboard {
             console.error('One month stats not set yet')
             return
         }
-        this.oneMonth.data.push(row)
+
+        this.oneMonth.data.push({
+            ...row,
+            winRate: row.wins / row.total
+        })
+
+        this.sort(this.oneMonth.data)
     }
     private readonly oneMonthOnUpdate: (ctx: EventContext, oldRow: StatsOneMonth, newRow: StatsOneMonth) => void = (ctx, oldRow, newRow) => {
         if (this.oneMonth.loading) {
@@ -25,10 +37,12 @@ export class UseLeaderboard {
 
         const idx = this.oneMonth.data.findIndex((r) => r.player.data === oldRow.player.data)
         if (idx !== -1) {
-            this.oneMonth.data[idx] = newRow
+            this.oneMonth.data[idx] = { ...newRow, winRate: newRow.wins / newRow.total }
         } else {
             console.error('Update for non-existing row??', oldRow, newRow)
         }
+
+        this.sort(this.oneMonth.data)
     }
     private readonly oneMonthOnDelete: (ctx: EventContext, row: StatsOneMonth) => void = (ctx, row) => {
         if (this.oneMonth.loading) {
