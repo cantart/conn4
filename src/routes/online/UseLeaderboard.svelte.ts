@@ -50,7 +50,7 @@ export class UseLeaderboard {
     private readonly setupOneMonth = () => {
         return this.conn.subscriptionBuilder().onApplied(() => {
             this.oneMonth = {
-                loading: false, data: Array.from(this.conn.db.statsOneMonth.iter())
+                loading: false, data: []
             }
             this.conn.db.statsOneMonth.onInsert(this.oneMonthOnInsert)
             this.conn.db.statsOneMonth.onUpdate(this.oneMonthOnUpdate)
