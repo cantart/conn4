@@ -5,6 +5,9 @@
 	import { m } from './paraglide/messages';
 	import { flip } from 'svelte/animate';
 	import { useCrossfade } from './transitions';
+	import { onMount } from 'svelte';
+	import { cubicOut } from 'svelte/easing';
+	import { Tween } from 'svelte/motion';
 
 	type GameUIPlayer = LocalPlayer & { teamId: number; online?: boolean };
 
@@ -58,6 +61,26 @@
 	let tableFull = $derived(!props.table.some((row) => row.some((cell) => cell === undefined)));
 
 	const { send, receive } = useCrossfade();
+
+	let initialScrollLeft = new Tween(0, {
+		duration: 250,
+		easing: cubicOut
+	});
+
+	let scrollContainer: HTMLElement;
+
+	$effect(() => {
+		if (scrollContainer) {
+			scrollContainer.scrollLeft = initialScrollLeft.current;
+		}
+	});
+
+	onMount(() => {
+		const scrollWidth = scrollContainer.scrollWidth;
+		const clientWidth = scrollContainer.clientWidth;
+		const targetScrollLeft = (scrollWidth - clientWidth) / 2;
+		initialScrollLeft.target = Math.max(0, targetScrollLeft);
+	});
 </script>
 
 <div class="flex flex-col justify-center gap-2">
@@ -89,7 +112,7 @@
 		{/each}
 	</div>
 
-	<div class="scrollbar-thin w-screen overflow-x-auto text-center">
+	<div class="scrollbar-thin w-screen overflow-x-auto text-center" bind:this={scrollContainer}>
 		<div in:slide class="inline-block">
 			{#each props.table as row, i (i)}
 				<div class="flex justify-center">
