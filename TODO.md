@@ -2,6 +2,8 @@
 
 ## First
 
+- Change from random a new team at the start of next game to switch team
+
 ## Next
 
 - Coin skins
