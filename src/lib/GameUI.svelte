@@ -70,9 +70,7 @@
 	let scrollContainer: HTMLElement;
 
 	$effect(() => {
-		if (scrollContainer) {
-			scrollContainer.scrollLeft = initialScrollLeft.current;
-		}
+		scrollContainer.scrollLeft = initialScrollLeft.current;
 	});
 
 	onMount(() => {
