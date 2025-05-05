@@ -13,7 +13,7 @@
 	import { type EventContext, type JoinRoom } from '../../module_bindings';
 	import type { SubscriptionHandle, You } from '$lib';
 	import Home from './Home.svelte';
-	import type { CustomContext, RoomData } from './types';
+	import type { RoomData } from './types';
 	import Room from './Room.svelte';
 	import GoogleLoginButton from './GoogleLoginButton.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -21,14 +21,21 @@
 	import GitHubLoginButton from './GitHubLoginButton.svelte';
 	import XLoginButton from './XLoginButton.svelte';
 	import YahooLoginButton from './YahooLoginButton.svelte';
-	import { getContext } from 'svelte';
+	import {
+		getConnContext,
+		getConnectedContext,
+		getFirebaseUserContext,
+		getPlayersContext,
+		getPostSignInContext,
+		getYouContext
+	} from './+layout.svelte';
 
-	const getConnected = getContext<CustomContext['connected']>('connected');
-	let you = $derived(getContext<CustomContext['you']>('you')());
-	let players = $derived(getContext<CustomContext['players']>('players')());
-	let conn = $derived(getContext<CustomContext['conn']>('conn')());
-	const postSignIn = getContext<CustomContext['postSignIn']>('postSignIn');
-	let firebaseUser = $derived(getContext<CustomContext['firebaseUser']>('firebaseUser')());
+	const getConnected = getConnectedContext();
+	let you = $derived(getYouContext()());
+	let players = $derived(getPlayersContext()());
+	let conn = $derived(getConnContext()());
+	const postSignIn = getPostSignInContext();
+	let firebaseUser = $derived(getFirebaseUserContext()());
 
 	let s = $state<
 		| {

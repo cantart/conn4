@@ -5,8 +5,7 @@
 	import type { You } from '$lib';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { Identity } from '@clockworklabs/spacetimedb-sdk';
-	import { setContext } from 'svelte';
-	import type { CustomContext } from './types';
+	import { getContext, setContext } from 'svelte';
 
 	const firebaseConfig = {
 		apiKey: 'AIzaSyATTntrsu3XgqR1S73O_FemmFgAwkAw420',
@@ -102,17 +101,77 @@
 			value: user
 		};
 	});
+
+	const connectedContext = {
+		key: '$connected', // Using '$' prefix convention for context keys
+		set: () => setContext(connectedContext.key, () => connected),
+		get: () => {
+			return getContext<ReturnType<typeof connectedContext.set>>(connectedContext.key);
+		}
+	} as const;
+
+	const playersContext = {
+		key: '$players',
+		ctx: () => players,
+		set: () => setContext(playersContext.key, playersContext.ctx),
+		get: () => {
+			return getContext<ReturnType<typeof playersContext.set>>(playersContext.key);
+		}
+	} as const;
+
+	const youContext = {
+		key: '$you',
+		ctx: () => you,
+		set: () => setContext(youContext.key, youContext.ctx),
+		get: () => {
+			return getContext<ReturnType<typeof youContext.set>>(youContext.key);
+		}
+	} as const;
+
+	const connContext = {
+		key: '$conn',
+		ctx: () => conn,
+		set: () => setContext(connContext.key, connContext.ctx),
+		get: () => {
+			return getContext<ReturnType<typeof connContext.set>>(connContext.key);
+		}
+	} as const;
+
+	const postSignInContext = {
+		key: '$postSignIn',
+		set: () => setContext(postSignInContext.key, setupDbConnection),
+		get: () => {
+			return getContext<ReturnType<typeof postSignInContext.set>>(postSignInContext.key);
+		}
+	} as const;
+
+	const firebaseUserContext = {
+		key: '$firebaseUser',
+		ctx: () => firebaseUser,
+		set: () => setContext(firebaseUserContext.key, firebaseUserContext.ctx),
+		get: () => {
+			return getContext<ReturnType<typeof firebaseUserContext.set>>(firebaseUserContext.key);
+		}
+	} as const;
+
+	export const getConnectedContext = connectedContext.get;
+	export const getPlayersContext = playersContext.get;
+	export const getYouContext = youContext.get;
+	export const getConnContext = connContext.get;
+	export const getPostSignInContext = postSignInContext.get;
+	export const getFirebaseUserContext = firebaseUserContext.get;
 </script>
 
 <script lang="ts">
 	let { children } = $props();
 
-	setContext<CustomContext['connected']>('connected', () => connected);
-	setContext<CustomContext['players']>('players', () => players);
-	setContext<CustomContext['you']>('you', () => you);
-	setContext<CustomContext['conn']>('conn', () => conn);
-	setContext<CustomContext['postSignIn']>('postSignIn', setupDbConnection);
-	setContext<CustomContext['firebaseUser']>('firebaseUser', () => firebaseUser);
+	// --- Set Contexts ---
+	connectedContext.set();
+	playersContext.set();
+	youContext.set();
+	connContext.set();
+	postSignInContext.set();
+	firebaseUserContext.set();
 </script>
 
 {@render children()}
