@@ -434,18 +434,6 @@ fn game_of_sender(ctx: &ReducerContext) -> Result<Game, String> {
     Ok(game)
 }
 
-/// TODO: Consider having this in Game impl
-fn assign_random_team(ctx: &ReducerContext, game_id: u32) -> Result<(), String> {
-    ctx.db
-        .game_current_team()
-        .game_id()
-        .update(GameCurrentTeam {
-            team_id: game_random_team(ctx, game_id)?.id,
-            game_id: game_id,
-        });
-    Ok(())
-}
-
 #[reducer]
 pub fn restart_game_table_full(ctx: &ReducerContext) -> Result<(), String> {
     let game = game_of_sender(ctx)?;
@@ -455,7 +443,13 @@ pub fn restart_game_table_full(ctx: &ReducerContext) -> Result<(), String> {
     }
 
     ctx.db.game().room_id().update(Game::new(game.room_id));
-    assign_random_team(ctx, game.room_id)?;
+    let game_current_team = ctx
+        .db
+        .game_current_team()
+        .game_id()
+        .find(game.room_id)
+        .ok_or("Cannot find game")?;
+    game_switch_team(ctx, &game, game_current_team)?;
 
     Ok(())
 }
@@ -469,7 +463,13 @@ pub fn restart_game_has_winner(ctx: &ReducerContext) -> Result<(), String> {
     }
 
     ctx.db.game().room_id().update(Game::new(game.room_id));
-    assign_random_team(ctx, game.room_id)?;
+    let game_current_team = ctx
+        .db
+        .game_current_team()
+        .game_id()
+        .find(game.room_id)
+        .ok_or("Cannot find game")?;
+    game_switch_team(ctx, &game, game_current_team)?;
 
     Ok(())
 }
@@ -517,6 +517,29 @@ fn post_game_end(ctx: &ReducerContext, game_id: u32, winner_team_id: u32) -> Res
         }
     }
 
+    Ok(())
+}
+
+fn game_switch_team(
+    ctx: &ReducerContext,
+    game: &Game,
+    game_current_team: GameCurrentTeam,
+) -> Result<(), String> {
+    let another_team = ctx
+        .db
+        .team()
+        .game_id()
+        .filter(game.room_id)
+        .filter(|team| team.id != game_current_team.team_id)
+        .next()
+        .ok_or("Cannot find another team")?;
+    ctx.db
+        .game_current_team()
+        .game_id()
+        .update(GameCurrentTeam {
+            team_id: another_team.id,
+            ..game_current_team
+        });
     Ok(())
 }
 
@@ -573,21 +596,7 @@ pub fn drop_piece(ctx: &ReducerContext, column: u32) -> Result<(), String> {
                 });
                 post_game_end(ctx, game.room_id, jt.team_id)?;
             } else {
-                let another_team = ctx
-                    .db
-                    .team()
-                    .game_id()
-                    .filter(game.room_id)
-                    .filter(|team| team.id != game_current_team.team_id)
-                    .next()
-                    .ok_or("Cannot find another team")?;
-                ctx.db
-                    .game_current_team()
-                    .game_id()
-                    .update(GameCurrentTeam {
-                        team_id: another_team.id,
-                        ..game_current_team
-                    });
+                game_switch_team(ctx, &game, game_current_team)?;
             }
 
             break;
