@@ -410,18 +410,6 @@ fn check_win(table: &GameTable, team_id: u32) -> Option<Vec<Coord>> {
     None
 }
 
-fn game_random_team(ctx: &ReducerContext, game_id: u32) -> Result<Team, String> {
-    let mut rng = ctx.rng();
-    let random_team = ctx
-        .db
-        .team()
-        .game_id()
-        .filter(game_id)
-        .choose(&mut rng)
-        .ok_or("Cannot find a random team in the game")?;
-    Ok(random_team)
-}
-
 fn game_of_sender(ctx: &ReducerContext) -> Result<Game, String> {
     let Some(jt) = ctx.db.join_team().joiner().find(ctx.sender) else {
         return Err("Player not in a team".to_string());
